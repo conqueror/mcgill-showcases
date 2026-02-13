@@ -31,6 +31,7 @@ from sklearn.metrics import (
 from sklearn.model_selection import learning_curve, validation_curve
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -41,6 +42,7 @@ from .data import (
     ClassificationSplit,
     build_binary_target,
     build_multilabel_targets,
+    list_rebalance_strategies,
     rebalance_binary_training_data,
 )
 
@@ -53,6 +55,11 @@ try:
     from lightgbm import LGBMClassifier
 except ImportError:  # pragma: no cover - optional dependency
     LGBMClassifier = None
+
+try:
+    from catboost import CatBoostClassifier
+except ImportError:  # pragma: no cover - optional dependency
+    CatBoostClassifier = None
 
 
 @dataclass(frozen=True)
@@ -81,7 +88,7 @@ def evaluate_binary_classification(
     y_train_binary = build_binary_target(split.y_train, positive_digit=positive_digit)
     y_test_binary = build_binary_target(split.y_test, positive_digit=positive_digit)
 
-    strategies = ["none", "upsample_minority", "downsample_majority"]
+    strategies = list_rebalance_strategies()
     metric_rows: list[dict[str, float | str]] = []
     pr_rows: list[dict[str, float | str]] = []
     roc_rows: list[dict[str, float | str]] = []
@@ -282,6 +289,19 @@ def _build_optional_boosting_models() -> list[tuple[str, object]]:
                 ),
             )
         )
+    if CatBoostClassifier is not None:
+        optional_models.append(
+            (
+                "catboost",
+                CatBoostClassifier(
+                    iterations=120,
+                    learning_rate=0.05,
+                    depth=6,
+                    random_seed=RANDOM_STATE,
+                    verbose=False,
+                ),
+            )
+        )
     return optional_models
 
 
@@ -334,6 +354,17 @@ def build_classification_benchmark(split: ClassificationSplit) -> pd.DataFrame:
                 n_estimators=220,
                 random_state=RANDOM_STATE,
                 n_jobs=-1,
+            ),
+        ),
+        (
+            "mlp_classifier",
+            make_pipeline(
+                StandardScaler(),
+                MLPClassifier(
+                    hidden_layer_sizes=(128, 64),
+                    max_iter=300,
+                    random_state=RANDOM_STATE,
+                ),
             ),
         ),
     ]
