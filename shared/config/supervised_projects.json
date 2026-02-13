@@ -1,0 +1,36 @@
+{
+  "projects": [
+    {
+      "path": "projects/sota-supervised-learning-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_showcase.py"
+    },
+    {
+      "path": "projects/eda-leakage-profiling-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_pipeline.py --quick"
+    },
+    {
+      "path": "projects/credit-risk-classification-capstone-showcase",
+      "bootstrap_cmd": "PYTHONPATH=../../shared/python uv run python scripts/run_pipeline.py --quick"
+    },
+    {
+      "path": "projects/feature-engineering-dimred-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_feature_pipeline.py --quick"
+    },
+    {
+      "path": "projects/automl-hpo-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_hpo_benchmark.py --quick"
+    },
+    {
+      "path": "projects/mlops-drift-production-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_pipeline.py --quick"
+    },
+    {
+      "path": "projects/xai-fairness-audit-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_audit.py --quick"
+    },
+    {
+      "path": "projects/causalml-kaggle-showcase",
+      "bootstrap_cmd": "uv run python scripts/run_contract_baseline.py"
+    }
+  ]
+}
