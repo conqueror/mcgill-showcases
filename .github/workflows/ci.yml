@@ -176,5 +176,8 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Verify supervised contracts
         run: python3 shared/scripts/verify_supervised_contract.py --bootstrap-missing
