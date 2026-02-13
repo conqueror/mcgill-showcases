@@ -79,7 +79,15 @@ Contract note:
 ## Documentation Site
 - MkDocs Material config: `mkdocs.yml`
 - Docs dependency set: `docs/requirements-mkdocs.txt`
-- Public URL (after Pages is enabled): `https://conqueror.github.io/mcgill-showcases/`
+- Public URL: https://conqueror.github.io/mcgill-showcases/
+- Live docs quick links:
+  - [Home](https://conqueror.github.io/mcgill-showcases/)
+  - [Getting Started](https://conqueror.github.io/mcgill-showcases/getting-started/)
+  - [Showcase Architecture](https://conqueror.github.io/mcgill-showcases/showcase-architecture/)
+  - [API Overview](https://conqueror.github.io/mcgill-showcases/api/)
+  - [Ranking API](https://conqueror.github.io/mcgill-showcases/api/ranking-api/)
+  - [Demand API](https://conqueror.github.io/mcgill-showcases/api/demand-api/)
+  - [Glossary](https://conqueror.github.io/mcgill-showcases/glossary/)
 - Local docs server:
 ```bash
 make docs-serve
@@ -88,6 +96,9 @@ make docs-serve
 ```bash
 make docs-check
 ```
+- API docs note:
+  - GitHub Pages hosts static API reference pages and embedded ReDoc viewers backed by versioned OpenAPI JSON assets.
+  - Interactive Swagger UI (`/docs`) is available when running each FastAPI showcase locally with `make dev`.
 - Main docs entry points:
   - `docs/index.md`
   - `docs/showcase-architecture.md`

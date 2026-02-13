@@ -32,10 +32,26 @@ make dev
 ## ReDoc Viewer
 
 <div id="redoc-ranking"></div>
-<script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js"></script>
 <script>
   (function () {
-    const specUrl = document.getElementById("ranking-openapi-link").href;
-    Redoc.init(specUrl, { hideDownloadButton: false }, document.getElementById("redoc-ranking"));
+    const target = document.getElementById("redoc-ranking");
+    const specAnchor = document.getElementById("ranking-openapi-link");
+
+    if (!target || !specAnchor) {
+      return;
+    }
+    if (!window.Redoc || typeof window.Redoc.init !== "function") {
+      target.innerHTML =
+        "<p><strong>Unable to load embedded ReDoc.</strong> Use the OpenAPI JSON download link above.</p>";
+      return;
+    }
+
+    try {
+      window.Redoc.init(specAnchor.href, { hideDownloadButton: false }, target);
+    } catch (_error) {
+      target.innerHTML =
+        "<p><strong>Unable to load embedded ReDoc.</strong> Use the OpenAPI JSON download link above.</p>";
+    }
   })();
 </script>
