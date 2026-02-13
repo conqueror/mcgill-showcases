@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-.PHONY: help sync download pipeline policy confounding verify verify-strict ruff ruff-fix format type ty test pytest check all clean
+.PHONY: help sync download pipeline policy confounding contract verify verify-strict ruff ruff-fix format type ty test pytest check all clean
 
 help:
 	@echo "CausalML Kaggle Showcase - Commands"
@@ -14,6 +14,7 @@ help:
 	@echo "  make pipeline        Run main training and evaluation pipeline."
 	@echo "  make policy          Run policy simulation by budget levels."
 	@echo "  make confounding     Run confounding diagnostics."
+	@echo "  make contract        Run synthetic supervised contract baseline artifacts."
 	@echo "  make verify          Validate required artifacts are present and well-formed."
 	@echo "  make verify-strict   Same as verify, plus notebook-generated outputs."
 	@echo ""
@@ -43,6 +44,9 @@ policy:
 
 confounding:
 	uv run python scripts/confounding_checks.py
+
+contract:
+	uv run python scripts/run_contract_baseline.py
 
 verify:
 	uv run python scripts/verify_learning_artifacts.py
