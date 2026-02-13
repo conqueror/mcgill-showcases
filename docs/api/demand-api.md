@@ -26,6 +26,64 @@ make export-openapi
 make dev
 ```
 
+## Example Requests And Responses
+
+Base URL for local runs:
+
+```text
+http://127.0.0.1:8000
+```
+
+### `GET /health`
+
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0"
+}
+```
+
+### `POST /predict`
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/predict \
+  -H "content-type: application/json" \
+  -d '{
+    "pickup_zone_id": 132,
+    "pickup_datetime": "2026-02-13T09:00:00Z"
+  }'
+```
+
+```json
+{
+  "pickup_zone_id": 132,
+  "pickup_datetime": "2026-02-13T09:00:00Z",
+  "predicted_pickups": 41.7,
+  "model_version": "demo-v1"
+}
+```
+
+### `GET /metrics`
+
+This endpoint is part of the observability workflow and exposes Prometheus-formatted metrics.
+
+```bash
+curl -s http://127.0.0.1:8000/metrics | head -n 12
+```
+
+```text
+# HELP http_requests_total Total HTTP requests by method and route.
+# TYPE http_requests_total counter
+http_requests_total{method="GET",route="/health"} 3.0
+http_requests_total{method="POST",route="/predict"} 2.0
+# HELP http_request_latency_seconds Request latency in seconds by method and route.
+# TYPE http_request_latency_seconds histogram
+```
+
 ## ReDoc Viewer
 
 <div id="redoc-demand"></div>

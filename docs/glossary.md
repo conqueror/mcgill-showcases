@@ -311,6 +311,16 @@ Definition: Conditional average treatment effect for a subgroup/segment.
 Why it matters: Supports targeted policy and personalization decisions.  
 Where to see it: `projects/causalml-kaggle-showcase`.
 
+## Tau (`tau`) / Individual Treatment Effect (ITE)
+Definition: `tau_i = Y_i(1) - Y_i(0)` is the unit-level treatment effect for unit `i`, and `tau(x) = E[Y(1) - Y(0) | X = x]` is the treatment effect conditioned on features `X`.  
+Why it matters: `tau` connects counterfactual theory to action. Ranking by predicted `tau(x)` supports treatment policies that target users most likely to benefit.  
+Where to see it: `projects/causalml-kaggle-showcase/notebooks/01_counterfactuals_and_ate.ipynb`, `projects/causalml-kaggle-showcase/notebooks/02_meta_learners_s_t_x_r.ipynb`, `projects/causalml-kaggle-showcase/notebooks/04_qini_and_targeting_policy.ipynb`.
+
+Examples:
+- If treated conversion is `0.12` and control conversion is `0.08`, the average effect is `0.04` (4 percentage points), which is the sample-level mean of `tau`.  
+- If new users have estimated effect `0.06` and returning users `0.01`, those are subgroup `tau(x)` values (CATE-style heterogeneity).  
+- In uplift ranking workflows, model scores approximate `tau(x)` and are used to choose who should receive treatment under a budget.
+
 ## Counterfactual
 Definition: The unobserved outcome under an alternative treatment/action for the same unit.  
 Why it matters: Core concept behind causal effect estimation.  

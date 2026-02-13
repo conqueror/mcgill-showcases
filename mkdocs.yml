@@ -71,6 +71,11 @@ nav:
       - Forecasting: tracks/forecasting.md
       - Responsible AI: tracks/responsible-ai.md
       - Optimization: tracks/optimization.md
+  - Project Deep Dives:
+      - Overview: deep-dives/index.md
+      - Supervised Learning Deep Dive: deep-dives/sota-supervised.md
+      - Causal Inference Deep Dive: deep-dives/causal-inference.md
+      - MLOps Drift Deep Dive: deep-dives/mlops-drift.md
   - API Reference:
       - Overview: api/index.md
       - Ranking API: api/ranking-api.md

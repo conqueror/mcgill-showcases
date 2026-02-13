@@ -20,6 +20,13 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - Responsible AI: fairness, explainability, and causal decision support.
 - Optimization: HPO and policy optimization workflows.
 
+## Project Deep Dives
+
+- [Deep dive overview](deep-dives/index.md)
+- [Supervised learning deep dive](deep-dives/sota-supervised.md)
+- [Causal inference deep dive](deep-dives/causal-inference.md)
+- [MLOps drift deep dive](deep-dives/mlops-drift.md)
+
 ## Contributor Entry
 
 - [Showcase architecture map](showcase-architecture.md)
