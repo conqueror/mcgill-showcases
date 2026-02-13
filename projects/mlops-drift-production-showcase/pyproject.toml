@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mlops-drift-production-showcase"
+version = "0.1.0"
+description = "MLOps teaching project with drift detection, tracking, and local model serving."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi>=0.116.1",
+  "joblib>=1.4.2",
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+  "pydantic>=2.10.0",
+  "scikit-learn>=1.6.0",
+  "scipy>=1.15.0",
+  "uvicorn>=0.34.0",
+]
+
+[project.optional-dependencies]
+tracking = [
+  "mlflow>=2.16.2",
+]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.9.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mlops_drift_showcase"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
