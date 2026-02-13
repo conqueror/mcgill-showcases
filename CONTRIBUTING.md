@@ -16,11 +16,13 @@ make sync
 ## Local Quality Gate
 ```bash
 make check
+make docs-check
 ```
 
 ## Pull Request Checklist
 - [ ] Scope is clear and limited.
 - [ ] `make check` passes.
+- [ ] `make docs-check` passes when docs are touched.
 - [ ] User-facing docs are updated.
 - [ ] New notebooks/docs render without broken links.
 - [ ] Added/changed commands are included in README.
@@ -37,3 +39,8 @@ Use Conventional Commits when possible:
 - Prefer clear wording over jargon.
 - Explain "why this matters" for each new concept.
 - Include at least one decision-oriented interpretation for major outputs.
+
+## New Showcase Contributions
+Before opening a PR for a new project, follow:
+
+- `docs/new-showcase-playbook.md`
