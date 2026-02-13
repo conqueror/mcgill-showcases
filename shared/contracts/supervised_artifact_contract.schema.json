@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Supervised Artifact Contract",
+  "type": "object",
+  "required": ["version", "required_files"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "required_files": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1
+    }
+  },
+  "additionalProperties": true
+}

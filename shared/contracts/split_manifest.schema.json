@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Supervised Split Manifest",
+  "type": "object",
+  "required": [
+    "task_type",
+    "strategy",
+    "train_rows",
+    "val_rows",
+    "test_rows",
+    "random_state",
+    "no_overlap_checks_passed"
+  ],
+  "properties": {
+    "task_type": {
+      "type": "string",
+      "enum": ["classification", "regression"]
+    },
+    "strategy": {
+      "type": "string",
+      "enum": ["stratified", "group", "timeseries", "kfold"]
+    },
+    "train_rows": {"type": "integer", "minimum": 1},
+    "val_rows": {"type": "integer", "minimum": 1},
+    "test_rows": {"type": "integer", "minimum": 1},
+    "group_column": {"type": ["string", "null"]},
+    "time_column": {"type": ["string", "null"]},
+    "random_state": {"type": "integer"},
+    "no_overlap_checks_passed": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}
