@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant You
+    participant Model
+    participant UnlabeledPool as Unlabeled Pool
+    participant Oracle as Label Source
+
+    You->>Model: Train with current labeled set
+    Model->>UnlabeledPool: Score uncertainty
+    UnlabeledPool-->>You: Most uncertain samples
+    You->>Oracle: Request labels for selected samples
+    Oracle-->>You: New labels
+    You->>Model: Retrain with expanded labeled set
+    Note over You,Model: Repeat until label budget is used

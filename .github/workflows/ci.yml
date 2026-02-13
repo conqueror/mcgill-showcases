@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  project-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - causalml-kaggle-showcase
+          - sota-supervised-learning-showcase
+          - sota-unsupervised-semisup-showcase
+
+    defaults:
+      run:
+        working-directory: projects/${{ matrix.project }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Lint, type, test
+        run: |
+          set -euo pipefail
+          case "${{ matrix.project }}" in
+            causalml-kaggle-showcase)
+              uv run ruff check .
+              uv run mypy src scripts
+              uv run pytest -q
+              ;;
+            sota-supervised-learning-showcase)
+              uv run ruff check src tests scripts/run_showcase.py
+              uv run ruff format --check src tests scripts/run_showcase.py
+              uv run ty check src tests scripts/run_showcase.py --ignore unresolved-import --ignore unresolved-attribute
+              uv run pytest -q
+              ;;
+            sota-unsupervised-semisup-showcase)
+              uv run ruff check src tests
+              uv run ty check src tests
+              uv run pytest -q
+              ;;
+            *)
+              echo "Unknown project: ${{ matrix.project }}" >&2
+              exit 1
+              ;;
+          esac

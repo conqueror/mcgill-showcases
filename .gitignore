@@ -1,0 +1,36 @@
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.venv/
+
+# Project-local envs and caches
+projects/**/.venv/
+projects/**/.pytest_cache/
+projects/**/.ruff_cache/
+projects/**/.mypy_cache/
+projects/**/.ipynb_checkpoints/
+projects/**/.DS_Store
+
+# Generated artifacts (keep placeholders)
+projects/**/artifacts/**
+!projects/**/artifacts/.gitkeep
+!projects/**/artifacts/**/.gitkeep
+
+# Local raw datasets (keep placeholders)
+projects/**/data/raw/**
+!projects/**/data/raw/.gitkeep
+
+# Logs and temp
+*.log
+tmp/

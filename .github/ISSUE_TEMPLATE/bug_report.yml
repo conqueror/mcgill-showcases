@@ -1,0 +1,45 @@
+name: Bug Report
+description: Report a reproducible bug in a showcase project.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: project
+    attributes:
+      label: Project
+      options:
+        - causalml-kaggle-showcase
+        - sota-supervised-learning-showcase
+        - sota-unsupervised-semisup-showcase
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. cd projects/...
+        2. make ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: |
+        OS:
+        Python version:
+        uv version:
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs/output
+      render: shell

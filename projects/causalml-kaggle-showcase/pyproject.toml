@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "causalml-kaggle-showcase"
+version = "0.1.0"
+description = "Learning project for causal inference with CausalML on a Kaggle marketing A/B dataset"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "causalml==0.16.0",
+  "duecredit>=0.10.2",
+  "kaggle>=1.7.4.5",
+  "matplotlib>=3.9.2",
+  "numpy>=2.0.0",
+  "numba>=0.60.0",
+  "pandas>=2.2.2",
+  "scikit-learn>=1.6.0",
+  "seaborn>=0.13.2",
+  "shap>=0.49.1",
+  "typer>=0.12.5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.6.9",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/causal_showcase"]

@@ -1,0 +1,11 @@
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Keep artifacts folder structure, ignore generated outputs
+artifacts/*.csv
+artifacts/*.json
+artifacts/*.md
+artifacts/diagrams/*.svg
+!artifacts/.gitkeep

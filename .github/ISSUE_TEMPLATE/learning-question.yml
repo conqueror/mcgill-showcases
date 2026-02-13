@@ -1,0 +1,31 @@
+name: Learning Question
+description: Ask a concept or interpretation question.
+title: "[Learning]: "
+labels: ["question", "learning"]
+body:
+  - type: dropdown
+    id: project
+    attributes:
+      label: Project
+      options:
+        - causalml-kaggle-showcase
+        - sota-supervised-learning-showcase
+        - sota-unsupervised-semisup-showcase
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What concept or output is unclear?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include the command/notebook section and what you expected.
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you already tried

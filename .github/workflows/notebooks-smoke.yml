@@ -1,0 +1,38 @@
+name: Notebook Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate-notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install notebook validator
+        run: python -m pip install --upgrade pip nbformat
+
+      - name: Validate notebook JSON
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import nbformat
+
+          root = Path("projects")
+          notebooks = sorted(root.rglob("*.ipynb"))
+          if not notebooks:
+              raise SystemExit("No notebooks found under projects/")
+
+          for nb_path in notebooks:
+              with nb_path.open("r", encoding="utf-8") as f:
+                  nbformat.read(f, as_version=4)
+              print(f"OK: {nb_path}")
+          PY

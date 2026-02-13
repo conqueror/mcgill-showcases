@@ -1,0 +1,19 @@
+name: Markdown Links
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown links (offline/local)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress --verbose "**/*.md"
+          fail: true

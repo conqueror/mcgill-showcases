@@ -1,0 +1,15 @@
+flowchart TD
+    A[What is your data situation?] --> B{Do you have labels?}
+    B -->|No| C[Start with clustering + anomaly detection]
+    B -->|A few labels| D[Semi-supervised + active learning]
+    B -->|Many labels| E[Supervised baseline]
+
+    C --> F{Need better features?}
+    D --> F
+    E --> F
+
+    F -->|Yes| G[Self-supervised representation learning]
+    F -->|No| H[Ship baseline + monitor]
+
+    G --> I[Try DEC to improve cluster quality]
+    I --> H

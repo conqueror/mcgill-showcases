@@ -1,0 +1,35 @@
+name: Feature Request
+description: Propose a student-focused improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Documentation
+        - Notebooks
+        - Scripts
+        - Tests
+        - CI
+        - New showcase project
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What student pain point does this fix?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: How to measure success
