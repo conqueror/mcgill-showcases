@@ -15,7 +15,7 @@ This API serves demand predictions from the demo model bundle used in the observ
 
 ## OpenAPI
 
-- Download schema: <a id="demand-openapi-link" href="../assets/openapi/demand-api.json">demand-api.json</a>
+- Download schema: <a id="demand-openapi-link" href="assets/openapi/demand-api.json">demand-api.json</a>
 - Source schema in repo: `docs/api/assets/openapi/demand-api.json`
 
 ## Local Commands

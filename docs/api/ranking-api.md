@@ -18,7 +18,7 @@ This API serves ranking-related inference for grouped candidate items.
 
 ## OpenAPI
 
-- Download schema: <a id="ranking-openapi-link" href="../assets/openapi/ranking-api.json">ranking-api.json</a>
+- Download schema: <a id="ranking-openapi-link" href="assets/openapi/ranking-api.json">ranking-api.json</a>
 - Source schema in repo: `docs/api/assets/openapi/ranking-api.json`
 
 ## Local Commands
