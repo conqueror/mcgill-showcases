@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  foundation-ci:
+  project-ci:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -67,7 +67,7 @@ jobs:
               uv run pytest -q
               ;;
             *)
-              echo "Unknown project in foundation-ci: ${{ matrix.project }}" >&2
+              echo "Unknown project in project-ci: ${{ matrix.project }}" >&2
               exit 1
               ;;
           esac
@@ -164,7 +164,7 @@ jobs:
   contract-supervised:
     runs-on: ubuntu-latest
     needs:
-      - foundation-ci
+      - project-ci
       - production-ci
       - systems-ci
     steps:
