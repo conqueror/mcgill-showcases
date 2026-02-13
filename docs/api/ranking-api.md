@@ -184,7 +184,9 @@ curl -s -X POST http://127.0.0.1:8000/rank \
     }
 
     try {
-      window.Redoc.init(specAnchor.href, { hideDownloadButton: false }, target);
+      const runtimeSpecUrl = new URL("../assets/openapi/ranking-api.json", window.location.href).href;
+      specAnchor.href = runtimeSpecUrl;
+      window.Redoc.init(runtimeSpecUrl, { hideDownloadButton: false }, target);
     } catch (_error) {
       target.innerHTML =
         "<p><strong>Unable to load embedded ReDoc.</strong> Use the OpenAPI JSON download link above.</p>";

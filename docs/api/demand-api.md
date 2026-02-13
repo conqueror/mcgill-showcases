@@ -103,7 +103,9 @@ http_requests_total{method="POST",route="/predict"} 2.0
     }
 
     try {
-      window.Redoc.init(specAnchor.href, { hideDownloadButton: false }, target);
+      const runtimeSpecUrl = new URL("../assets/openapi/demand-api.json", window.location.href).href;
+      specAnchor.href = runtimeSpecUrl;
+      window.Redoc.init(runtimeSpecUrl, { hideDownloadButton: false }, target);
     } catch (_error) {
       target.innerHTML =
         "<p><strong>Unable to load embedded ReDoc.</strong> Use the OpenAPI JSON download link above.</p>";
