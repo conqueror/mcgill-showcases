@@ -4,6 +4,30 @@ title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: dropdown
+    id: project
+    attributes:
+      label: Related project
+      options:
+        - Repository-wide / multiple projects
+        - automl-hpo-showcase
+        - batch-vs-stream-ml-systems-showcase
+        - causalml-kaggle-showcase
+        - credit-risk-classification-capstone-showcase
+        - demand-api-observability-showcase
+        - eda-leakage-profiling-showcase
+        - feature-engineering-dimred-showcase
+        - learning-to-rank-foundations-showcase
+        - mlops-drift-production-showcase
+        - model-release-rollout-showcase
+        - nyc-demand-forecasting-foundations-showcase
+        - ranking-api-productization-showcase
+        - rl-bandits-policy-showcase
+        - sota-supervised-learning-showcase
+        - sota-unsupervised-semisup-showcase
+        - xai-fairness-audit-showcase
+    validations:
+      required: true
+  - type: dropdown
     id: area
     attributes:
       label: Area

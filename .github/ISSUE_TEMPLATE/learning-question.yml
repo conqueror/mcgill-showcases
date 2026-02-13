@@ -8,11 +8,30 @@ body:
     attributes:
       label: Project
       options:
+        - automl-hpo-showcase
+        - batch-vs-stream-ml-systems-showcase
         - causalml-kaggle-showcase
+        - credit-risk-classification-capstone-showcase
+        - demand-api-observability-showcase
+        - eda-leakage-profiling-showcase
+        - feature-engineering-dimred-showcase
+        - learning-to-rank-foundations-showcase
+        - mlops-drift-production-showcase
+        - model-release-rollout-showcase
+        - nyc-demand-forecasting-foundations-showcase
+        - ranking-api-productization-showcase
+        - rl-bandits-policy-showcase
         - sota-supervised-learning-showcase
         - sota-unsupervised-semisup-showcase
+        - xai-fairness-audit-showcase
     validations:
       required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command run (optional)
+      description: Include the command you ran before the question came up.
+      placeholder: make run
   - type: textarea
     id: question
     attributes:
@@ -23,8 +42,8 @@ body:
   - type: textarea
     id: context
     attributes:
-      label: Context
-      description: Include the command/notebook section and what you expected.
+      label: Context and artifact
+      description: Include the command, notebook section, or artifact path and what you expected.
   - type: textarea
     id: tried
     attributes:
