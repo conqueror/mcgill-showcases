@@ -82,7 +82,7 @@ sequenceDiagram
     participant You
     participant Model
     participant UnlabeledPool as Unlabeled Pool
-    participant Oracle as Label Source
+    participant Oracle as Label Provider
 
     You->>Model: Train with current labeled set
     Model->>UnlabeledPool: Score uncertainty
@@ -202,7 +202,7 @@ Use this exact order when learning solo:
 
 ## Why This Tutorial Is Self-Learning Friendly
 
-This project is designed so you can learn intuitively without external guidance:
+This project is designed so you can learn intuitively without extra mentor guidance:
 
 1. Every concept has a runnable experiment and a concrete output file.
 2. Every module has both metric tables (`.csv`) and visual artifacts (`.png`).
@@ -224,7 +224,7 @@ For a full step-by-step learning session:
 
 ## How to Validate Diagram Rendering
 
-All Mermaid source files are in `docs/diagrams/`.
+All Mermaid diagram files are in `docs/diagrams/`.
 
 Render/validate them with:
 
