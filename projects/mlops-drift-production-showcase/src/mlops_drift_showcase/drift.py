@@ -14,9 +14,9 @@ def _psi(
 ) -> float:
     """Population Stability Index (PSI) for one feature."""
     quantiles = np.linspace(0.0, 1.0, bins + 1)
-    breaks = np.quantile(expected, quantiles)
-    breaks[0] = -np.inf
-    breaks[-1] = np.inf
+    raw_breaks = np.quantile(expected, quantiles)
+    interior_breaks = np.unique(raw_breaks[1:-1])
+    breaks = np.concatenate((np.array([-np.inf]), interior_breaks, np.array([np.inf])))
 
     expected_counts, _ = np.histogram(expected, bins=breaks)
     actual_counts, _ = np.histogram(actual, bins=breaks)

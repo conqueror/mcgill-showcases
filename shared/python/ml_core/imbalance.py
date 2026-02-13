@@ -29,34 +29,39 @@ def resample_binary(
         return x_train, y_train
 
     if method in {"upsample_minority", "downsample_majority"}:
-        y_vals = y_train.to_numpy()
-        pos_mask = y_vals == 1
-        x_pos = x_train.loc[pos_mask]
-        y_pos = y_train.loc[pos_mask]
-        x_neg = x_train.loc[~pos_mask]
-        y_neg = y_train.loc[~pos_mask]
+        counts = y_train.value_counts(dropna=False)
+        if len(counts) != 2:
+            raise ValueError("Binary resampling expects exactly two target classes.")
+        minority_label = counts.idxmin()
+        majority_label = counts.idxmax()
+
+        minority_mask = y_train == minority_label
+        x_minority = x_train.loc[minority_mask]
+        y_minority = y_train.loc[minority_mask]
+        x_majority = x_train.loc[~minority_mask]
+        y_majority = y_train.loc[~minority_mask]
 
         if method == "upsample_minority":
-            x_pos_up, y_pos_up = resample(
-                x_pos,
-                y_pos,
+            x_minority_up, y_minority_up = resample(
+                x_minority,
+                y_minority,
                 replace=True,
-                n_samples=len(y_neg),
+                n_samples=len(y_majority),
                 random_state=random_state,
             )
-            out_x = pd.concat([x_neg, x_pos_up], axis=0)
-            out_y = pd.concat([y_neg, y_pos_up], axis=0)
+            out_x = pd.concat([x_majority, x_minority_up], axis=0)
+            out_y = pd.concat([y_majority, y_minority_up], axis=0)
             return out_x.reset_index(drop=True), out_y.reset_index(drop=True)
 
-        x_neg_down, y_neg_down = resample(
-            x_neg,
-            y_neg,
+        x_majority_down, y_majority_down = resample(
+            x_majority,
+            y_majority,
             replace=False,
-            n_samples=len(y_pos),
+            n_samples=len(y_minority),
             random_state=random_state,
         )
-        out_x = pd.concat([x_pos, x_neg_down], axis=0)
-        out_y = pd.concat([y_pos, y_neg_down], axis=0)
+        out_x = pd.concat([x_minority, x_majority_down], axis=0)
+        out_y = pd.concat([y_minority, y_majority_down], axis=0)
         return out_x.reset_index(drop=True), out_y.reset_index(drop=True)
 
     try:
