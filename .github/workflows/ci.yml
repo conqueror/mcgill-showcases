@@ -6,13 +6,19 @@ on:
   pull_request:
 
 jobs:
-  project-ci:
+  foundation-ci:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         project:
+          - automl-hpo-showcase
           - causalml-kaggle-showcase
+          - credit-risk-classification-capstone-showcase
+          - eda-leakage-profiling-showcase
+          - feature-engineering-dimred-showcase
+          - learning-to-rank-foundations-showcase
+          - nyc-demand-forecasting-foundations-showcase
           - sota-supervised-learning-showcase
           - sota-unsupervised-semisup-showcase
 
@@ -39,6 +45,11 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ matrix.project }}" in
+            automl-hpo-showcase|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|nyc-demand-forecasting-foundations-showcase)
+              uv run ruff check src tests scripts
+              uv run mypy src tests scripts
+              uv run pytest -q
+              ;;
             causalml-kaggle-showcase)
               uv run ruff check .
               uv run mypy src scripts
@@ -56,7 +67,114 @@ jobs:
               uv run pytest -q
               ;;
             *)
-              echo "Unknown project: ${{ matrix.project }}" >&2
+              echo "Unknown project in foundation-ci: ${{ matrix.project }}" >&2
               exit 1
               ;;
           esac
+
+  production-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - demand-api-observability-showcase
+          - mlops-drift-production-showcase
+          - ranking-api-productization-showcase
+          - xai-fairness-audit-showcase
+
+    defaults:
+      run:
+        working-directory: projects/${{ matrix.project }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Lint, type, test
+        run: |
+          set -euo pipefail
+          case "${{ matrix.project }}" in
+            demand-api-observability-showcase|mlops-drift-production-showcase|ranking-api-productization-showcase|xai-fairness-audit-showcase)
+              uv run ruff check src tests scripts
+              uv run mypy src tests scripts
+              uv run pytest -q
+              ;;
+            *)
+              echo "Unknown project in production-ci: ${{ matrix.project }}" >&2
+              exit 1
+              ;;
+          esac
+
+  systems-ci:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - batch-vs-stream-ml-systems-showcase
+          - model-release-rollout-showcase
+          - rl-bandits-policy-showcase
+
+    defaults:
+      run:
+        working-directory: projects/${{ matrix.project }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --extra dev
+
+      - name: Lint, type, test
+        run: |
+          set -euo pipefail
+          case "${{ matrix.project }}" in
+            batch-vs-stream-ml-systems-showcase|model-release-rollout-showcase|rl-bandits-policy-showcase)
+              uv run ruff check src tests scripts
+              uv run mypy src tests scripts
+              uv run pytest -q
+              ;;
+            *)
+              echo "Unknown project in systems-ci: ${{ matrix.project }}" >&2
+              exit 1
+              ;;
+          esac
+
+  contract-supervised:
+    runs-on: ubuntu-latest
+    needs:
+      - foundation-ci
+      - production-ci
+      - systems-ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify supervised contracts
+        run: python3 shared/scripts/verify_supervised_contract.py --bootstrap-missing
