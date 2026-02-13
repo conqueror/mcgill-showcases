@@ -23,11 +23,8 @@ def _small_split() -> ClassificationSplit:
 def test_evaluate_binary_classification_outputs_expected_strategies() -> None:
     split = _small_split()
     result = evaluate_binary_classification(split)
-    assert set(result.metrics["strategy"]) == {
-        "none",
-        "upsample_minority",
-        "downsample_majority",
-    }
+    observed = set(result.metrics["strategy"])
+    assert {"none", "upsample_minority", "downsample_majority"}.issubset(observed)
     assert result.metrics["f1"].between(0.0, 1.0).all()
 
 
@@ -52,4 +49,5 @@ def test_classification_benchmark_has_baseline_and_ensembles() -> None:
     assert "baseline_dummy" in model_names
     assert "decision_tree" in model_names
     assert "random_forest" in model_names
+    assert "mlp_classifier" in model_names
     assert "stacking" in model_names

@@ -144,7 +144,38 @@ def rebalance_binary_training_data(
         y_balanced = np.concatenate([y_positive, y_negative_down])
         return x_balanced, y_balanced
 
+    if strategy in {"smote", "smotetomek", "smoteenn"}:
+        try:
+            from imblearn.combine import SMOTEENN, SMOTETomek
+            from imblearn.over_sampling import SMOTE
+        except ImportError as exc:  # pragma: no cover - optional dependency
+            raise ValueError(
+                "SMOTE-based strategies require `imbalanced-learn` optional dependency."
+            ) from exc
+
+        if strategy == "smote":
+            sampler = SMOTE(random_state=random_state)
+        elif strategy == "smotetomek":
+            sampler = SMOTETomek(random_state=random_state)
+        else:
+            sampler = SMOTEENN(random_state=random_state)
+
+        x_res, y_res = sampler.fit_resample(x_train, y_train)
+        return np.asarray(x_res), np.asarray(y_res)
+
     raise ValueError(
         "Unknown strategy. Use one of: "
-        "'none', 'upsample_minority', 'downsample_majority'."
+        "'none', 'upsample_minority', 'downsample_majority', "
+        "'smote', 'smotetomek', 'smoteenn'."
     )
+
+
+def list_rebalance_strategies() -> list[str]:
+    strategies = ["none", "upsample_minority", "downsample_majority"]
+    try:
+        import imblearn  # noqa: F401
+
+        strategies.extend(["smote", "smotetomek", "smoteenn"])
+    except Exception:  # pragma: no cover - optional dependency
+        pass
+    return strategies

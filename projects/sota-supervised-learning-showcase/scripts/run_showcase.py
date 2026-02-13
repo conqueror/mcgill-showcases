@@ -4,8 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
+
+import pandas as pd
+from sklearn.datasets import load_digits
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from sota_supervised_showcase.classification import (
     build_classification_benchmark,
@@ -18,6 +26,9 @@ from sota_supervised_showcase.classification import (
 from sota_supervised_showcase.config import ARTIFACTS_DIR, TENANT_ID, TRACE_ID
 from sota_supervised_showcase.data import load_digits_split, load_regression_split
 from sota_supervised_showcase.regression import evaluate_regression_models
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.append(str(REPO_ROOT / "shared/python"))
 
 
 def log_event(route: str, status: str, started_at: float) -> None:
@@ -65,6 +76,12 @@ Use these files to walk from baseline models to advanced ensembles.
 
 
 def run(output_dir: Path) -> None:
+    from ml_core.contracts import (
+        merge_required_files,
+        write_supervised_contract_artifacts,
+    )
+    from ml_core.splits import build_supervised_split
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     started_at = time.perf_counter()
@@ -122,6 +139,49 @@ def run(output_dir: Path) -> None:
 
     started_at = time.perf_counter()
     log_event(route="artifact_export", status="ok", started_at=started_at)
+
+    digits = load_digits()
+    x_df = pd.DataFrame(
+        digits.data,
+        columns=[f"pixel_{index}" for index in range(digits.data.shape[1])],
+    )
+    y = pd.Series((digits.target == 0).astype(int), name="target")
+    contract_split = build_supervised_split(
+        x_df,
+        y,
+        strategy="stratified",
+        random_state=42,
+    )
+    model = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("clf", LogisticRegression(max_iter=2000, random_state=42)),
+        ]
+    )
+    model.fit(contract_split.x_train, contract_split.y_train)
+    probs = model.predict_proba(contract_split.x_test)[:, 1]
+    preds = (probs >= 0.5).astype(int)
+    contract_metrics = {
+        "test_roc_auc": float(roc_auc_score(contract_split.y_test, probs)),
+        "test_f1": float(f1_score(contract_split.y_test, preds)),
+    }
+    contract_required = write_supervised_contract_artifacts(
+        project_root=output_dir.parent,
+        frame=x_df,
+        target=y,
+        split=contract_split,
+        task_type="classification",
+        strategy="stratified",
+        random_state=42,
+        metrics=contract_metrics,
+        run_name="sota_supervised_binary_baseline",
+        threshold_scores=probs,
+    )
+
+    merge_required_files(
+        output_dir.parent / "artifacts/manifest.json",
+        contract_required,
+    )
 
 
 def parse_args() -> argparse.Namespace:
