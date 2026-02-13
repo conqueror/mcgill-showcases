@@ -76,6 +76,8 @@ nav:
       - Supervised Learning Deep Dive: deep-dives/sota-supervised.md
       - Causal Inference Deep Dive: deep-dives/causal-inference.md
       - MLOps Drift Deep Dive: deep-dives/mlops-drift.md
+      - Ranking Track Deep Dive: deep-dives/ranking-track.md
+      - Forecasting Track Deep Dive: deep-dives/forecasting-track.md
   - API Reference:
       - Overview: api/index.md
       - Ranking API: api/ranking-api.md

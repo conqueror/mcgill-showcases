@@ -26,6 +26,8 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - [Supervised learning deep dive](deep-dives/sota-supervised.md)
 - [Causal inference deep dive](deep-dives/causal-inference.md)
 - [MLOps drift deep dive](deep-dives/mlops-drift.md)
+- [Ranking track deep dive](deep-dives/ranking-track.md)
+- [Forecasting track deep dive](deep-dives/forecasting-track.md)
 
 ## Contributor Entry
 

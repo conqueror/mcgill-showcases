@@ -9,6 +9,8 @@ These pages bring project-level details directly into the docs site so students 
 | [Supervised Learning](sota-supervised.md) | classification/regression foundations, imbalance handling, model evaluation | 90-150 min | metrics tables, curves, learning diagnostics |
 | [Causal Inference](causal-inference.md) | ATE/CATE/`tau(x)`, uplift modeling, targeting policies | 120-180 min | Qini curves, uplift-at-k, policy simulations |
 | [MLOps Drift](mlops-drift.md) | training, drift detection, retrain decisions, local serving | 90-150 min | drift report, policy decision JSON, API outputs |
+| [Ranking Track](ranking-track.md) | grouped ranking modeling + API productization workflow | 90-150 min | group split manifests, NDCG metrics, ranking API outputs |
+| [Forecasting Track](forecasting-track.md) | time-aware forecasting + observability-ready API workflow | 90-150 min | time split manifests, forecast metrics, demand API metrics |
 
 ## How To Use These Pages
 
@@ -22,3 +24,7 @@ These pages bring project-level details directly into the docs site so students 
 - Supervised project source: [`projects/sota-supervised-learning-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/sota-supervised-learning-showcase/README.md)
 - Causal project source: [`projects/causalml-kaggle-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/causalml-kaggle-showcase/README.md)
 - MLOps project source: [`projects/mlops-drift-production-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/mlops-drift-production-showcase/README.md)
+- Ranking foundations source: [`projects/learning-to-rank-foundations-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/learning-to-rank-foundations-showcase/README.md)
+- Ranking API source: [`projects/ranking-api-productization-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/ranking-api-productization-showcase/README.md)
+- Forecasting foundations source: [`projects/nyc-demand-forecasting-foundations-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/nyc-demand-forecasting-foundations-showcase/README.md)
+- Demand API source: [`projects/demand-api-observability-showcase/README.md`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/demand-api-observability-showcase/README.md)
