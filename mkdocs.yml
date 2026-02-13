@@ -1,0 +1,83 @@
+site_name: McGill ML Showcases
+site_description: Student-friendly machine learning showcases with reproducible workflows.
+site_url: https://conqueror.github.io/mcgill-showcases/
+repo_url: https://github.com/conqueror/mcgill-showcases
+repo_name: conqueror/mcgill-showcases
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: false
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+nav:
+  - Home: index.md
+  - Start Here:
+      - Getting Started: getting-started.md
+      - Learning Path: learning-path.md
+      - Showcase Architecture: showcase-architecture.md
+      - Coverage Matrix: aspect-coverage-matrix.md
+  - Tracks:
+      - Foundations: tracks/foundations.md
+      - Production: tracks/production.md
+      - Ranking: tracks/ranking.md
+      - Forecasting: tracks/forecasting.md
+      - Responsible AI: tracks/responsible-ai.md
+      - Optimization: tracks/optimization.md
+  - API Reference:
+      - Overview: api/index.md
+      - Ranking API: api/ranking-api.md
+      - Demand API: api/demand-api.md
+  - Contributor Guide:
+      - New Showcase Playbook: new-showcase-playbook.md
+      - Repository Map: repo-map.md
+      - FAQ: faq.md
+      - Troubleshooting: troubleshooting.md
+      - Glossary: glossary.md

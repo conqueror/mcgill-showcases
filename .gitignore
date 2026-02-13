@@ -34,3 +34,6 @@ projects/**/data/raw/**
 # Logs and temp
 *.log
 tmp/
+
+# Docs build output
+site/
