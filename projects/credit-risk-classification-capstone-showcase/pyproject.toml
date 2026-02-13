@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "credit-risk-classification-capstone-showcase"
+version = "0.1.0"
+description = "Credit risk classification capstone showcase with diagnostics, imbalance handling, and threshold decisions."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "imbalanced-learn>=0.12.4",
+  "matplotlib>=3.9.0",
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+  "scikit-learn>=1.6.0",
+  "seaborn>=0.13.2",
+]
+
+[project.optional-dependencies]
+profiling = [
+  "missingno>=0.5.2",
+  "ydata-profiling>=4.12.2",
+]
+boosters = [
+  "catboost>=1.2.8",
+  "lightgbm>=4.6.0",
+  "xgboost>=2.1.4",
+]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.9.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/credit_risk_capstone"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "../../shared/python"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
