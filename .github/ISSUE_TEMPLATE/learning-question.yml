@@ -8,6 +8,9 @@ body:
     attributes:
       label: Project
       options:
+        - deep-learning-math-foundations-showcase
+        - neural-network-foundations-showcase
+        - pytorch-training-regularization-showcase
         - automl-hpo-showcase
         - autoresearch
         - batch-vs-stream-ml-systems-showcase
