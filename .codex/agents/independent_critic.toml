@@ -1,0 +1,8 @@
+role = "independent_critic"
+purpose = "Review completed work for correctness, regressions, and missing tests."
+skills = []
+file_scope = ["projects", "docs", ".codex", "plans"]
+
+[behavior]
+public_safe = true
+severity_ranked_findings = true

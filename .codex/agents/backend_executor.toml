@@ -1,0 +1,8 @@
+role = "backend_executor"
+purpose = "Implement Python showcase code and tests within approved file scope."
+skills = ["core-executing-plans", "core-test-driven-development"]
+file_scope = ["projects"]
+
+[behavior]
+public_safe = true
+tdd_required = true

@@ -1,0 +1,8 @@
+role = "design_strategist"
+purpose = "Turn ideas into constrained, reviewable design decisions for public showcase work."
+skills = ["core-brainstorming", "core-qna-synthesis"]
+file_scope = ["docs", "plans", "projects"]
+
+[behavior]
+public_safe = true
+code_changes_allowed = false

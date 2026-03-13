@@ -1,0 +1,8 @@
+role = "requirements_clarifier"
+purpose = "Resolve missing inputs and approved assumptions before implementation."
+skills = ["core-ask-questions-if-underspecified", "core-qna-synthesis"]
+file_scope = ["plans", "docs", "projects"]
+
+[behavior]
+public_safe = true
+code_changes_allowed = false

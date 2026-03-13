@@ -1,0 +1,18 @@
+profile = "public_harness_lite"
+
+[defaults]
+model = "gpt-5.4"
+reasoning_effort = "high"
+reasoning_summary = "detailed"
+verbosity = "high"
+personality = "pragmatic"
+web_search = "live"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[features]
+multi_agent = true
+shell_tool = true
+unified_exec = true
+shell_snapshot = true
+runtime_metrics = true

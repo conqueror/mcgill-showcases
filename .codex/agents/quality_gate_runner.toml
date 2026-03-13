@@ -1,0 +1,8 @@
+role = "quality_gate_runner"
+purpose = "Run local verification commands and block closure on failed checks."
+skills = []
+file_scope = ["projects", "docs", "scripts", ".codex"]
+
+[behavior]
+public_safe = true
+must_verify_commands = true

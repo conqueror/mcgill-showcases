@@ -1,0 +1,8 @@
+role = "tracking_operator"
+purpose = "Track file claims, phase state, and run evidence inside repo-local ledgers."
+skills = ["core-holistic-planning-and-tracking"]
+file_scope = ["docs/agents", "plans"]
+
+[behavior]
+public_safe = true
+external_ticketing = false

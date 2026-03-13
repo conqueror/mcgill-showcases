@@ -1,0 +1,158 @@
+version = 1
+
+[policy]
+canonical_skill = "core-harness-flow"
+default_sequence = "public_lite"
+reduced_sequence = "review_only_or_closure_only"
+prefer_most_specific_skill = true
+honor_user_requested_skills = true
+require_skip_reason_for_requested_skill = true
+require_role_activation_ledger = true
+require_skill_activation_ledger = true
+require_routing_manifest_check = true
+
+[roles]
+all_supported = [
+  "workflow_orchestrator",
+  "requirements_clarifier",
+  "design_strategist",
+  "tracking_operator",
+  "backend_executor",
+  "quality_gate_runner",
+  "independent_critic",
+  "commit_curator",
+]
+orchestration_core = [
+  "workflow_orchestrator",
+  "tracking_operator",
+  "quality_gate_runner",
+  "independent_critic",
+]
+early_gate_roles = [
+  "requirements_clarifier",
+  "design_strategist",
+]
+execution_roles = [
+  "backend_executor",
+]
+closure_roles = [
+  "commit_curator",
+]
+
+[skills]
+honor_user_requested = true
+prefer_domain_specific = true
+require_skip_reason = true
+
+[phases.intake]
+required_roles = ["workflow_orchestrator"]
+required_skills = ["core-qna-synthesis"]
+
+[phases.clarification]
+required_roles = ["requirements_clarifier"]
+required_skills = ["core-ask-questions-if-underspecified"]
+
+[phases.design]
+required_roles = ["design_strategist"]
+required_skills = ["core-brainstorming"]
+
+[phases.plan]
+required_roles = ["tracking_operator"]
+required_skills = ["core-writing-plans"]
+
+[phases.implementation]
+conditional_roles = ["backend_executor"]
+required_skills = ["core-executing-plans", "core-test-driven-development"]
+
+[phases.quality]
+required_roles = ["quality_gate_runner"]
+required_skills = []
+
+[phases.critic]
+required_roles = ["independent_critic"]
+required_skills = []
+
+[phases.commit]
+conditional_roles = ["commit_curator"]
+required_skills = ["eng-conventional-commit-helper"]
+
+[task_classes.standard]
+required_roles = [
+  "workflow_orchestrator",
+  "requirements_clarifier",
+  "design_strategist",
+  "tracking_operator",
+  "quality_gate_runner",
+  "independent_critic",
+]
+conditional_roles = [
+  "backend_executor",
+  "commit_curator",
+]
+
+[task_classes.review_only]
+required_roles = [
+  "workflow_orchestrator",
+  "requirements_clarifier",
+  "tracking_operator",
+  "quality_gate_runner",
+  "independent_critic",
+]
+optional_roles = [
+  "design_strategist",
+]
+forbidden_roles = [
+  "backend_executor",
+  "commit_curator",
+]
+
+[task_classes.closure_only]
+required_roles = [
+  "workflow_orchestrator",
+  "tracking_operator",
+  "quality_gate_runner",
+  "independent_critic",
+  "commit_curator",
+]
+forbidden_roles = [
+  "backend_executor",
+]
+
+[task_classes.harness_change]
+required_roles = [
+  "workflow_orchestrator",
+  "requirements_clarifier",
+  "design_strategist",
+  "tracking_operator",
+  "quality_gate_runner",
+  "independent_critic",
+]
+conditional_roles = [
+  "backend_executor",
+  "commit_curator",
+]
+
+[activation.role.backend_executor]
+trigger_any = ["python_project_work", "new_showcase", "tests_required"]
+
+[activation.role.commit_curator]
+trigger_any = ["user_requested_commit", "landing_preparation"]
+
+[ledgers]
+required_sections = [
+  "Routing Manifest and Task Classification",
+  "Role Activation Ledger",
+  "Skill Activation Ledger",
+]
+role_activation_fields = [
+  "roles_considered",
+  "roles_activated",
+  "roles_skipped_with_reason",
+]
+skill_activation_fields = [
+  "user_requested_skills",
+  "phase_required_skills",
+  "domain_skills_considered",
+  "skills_invoked",
+  "skills_skipped_with_reason",
+]

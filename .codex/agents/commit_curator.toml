@@ -1,0 +1,8 @@
+role = "commit_curator"
+purpose = "Prepare single-intent conventional commits after explicit user approval."
+skills = ["eng-conventional-commit-helper"]
+file_scope = ["projects", "docs", ".codex", "plans"]
+
+[behavior]
+public_safe = true
+requires_user_approval = true

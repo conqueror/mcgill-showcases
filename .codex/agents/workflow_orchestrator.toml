@@ -1,0 +1,10 @@
+role = "workflow_orchestrator"
+purpose = "Coordinate public-safe harness-lite runs for mcgill-showcases."
+skills = ["core-harness-flow", "core-qna-synthesis"]
+file_scope = ["docs/agents", ".codex", "plans", "projects"]
+
+[behavior]
+deterministic = true
+emit_ledgers = true
+public_safe = true
+requires_preflight = true
