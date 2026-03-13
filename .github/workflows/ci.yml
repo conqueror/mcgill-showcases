@@ -12,6 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         project:
+          - deep-learning-math-foundations-showcase
+          - neural-network-foundations-showcase
+          - pytorch-training-regularization-showcase
           - automl-hpo-showcase
           - autoresearch
           - causalml-kaggle-showcase
@@ -46,6 +49,12 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ matrix.project }}" in
+            deep-learning-math-foundations-showcase|neural-network-foundations-showcase|pytorch-training-regularization-showcase)
+              uv run ruff check src tests scripts
+              uv run ruff format --check src tests scripts
+              uv run ty check src tests scripts --ignore unresolved-import --ignore unresolved-attribute
+              uv run pytest -q
+              ;;
             automl-hpo-showcase|autoresearch|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|nyc-demand-forecasting-foundations-showcase)
               uv run ruff check src tests scripts
               uv run mypy src tests scripts

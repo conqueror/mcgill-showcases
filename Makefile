@@ -10,6 +10,9 @@ AUTOML_DIR := projects/automl-hpo-showcase
 AUTORESEARCH_DIR := projects/autoresearch
 FE_DIR := projects/feature-engineering-dimred-showcase
 RL_DIR := projects/rl-bandits-policy-showcase
+DL_MATH_DIR := projects/deep-learning-math-foundations-showcase
+NN_FOUNDATIONS_DIR := projects/neural-network-foundations-showcase
+PYTORCH_TRAIN_DIR := projects/pytorch-training-regularization-showcase
 SYSTEMS_DIR := projects/batch-vs-stream-ml-systems-showcase
 ROLLOUT_DIR := projects/model-release-rollout-showcase
 EDA_DIR := projects/eda-leakage-profiling-showcase
@@ -20,7 +23,7 @@ NYC_DEMAND_DIR := projects/nyc-demand-forecasting-foundations-showcase
 DEMAND_API_OBS_DIR := projects/demand-api-observability-showcase
 DOCS_REQUIREMENTS := docs/requirements-mkdocs.txt
 
-.PHONY: help sync lint type ty test check check-contracts check-supervised verify smoke docs-serve docs-build docs-check
+.PHONY: help sync lint type ty test check check-contracts check-supervised verify smoke docs-serve docs-build docs-check harness-preflight harness-lint
 
 help:
 	@echo "mcgill-showcases root commands"
@@ -37,6 +40,8 @@ help:
 	@echo "  make docs-serve  Run MkDocs Material site locally"
 	@echo "  make docs-build  Build MkDocs site into site/"
 	@echo "  make docs-check  Strict MkDocs build for CI/pre-PR checks"
+	@echo "  make harness-preflight  Run repo-local harness-lite readiness checks"
+	@echo "  make harness-lint  Run repo-local harness-lite config lint"
 
 docs-serve:
 	uv run --with-requirements $(DOCS_REQUIREMENTS) mkdocs serve
@@ -48,6 +53,9 @@ docs-check:
 	uv run --with-requirements $(DOCS_REQUIREMENTS) mkdocs build --strict
 
 sync:
+	$(MAKE) -C $(DL_MATH_DIR) sync
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) sync
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) sync
 	$(MAKE) -C $(CAUSAL_DIR) sync
 	$(MAKE) -C $(SUPERVISED_DIR) sync
 	$(MAKE) -C $(UNSUP_DIR) sync
@@ -67,6 +75,12 @@ sync:
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) sync
 
 lint:
+	$(MAKE) -C $(DL_MATH_DIR) ruff
+	$(MAKE) -C $(DL_MATH_DIR) ruff-format
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) ruff
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) ruff-format
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) ruff
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) ruff-format
 	$(MAKE) -C $(CAUSAL_DIR) ruff
 	$(MAKE) -C $(SUPERVISED_DIR) ruff-check
 	$(MAKE) -C $(SUPERVISED_DIR) ruff-format
@@ -87,6 +101,9 @@ lint:
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) ruff
 
 type ty:
+	$(MAKE) -C $(DL_MATH_DIR) ty
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) ty
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) ty
 	$(MAKE) -C $(CAUSAL_DIR) ty
 	$(MAKE) -C $(SUPERVISED_DIR) ty-check
 	$(MAKE) -C $(UNSUP_DIR) ty
@@ -106,6 +123,9 @@ type ty:
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) ty
 
 test:
+	$(MAKE) -C $(DL_MATH_DIR) test
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) test
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) test
 	$(MAKE) -C $(CAUSAL_DIR) pytest
 	$(MAKE) -C $(SUPERVISED_DIR) test
 	$(MAKE) -C $(UNSUP_DIR) test
@@ -130,6 +150,9 @@ check-supervised check-contracts:
 	python3 shared/scripts/verify_supervised_contract.py --bootstrap-missing
 
 verify:
+	@if [ -f "$(DL_MATH_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(DL_MATH_DIR) verify; else echo "Skipping $(DL_MATH_DIR) verify: run pipeline first"; fi
+	@if [ -f "$(NN_FOUNDATIONS_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(NN_FOUNDATIONS_DIR) verify; else echo "Skipping $(NN_FOUNDATIONS_DIR) verify: run pipeline first"; fi
+	@if [ -f "$(PYTORCH_TRAIN_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(PYTORCH_TRAIN_DIR) verify; else echo "Skipping $(PYTORCH_TRAIN_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(CAUSAL_DIR)/artifacts/metrics_summary.csv" ]; then \
 		$(MAKE) -C $(CAUSAL_DIR) verify; \
 	else \
@@ -161,6 +184,9 @@ verify:
 	@if [ -f "$(DEMAND_API_OBS_DIR)/artifacts/model.joblib" ]; then $(MAKE) -C $(DEMAND_API_OBS_DIR) verify; else echo "Skipping $(DEMAND_API_OBS_DIR) verify: run train-demo first"; fi
 
 smoke:
+	$(MAKE) -C $(DL_MATH_DIR) smoke
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) smoke
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) smoke
 	$(MAKE) -C $(SUPERVISED_DIR) run
 	$(MAKE) -C $(UNSUP_DIR) smoke-digits
 	$(MAKE) -C $(MLOPS_DIR) smoke
@@ -177,3 +203,9 @@ smoke:
 	$(MAKE) -C $(RANK_API_DIR) smoke
 	$(MAKE) -C $(NYC_DEMAND_DIR) smoke
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) smoke
+
+harness-preflight:
+	bash scripts/dev/harness-cli-preflight.sh
+
+harness-lint:
+	python3 scripts/harness_config_lint.py
