@@ -34,6 +34,14 @@ This note maps related showcases into cohesive, in-repo learning tracks.
 - Optional OpenTelemetry instrumentation hooks.
 - OpenAPI export/check and API behavior tests.
 
+## Agentic Experimentation Track
+
+1. `projects/autoresearch`
+- Fixed-budget autonomous research loop for tiny language-model pretraining.
+- Unified platform guidance for `autoresearch-macos` and `autoresearch`.
+- Decision artifacts for keep/discard/crash outcomes.
+- Codex and Claude Code launch briefs tied to the upstream repos.
+
 ## Intentional Scope Boundaries
 
 - Full-size raw datasets are excluded to keep clone and run workflows lightweight.

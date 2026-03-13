@@ -25,6 +25,7 @@ make sync
 - Ranking API serving and contracts: `projects/ranking-api-productization-showcase`
 - Time-aware demand forecasting foundations: `projects/nyc-demand-forecasting-foundations-showcase`
 - Demand API with metrics and tracing hooks: `projects/demand-api-observability-showcase`
+- Agent-guided research loops for tiny language models: `projects/autoresearch`
 
 ## First Run Pattern
 ```bash

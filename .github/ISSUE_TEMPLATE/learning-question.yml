@@ -9,6 +9,7 @@ body:
       label: Project
       options:
         - automl-hpo-showcase
+        - autoresearch
         - batch-vs-stream-ml-systems-showcase
         - causalml-kaggle-showcase
         - credit-risk-classification-capstone-showcase

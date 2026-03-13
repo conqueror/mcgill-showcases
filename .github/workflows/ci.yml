@@ -13,6 +13,7 @@ jobs:
       matrix:
         project:
           - automl-hpo-showcase
+          - autoresearch
           - causalml-kaggle-showcase
           - credit-risk-classification-capstone-showcase
           - eda-leakage-profiling-showcase
@@ -45,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ matrix.project }}" in
-            automl-hpo-showcase|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|nyc-demand-forecasting-foundations-showcase)
+            automl-hpo-showcase|autoresearch|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|nyc-demand-forecasting-foundations-showcase)
               uv run ruff check src tests scripts
               uv run mypy src tests scripts
               uv run pytest -q

@@ -43,6 +43,7 @@ If this is your first time, start with `sota-supervised-learning-showcase`.
 | `mlops-drift-production-showcase` | MLOps lifecycle, drift detection, retraining decisions, local API serving | Intermediate | 2-3 hours | Python, ML basics, API basics | [`projects/mlops-drift-production-showcase/README.md`](projects/mlops-drift-production-showcase/README.md) |
 | `xai-fairness-audit-showcase` | Explainability, subgroup fairness metrics, mitigation tradeoffs | Intermediate | 2-3 hours | Python, classification metrics | [`projects/xai-fairness-audit-showcase/README.md`](projects/xai-fairness-audit-showcase/README.md) |
 | `automl-hpo-showcase` | Hyperparameter optimization strategy benchmarking (grid/random/TPE) | Intermediate | 1.5-2.5 hours | Python, model tuning basics | [`projects/automl-hpo-showcase/README.md`](projects/automl-hpo-showcase/README.md) |
+| `autoresearch` | Fixed-budget autonomous research loops with Codex/Claude launch briefs for macOS and Unix | Intermediate-Advanced | 2-3 hours | Python, basic ML, Git, access to Apple Silicon or an NVIDIA GPU for the real upstream path | [`projects/autoresearch/README.md`](projects/autoresearch/README.md) |
 | `eda-leakage-profiling-showcase` | Data profiling, missingness diagnostics, leakage analysis, split strategy comparison | Beginner-Intermediate | 1.5-2.0 hours | Python, pandas basics | [`projects/eda-leakage-profiling-showcase/README.md`](projects/eda-leakage-profiling-showcase/README.md) |
 | `feature-engineering-dimred-showcase` | Encoding, feature selection, PCA/t-SNE/UMAP comparison | Beginner-Intermediate | 1.5-2.5 hours | Python, preprocessing basics | [`projects/feature-engineering-dimred-showcase/README.md`](projects/feature-engineering-dimred-showcase/README.md) |
 | `rl-bandits-policy-showcase` | Multi-armed bandits, reward/regret analysis, policy recommendation | Intermediate | 1.5-2.5 hours | Python, probability basics | [`projects/rl-bandits-policy-showcase/README.md`](projects/rl-bandits-policy-showcase/README.md) |
@@ -114,7 +115,7 @@ make docs-check
 - Ranking path: learning-to-rank foundations -> ranking API productization -> model rollout.
 - Release path: mlops drift -> batch vs stream -> model rollout.
 - Responsible AI path: supervised -> xai fairness -> causal.
-- Optimization path: supervised -> automl hpo -> rl bandits.
+- Optimization path: supervised -> automl hpo -> autoresearch -> rl bandits.
 - Data quality path: eda leakage profiling -> feature engineering -> supervised contract artifacts.
 - See detailed guidance in `docs/learning-path.md`.
 

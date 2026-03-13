@@ -7,6 +7,7 @@ UNSUP_DIR := projects/sota-unsupervised-semisup-showcase
 MLOPS_DIR := projects/mlops-drift-production-showcase
 XAI_DIR := projects/xai-fairness-audit-showcase
 AUTOML_DIR := projects/automl-hpo-showcase
+AUTORESEARCH_DIR := projects/autoresearch
 FE_DIR := projects/feature-engineering-dimred-showcase
 RL_DIR := projects/rl-bandits-policy-showcase
 SYSTEMS_DIR := projects/batch-vs-stream-ml-systems-showcase
@@ -53,6 +54,7 @@ sync:
 	$(MAKE) -C $(MLOPS_DIR) sync
 	$(MAKE) -C $(XAI_DIR) sync
 	$(MAKE) -C $(AUTOML_DIR) sync
+	$(MAKE) -C $(AUTORESEARCH_DIR) sync
 	$(MAKE) -C $(FE_DIR) sync
 	$(MAKE) -C $(RL_DIR) sync
 	$(MAKE) -C $(SYSTEMS_DIR) sync
@@ -72,6 +74,7 @@ lint:
 	$(MAKE) -C $(MLOPS_DIR) ruff
 	$(MAKE) -C $(XAI_DIR) ruff
 	$(MAKE) -C $(AUTOML_DIR) ruff
+	$(MAKE) -C $(AUTORESEARCH_DIR) ruff
 	$(MAKE) -C $(FE_DIR) ruff
 	$(MAKE) -C $(RL_DIR) ruff
 	$(MAKE) -C $(SYSTEMS_DIR) ruff
@@ -90,6 +93,7 @@ type ty:
 	$(MAKE) -C $(MLOPS_DIR) ty
 	$(MAKE) -C $(XAI_DIR) ty
 	$(MAKE) -C $(AUTOML_DIR) ty
+	$(MAKE) -C $(AUTORESEARCH_DIR) ty
 	$(MAKE) -C $(FE_DIR) ty
 	$(MAKE) -C $(RL_DIR) ty
 	$(MAKE) -C $(SYSTEMS_DIR) ty
@@ -108,6 +112,7 @@ test:
 	$(MAKE) -C $(MLOPS_DIR) test
 	$(MAKE) -C $(XAI_DIR) test
 	$(MAKE) -C $(AUTOML_DIR) test
+	$(MAKE) -C $(AUTORESEARCH_DIR) test
 	$(MAKE) -C $(FE_DIR) test
 	$(MAKE) -C $(RL_DIR) test
 	$(MAKE) -C $(SYSTEMS_DIR) test
@@ -143,6 +148,7 @@ verify:
 	@if [ -f "$(MLOPS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(MLOPS_DIR) verify; else echo "Skipping $(MLOPS_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(XAI_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(XAI_DIR) verify; else echo "Skipping $(XAI_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(AUTOML_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTOML_DIR) verify; else echo "Skipping $(AUTOML_DIR) verify: run pipeline first"; fi
+	@if [ -f "$(AUTORESEARCH_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTORESEARCH_DIR) verify; else echo "Skipping $(AUTORESEARCH_DIR) verify: run showcase first"; fi
 	@if [ -f "$(FE_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(FE_DIR) verify; else echo "Skipping $(FE_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(RL_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(RL_DIR) verify; else echo "Skipping $(RL_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(SYSTEMS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(SYSTEMS_DIR) verify; else echo "Skipping $(SYSTEMS_DIR) verify: run pipeline first"; fi
@@ -160,6 +166,7 @@ smoke:
 	$(MAKE) -C $(MLOPS_DIR) smoke
 	$(MAKE) -C $(XAI_DIR) smoke
 	$(MAKE) -C $(AUTOML_DIR) smoke
+	$(MAKE) -C $(AUTORESEARCH_DIR) smoke
 	$(MAKE) -C $(FE_DIR) smoke
 	$(MAKE) -C $(RL_DIR) smoke
 	$(MAKE) -C $(SYSTEMS_DIR) smoke

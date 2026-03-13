@@ -27,6 +27,7 @@ This matrix maps the requested ML workflow aspects to concrete showcase projects
 | Overfitting/bias-aware evaluation (ROC/PR/Learning/Threshold, RMSE/MAE/R²) | Supervised, EDA, and related evaluation pipelines | `make run` | `artifacts/eval/metrics_summary.csv`, `artifacts/eval/threshold_analysis.csv`, learning/validation curve artifacts |
 | Explainability (SHAP/LIME) | `projects/xai-fairness-audit-showcase` | `make sync-explainability && make run-explainability` | `artifacts/explainability/shap_status.txt`, `artifacts/explainability/lime_status.txt` |
 | Hyperparameter optimization (HyperOpt/Optuna) | `projects/automl-hpo-showcase` | `make run-advanced` | `artifacts/hpo/trials.csv`, `artifacts/hpo/strategy_comparison.csv` |
+| Autonomous agent experiment loops | `projects/autoresearch` | `make run` | `artifacts/overview/platform_comparison.csv`, `artifacts/analysis/decision_scenarios.csv`, `artifacts/agent/codex_macos.md` |
 | Experiment tracking (MLflow) | AutoML and MLOps showcases | `make run-advanced` (AutoML), `make run-tracking` (MLOps) | `artifacts/hpo/mlflow_status.txt`, `artifacts/tracking/mlflow_status.txt` |
 | Productionization examples | MLOps serving + ranking API productization + demand API observability + rollout/systems showcases | `make serve` (MLOps), `make dev` + `make export-openapi` (ranking API / demand API) | `openapi.json`, `artifacts/registry/model_versions.json`, `http_requests_total` metrics endpoint output, rollout decision logs, serving and monitoring artifacts |
 

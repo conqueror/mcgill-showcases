@@ -19,7 +19,8 @@
 ## Path D: Modeling Optimization Focus
 1. `projects/sota-supervised-learning-showcase`
 2. `projects/automl-hpo-showcase`
-3. `projects/rl-bandits-policy-showcase`
+3. `projects/autoresearch`
+4. `projects/rl-bandits-policy-showcase`
 
 ## Path E: Feature and Representation Focus
 1. `projects/sota-supervised-learning-showcase`
@@ -56,6 +57,11 @@
 1. `projects/nyc-demand-forecasting-foundations-showcase`
 2. `projects/demand-api-observability-showcase`
 3. `projects/mlops-drift-production-showcase`
+
+## Path K: Agentic Research Workflow
+1. `projects/automl-hpo-showcase`
+2. `projects/autoresearch`
+3. `projects/model-release-rollout-showcase`
 
 ## How To Know You Are Progressing
 - You can explain outputs in plain language.
