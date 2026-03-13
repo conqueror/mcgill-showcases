@@ -13,7 +13,7 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 
 ## Learning Tracks
 
-- Foundations: core supervised, unsupervised, EDA, and feature engineering workflows.
+- Foundations: math foundations, neural network mechanics, PyTorch training loops, core supervised workflows, unsupervised workflows, EDA, and feature engineering.
 - Production: serving, drift monitoring, rollout decisions, and system patterns.
 - Ranking: grouped ranking modeling and API productization.
 - Forecasting: time-aware demand modeling and observability-ready APIs.

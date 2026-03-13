@@ -4,6 +4,15 @@ This matrix maps the requested ML workflow aspects to concrete showcase projects
 
 | Aspect | Where It Is Implemented | How to Run | Evidence Artifact(s) |
 |---|---|---|---|
+| Linear algebra for model intuition | `projects/deep-learning-math-foundations-showcase` | `make run` | `artifacts/vector_operations.csv`, `artifacts/matrix_transformations.csv` |
+| Calculus and gradient intuition | `projects/deep-learning-math-foundations-showcase` | `make run` | `artifacts/derivative_examples.csv`, `artifacts/gradient_descent_trace.csv` |
+| Probability and uncertainty basics | `projects/deep-learning-math-foundations-showcase` | `make run` | `artifacts/probability_simulations.csv` |
+| Entropy / cross-entropy / KL divergence | `projects/deep-learning-math-foundations-showcase` | `make run` | `artifacts/information_theory_summary.md` |
+| Perceptrons, activations, and forward-pass intuition | `projects/neural-network-foundations-showcase` | `make run` | `artifacts/activation_comparison.csv`, `artifacts/decision_boundary_summary.csv` |
+| Backpropagation and initialization | `projects/neural-network-foundations-showcase` | `make run` | `artifacts/backprop_gradient_trace.csv`, `artifacts/initialization_comparison.csv` |
+| Underfitting vs overfitting | `projects/neural-network-foundations-showcase` | `make run` | `artifacts/underfit_overfit_examples.csv`, `artifacts/training_curves.csv` |
+| PyTorch training loops and optimizer comparison | `projects/pytorch-training-regularization-showcase` | `make run` | `artifacts/baseline_metrics.json`, `artifacts/optimizer_comparison.csv`, `artifacts/learning_rate_schedule_comparison.csv` |
+| Regularization (dropout, batch norm, weight decay, early stopping) | `projects/pytorch-training-regularization-showcase` | `make run` | `artifacts/regularization_ablation.csv`, `artifacts/gradient_health_report.md` |
 | Data profiling (`ydata-profiling`) | `projects/eda-leakage-profiling-showcase`, `projects/feature-engineering-dimred-showcase` | `make sync-profiling && make run` | `artifacts/eda/profile_status.txt` |
 | Univariate analysis | EDA + feature engineering showcases via shared EDA utilities | `make run` | `artifacts/eda/univariate_summary.csv` |
 | Bivariate analysis vs target | EDA + feature engineering showcases | `make run` | `artifacts/eda/bivariate_vs_target.csv` |

@@ -30,11 +30,15 @@ make sync
 4. Enter that project and follow its `README.md`.
 
 If this is your first time, start with `sota-supervised-learning-showcase`.
+If you want the deep-learning sequence specifically, start with `deep-learning-math-foundations-showcase`.
 
 ## Project Catalog
 
 | Project | Topic | Difficulty | Estimated Time | Prerequisites | Start Link |
 |---|---|---|---|---|---|
+| `deep-learning-math-foundations-showcase` | Essential math for deep learning: vectors, derivatives, entropy, and gradient descent | Beginner | 1.0-1.5 hours | Python basics, high-school algebra | [`projects/deep-learning-math-foundations-showcase/README.md`](projects/deep-learning-math-foundations-showcase/README.md) |
+| `neural-network-foundations-showcase` | Perceptrons, activations, backprop intuition, initialization, and decision boundaries | Beginner | 1.0-1.5 hours | Python, basic algebra, deep-learning math foundations recommended | [`projects/neural-network-foundations-showcase/README.md`](projects/neural-network-foundations-showcase/README.md) |
+| `pytorch-training-regularization-showcase` | PyTorch training loops, optimizers, schedulers, dropout, batch norm, and regularization experiments | Beginner-Intermediate | 1.5-2.0 hours | Python, neural-network foundations recommended | [`projects/pytorch-training-regularization-showcase/README.md`](projects/pytorch-training-regularization-showcase/README.md) |
 | `sota-supervised-learning-showcase` | Supervised learning foundations + SOTA-style evaluation | Beginner-Intermediate | 1.5-2.5 hours | Python, basic classification/regression | [`projects/sota-supervised-learning-showcase/README.md`](projects/sota-supervised-learning-showcase/README.md) |
 | `credit-risk-classification-capstone-showcase` | Credit default capstone (EDA, imbalance handling, threshold decisions) | Intermediate | 2-3 hours | Supervised ML basics, tabular data prep | [`projects/credit-risk-classification-capstone-showcase/README.md`](projects/credit-risk-classification-capstone-showcase/README.md) |
 | `nyc-demand-forecasting-foundations-showcase` | Time-aware demand forecasting with explicit train/val/test splits | Intermediate | 1.5-2.5 hours | Python, regression basics, time-based validation intuition | [`projects/nyc-demand-forecasting-foundations-showcase/README.md`](projects/nyc-demand-forecasting-foundations-showcase/README.md) |
@@ -70,12 +74,15 @@ make smoke
 make docs-build
 make docs-serve
 make docs-check
+make harness-preflight
+make harness-lint
 ```
 
 Project-specific runs should be started from each project folder.
 
 Contract note:
 - `make check-contracts` bootstraps missing supervised artifacts in quick mode, then validates split/EDA/leakage/eval/experiment contracts.
+- `make harness-preflight` and `make harness-lint` validate the repo-local public harness-lite bootstrap.
 
 ## Documentation Site
 - MkDocs Material config: `mkdocs.yml`
@@ -109,6 +116,7 @@ make docs-check
   - `docs/api/demand-api.md`
 
 ## Learning Path
+- Deep learning foundations path: deep-learning math foundations -> neural-network foundations -> pytorch training regularization -> supervised or unsupervised next.
 - Core ML path: supervised -> unsupervised/semisup -> causal.
 - Production path: supervised -> mlops drift -> batch vs stream.
 - Forecasting path: nyc-demand forecasting foundations -> demand API observability -> model rollout.
@@ -130,6 +138,11 @@ make docs-check
 
 ## Contributing
 See `CONTRIBUTING.md` for setup, standards, and pull request workflow.
+
+## Harness Lite
+- Repo-local harness config: `.codex/config.toml`
+- Routing manifest: `.codex/harness/role-skill-matrix.toml`
+- Operating pack: `docs/agents/oodaris-harness-v2-operating-pack.md`
 
 ## License
 MIT License. See `LICENSE`.

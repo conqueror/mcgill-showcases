@@ -13,6 +13,9 @@ make sync
 ```
 
 ## Pick Your First Project
+- Deep learning math foundations: `projects/deep-learning-math-foundations-showcase`
+- Neural network mechanics and decision boundaries: `projects/neural-network-foundations-showcase`
+- PyTorch training loops and regularization: `projects/pytorch-training-regularization-showcase`
 - Easiest start: `projects/sota-supervised-learning-showcase`
 - Causal decisioning: `projects/causalml-kaggle-showcase`
 - Modern unlabeled-data workflows: `projects/sota-unsupervised-semisup-showcase`
@@ -43,12 +46,15 @@ make check-contracts
 make check
 make verify
 make docs-check
+make harness-preflight
+make harness-lint
 ```
 
 - `make check-contracts` regenerates missing supervised artifacts in quick mode and validates contract files.
 - `make check` runs lint, type checks, tests, and contract verification across projects.
 - `make verify` validates per-project artifact manifests where available.
 - `make docs-check` runs a strict MkDocs Material build for docs consistency.
+- `make harness-preflight` and `make harness-lint` validate the repo-local public harness-lite bootstrap.
 
 ## Docs Site
 Run local docs with:
