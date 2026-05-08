@@ -8,6 +8,7 @@ MLOPS_DIR := projects/mlops-drift-production-showcase
 XAI_DIR := projects/xai-fairness-audit-showcase
 AUTOML_DIR := projects/automl-hpo-showcase
 AUTORESEARCH_DIR := projects/autoresearch
+AGENTIC_COURSE_DIR := projects/agentic-course-assistant-showcase
 FE_DIR := projects/feature-engineering-dimred-showcase
 RL_DIR := projects/rl-bandits-policy-showcase
 DL_MATH_DIR := projects/deep-learning-math-foundations-showcase
@@ -18,6 +19,7 @@ ROLLOUT_DIR := projects/model-release-rollout-showcase
 EDA_DIR := projects/eda-leakage-profiling-showcase
 CREDIT_DIR := projects/credit-risk-classification-capstone-showcase
 LTR_DIR := projects/learning-to-rank-foundations-showcase
+NLP_DIR := projects/modern-nlp-pipeline-showcase
 RANK_API_DIR := projects/ranking-api-productization-showcase
 NYC_DEMAND_DIR := projects/nyc-demand-forecasting-foundations-showcase
 DEMAND_API_OBS_DIR := projects/demand-api-observability-showcase
@@ -63,6 +65,7 @@ sync:
 	$(MAKE) -C $(XAI_DIR) sync
 	$(MAKE) -C $(AUTOML_DIR) sync
 	$(MAKE) -C $(AUTORESEARCH_DIR) sync
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) sync
 	$(MAKE) -C $(FE_DIR) sync
 	$(MAKE) -C $(RL_DIR) sync
 	$(MAKE) -C $(SYSTEMS_DIR) sync
@@ -70,6 +73,7 @@ sync:
 	$(MAKE) -C $(EDA_DIR) sync
 	$(MAKE) -C $(CREDIT_DIR) sync
 	$(MAKE) -C $(LTR_DIR) sync
+	$(MAKE) -C $(NLP_DIR) sync
 	$(MAKE) -C $(RANK_API_DIR) sync
 	$(MAKE) -C $(NYC_DEMAND_DIR) sync
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) sync
@@ -89,6 +93,7 @@ lint:
 	$(MAKE) -C $(XAI_DIR) ruff
 	$(MAKE) -C $(AUTOML_DIR) ruff
 	$(MAKE) -C $(AUTORESEARCH_DIR) ruff
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) ruff
 	$(MAKE) -C $(FE_DIR) ruff
 	$(MAKE) -C $(RL_DIR) ruff
 	$(MAKE) -C $(SYSTEMS_DIR) ruff
@@ -96,6 +101,7 @@ lint:
 	$(MAKE) -C $(EDA_DIR) ruff
 	$(MAKE) -C $(CREDIT_DIR) ruff
 	$(MAKE) -C $(LTR_DIR) ruff
+	$(MAKE) -C $(NLP_DIR) ruff
 	$(MAKE) -C $(RANK_API_DIR) ruff
 	$(MAKE) -C $(NYC_DEMAND_DIR) ruff
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) ruff
@@ -111,6 +117,7 @@ type ty:
 	$(MAKE) -C $(XAI_DIR) ty
 	$(MAKE) -C $(AUTOML_DIR) ty
 	$(MAKE) -C $(AUTORESEARCH_DIR) ty
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) ty
 	$(MAKE) -C $(FE_DIR) ty
 	$(MAKE) -C $(RL_DIR) ty
 	$(MAKE) -C $(SYSTEMS_DIR) ty
@@ -118,6 +125,7 @@ type ty:
 	$(MAKE) -C $(EDA_DIR) ty
 	$(MAKE) -C $(CREDIT_DIR) ty
 	$(MAKE) -C $(LTR_DIR) ty
+	$(MAKE) -C $(NLP_DIR) ty
 	$(MAKE) -C $(RANK_API_DIR) ty
 	$(MAKE) -C $(NYC_DEMAND_DIR) ty
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) ty
@@ -133,6 +141,7 @@ test:
 	$(MAKE) -C $(XAI_DIR) test
 	$(MAKE) -C $(AUTOML_DIR) test
 	$(MAKE) -C $(AUTORESEARCH_DIR) test
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) test
 	$(MAKE) -C $(FE_DIR) test
 	$(MAKE) -C $(RL_DIR) test
 	$(MAKE) -C $(SYSTEMS_DIR) test
@@ -140,6 +149,7 @@ test:
 	$(MAKE) -C $(EDA_DIR) test
 	$(MAKE) -C $(CREDIT_DIR) test
 	$(MAKE) -C $(LTR_DIR) test
+	$(MAKE) -C $(NLP_DIR) test
 	$(MAKE) -C $(RANK_API_DIR) test
 	$(MAKE) -C $(NYC_DEMAND_DIR) test
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) test
@@ -172,6 +182,7 @@ verify:
 	@if [ -f "$(XAI_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(XAI_DIR) verify; else echo "Skipping $(XAI_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(AUTOML_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTOML_DIR) verify; else echo "Skipping $(AUTOML_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(AUTORESEARCH_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTORESEARCH_DIR) verify; else echo "Skipping $(AUTORESEARCH_DIR) verify: run showcase first"; fi
+	@if [ -f "$(AGENTIC_COURSE_DIR)/artifacts/agent_trace.json" ]; then $(MAKE) -C $(AGENTIC_COURSE_DIR) verify; else echo "Skipping $(AGENTIC_COURSE_DIR) verify: run showcase first"; fi
 	@if [ -f "$(FE_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(FE_DIR) verify; else echo "Skipping $(FE_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(RL_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(RL_DIR) verify; else echo "Skipping $(RL_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(SYSTEMS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(SYSTEMS_DIR) verify; else echo "Skipping $(SYSTEMS_DIR) verify: run pipeline first"; fi
@@ -179,6 +190,7 @@ verify:
 	@if [ -f "$(EDA_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(EDA_DIR) verify; else echo "Skipping $(EDA_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(CREDIT_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(CREDIT_DIR) verify; else echo "Skipping $(CREDIT_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(LTR_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(LTR_DIR) verify; else echo "Skipping $(LTR_DIR) verify: run pipeline first"; fi
+	@if [ -f "$(NLP_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(NLP_DIR) verify; else echo "Skipping $(NLP_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(RANK_API_DIR)/artifacts/model.txt" ]; then $(MAKE) -C $(RANK_API_DIR) verify; else echo "Skipping $(RANK_API_DIR) verify: run train-demo first"; fi
 	@if [ -f "$(NYC_DEMAND_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(NYC_DEMAND_DIR) verify; else echo "Skipping $(NYC_DEMAND_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(DEMAND_API_OBS_DIR)/artifacts/model.joblib" ]; then $(MAKE) -C $(DEMAND_API_OBS_DIR) verify; else echo "Skipping $(DEMAND_API_OBS_DIR) verify: run train-demo first"; fi
@@ -193,6 +205,7 @@ smoke:
 	$(MAKE) -C $(XAI_DIR) smoke
 	$(MAKE) -C $(AUTOML_DIR) smoke
 	$(MAKE) -C $(AUTORESEARCH_DIR) smoke
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) smoke
 	$(MAKE) -C $(FE_DIR) smoke
 	$(MAKE) -C $(RL_DIR) smoke
 	$(MAKE) -C $(SYSTEMS_DIR) smoke
@@ -200,6 +213,7 @@ smoke:
 	$(MAKE) -C $(EDA_DIR) smoke
 	$(MAKE) -C $(CREDIT_DIR) smoke
 	$(MAKE) -C $(LTR_DIR) smoke
+	$(MAKE) -C $(NLP_DIR) smoke
 	$(MAKE) -C $(RANK_API_DIR) smoke
 	$(MAKE) -C $(NYC_DEMAND_DIR) smoke
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) smoke

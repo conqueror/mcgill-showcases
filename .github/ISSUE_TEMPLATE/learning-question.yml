@@ -11,6 +11,7 @@ body:
         - deep-learning-math-foundations-showcase
         - neural-network-foundations-showcase
         - pytorch-training-regularization-showcase
+        - agentic-course-assistant-showcase
         - automl-hpo-showcase
         - autoresearch
         - batch-vs-stream-ml-systems-showcase
@@ -20,6 +21,7 @@ body:
         - eda-leakage-profiling-showcase
         - feature-engineering-dimred-showcase
         - learning-to-rank-foundations-showcase
+        - modern-nlp-pipeline-showcase
         - mlops-drift-production-showcase
         - model-release-rollout-showcase
         - nyc-demand-forecasting-foundations-showcase

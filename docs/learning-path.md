@@ -67,6 +67,12 @@
 2. `projects/ranking-api-productization-showcase`
 3. `projects/model-release-rollout-showcase`
 
+## Path N: NLP Systems Workflow
+1. `projects/pytorch-training-regularization-showcase`
+2. `projects/modern-nlp-pipeline-showcase`
+3. `projects/learning-to-rank-foundations-showcase`
+4. `projects/ranking-api-productization-showcase`
+
 ## Path K: Forecasting and Observability Workflow
 1. `projects/nyc-demand-forecasting-foundations-showcase`
 2. `projects/demand-api-observability-showcase`
@@ -75,7 +81,14 @@
 ## Path L: Agentic Research Workflow
 1. `projects/automl-hpo-showcase`
 2. `projects/autoresearch`
-3. `projects/model-release-rollout-showcase`
+3. `projects/agentic-course-assistant-showcase`
+4. `projects/model-release-rollout-showcase`
+
+## Path O: Agent Frameworks Workflow
+1. `projects/autoresearch`
+2. `projects/agentic-course-assistant-showcase`
+3. `projects/modern-nlp-pipeline-showcase`
+4. `projects/model-release-rollout-showcase`
 
 ## How To Know You Are Progressing
 - You can explain outputs in plain language.

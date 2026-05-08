@@ -42,6 +42,11 @@ This note maps related showcases into cohesive, in-repo learning tracks.
 - Decision artifacts for keep/discard/crash outcomes.
 - Codex and Claude Code launch briefs tied to the upstream repos.
 
+2. `projects/agentic-course-assistant-showcase`
+- Deterministic course-assistant workflow for routing, tools, guardrails, and trace inspection.
+- Optional OpenAI Agents SDK and Google ADK reference modules.
+- Stable local artifacts that make agent decisions inspectable before live API usage.
+
 ## Intentional Scope Boundaries
 
 - Full-size raw datasets are excluded to keep clone and run workflows lightweight.

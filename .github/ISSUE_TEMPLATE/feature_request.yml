@@ -9,6 +9,7 @@ body:
       label: Related project
       options:
         - Repository-wide / multiple projects
+        - agentic-course-assistant-showcase
         - automl-hpo-showcase
         - batch-vs-stream-ml-systems-showcase
         - causalml-kaggle-showcase
@@ -17,6 +18,7 @@ body:
         - eda-leakage-profiling-showcase
         - feature-engineering-dimred-showcase
         - learning-to-rank-foundations-showcase
+        - modern-nlp-pipeline-showcase
         - mlops-drift-production-showcase
         - model-release-rollout-showcase
         - nyc-demand-forecasting-foundations-showcase

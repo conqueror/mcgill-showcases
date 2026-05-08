@@ -26,6 +26,7 @@ projects/**/.DS_Store
 projects/**/artifacts/**
 !projects/**/artifacts/.gitkeep
 !projects/**/artifacts/**/.gitkeep
+!projects/agentic-course-assistant-showcase/artifacts/manifest.json
 
 # Local raw datasets (keep placeholders)
 projects/**/data/raw/**

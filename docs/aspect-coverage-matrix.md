@@ -31,12 +31,17 @@ This matrix maps the requested ML workflow aspects to concrete showcase projects
 | Imputation techniques | Feature engineering preprocessing | `make run` | Pipeline uses median + most-frequent imputers |
 | Over/Under sampling + SMOTE hybrids | Supervised showcase data utilities | `make sync-boosting` (for optional libs), `make run` | Strategy-level metrics and logs |
 | Dimensionality reduction / feature subset selection | Feature engineering + dimred showcase | `make run && make run-dimred` | `artifacts/selection/selection_scores.csv`, `artifacts/dimred/embedding_quality_metrics.csv` |
+| Text chunking and document preparation for NLP systems | `projects/modern-nlp-pipeline-showcase` | `make run` | `artifacts/data/corpus_overview.csv`, `artifacts/data/topic_distribution.csv` |
+| Sparse lexical vs dense semantic text representations | `projects/modern-nlp-pipeline-showcase` | `make run` | `artifacts/classification/metrics_summary.csv`, `artifacts/retrieval/retrieval_metrics.csv` |
+| Retrieval-grounded QA on research text | `projects/modern-nlp-pipeline-showcase` | `make run` | `artifacts/generation/qa_outputs.csv`, `artifacts/retrieval/retrieval_examples.json` |
+| Query-focused summarization from retrieved evidence | `projects/modern-nlp-pipeline-showcase` | `make run` | `artifacts/generation/query_summaries.json`, `artifacts/summary.md` |
 | SoTA modeling (XGBoost/LightGBM/CatBoost/Deep/Stacking) | Supervised showcase classification benchmark | `make sync-boosting && make run` | `artifacts/classification_benchmark.csv` |
 | Learning-to-rank modeling (LambdaRank + NDCG) | `projects/learning-to-rank-foundations-showcase` | `make run` | `artifacts/eval/ranking_metrics.json`, `artifacts/splits/group_split_manifest.json` |
 | Overfitting/bias-aware evaluation (ROC/PR/Learning/Threshold, RMSE/MAE/R²) | Supervised, EDA, and related evaluation pipelines | `make run` | `artifacts/eval/metrics_summary.csv`, `artifacts/eval/threshold_analysis.csv`, learning/validation curve artifacts |
 | Explainability (SHAP/LIME) | `projects/xai-fairness-audit-showcase` | `make sync-explainability && make run-explainability` | `artifacts/explainability/shap_status.txt`, `artifacts/explainability/lime_status.txt` |
 | Hyperparameter optimization (HyperOpt/Optuna) | `projects/automl-hpo-showcase` | `make run-advanced` | `artifacts/hpo/trials.csv`, `artifacts/hpo/strategy_comparison.csv` |
 | Autonomous agent experiment loops | `projects/autoresearch` | `make run` | `artifacts/overview/platform_comparison.csv`, `artifacts/analysis/decision_scenarios.csv`, `artifacts/agent/codex_macos.md` |
+| Agent framework routing, tools, guardrails, traces, evals, A2A, sessions, memory, skills, and harness evidence | `projects/agentic-course-assistant-showcase` | `make smoke` | `artifacts/course_assistant_response.md`, `artifacts/agent_trace.json`, `artifacts/resource_matches.csv`, `artifacts/concepts/agentic_concepts.csv`, `artifacts/evals/agent_judge_rubric.json` |
 | Experiment tracking (MLflow) | AutoML and MLOps showcases | `make run-advanced` (AutoML), `make run-tracking` (MLOps) | `artifacts/hpo/mlflow_status.txt`, `artifacts/tracking/mlflow_status.txt` |
 | Productionization examples | MLOps serving + ranking API productization + demand API observability + rollout/systems showcases | `make serve` (MLOps), `make dev` + `make export-openapi` (ranking API / demand API) | `openapi.json`, `artifacts/registry/model_versions.json`, `http_requests_total` metrics endpoint output, rollout decision logs, serving and monitoring artifacts |
 

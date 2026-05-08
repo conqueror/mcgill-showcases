@@ -24,11 +24,13 @@ make sync
 - Responsible AI auditing: `projects/xai-fairness-audit-showcase`
 - Rollout and rollback simulation: `projects/model-release-rollout-showcase`
 - Data diagnostics and leakage checks: `projects/eda-leakage-profiling-showcase`
+- Modern NLP classification, retrieval, and generation workflow: `projects/modern-nlp-pipeline-showcase`
 - Ranking model training fundamentals: `projects/learning-to-rank-foundations-showcase`
 - Ranking API serving and contracts: `projects/ranking-api-productization-showcase`
 - Time-aware demand forecasting foundations: `projects/nyc-demand-forecasting-foundations-showcase`
 - Demand API with metrics and tracing hooks: `projects/demand-api-observability-showcase`
 - Agent-guided research loops for tiny language models: `projects/autoresearch`
+- Agent routing, tools, guardrails, traces, eval rubrics, A2A/session/memory concepts, and SDK comparison: `projects/agentic-course-assistant-showcase`
 
 ## First Run Pattern
 ```bash

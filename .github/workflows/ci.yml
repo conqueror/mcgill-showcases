@@ -15,6 +15,7 @@ jobs:
           - deep-learning-math-foundations-showcase
           - neural-network-foundations-showcase
           - pytorch-training-regularization-showcase
+          - agentic-course-assistant-showcase
           - automl-hpo-showcase
           - autoresearch
           - causalml-kaggle-showcase
@@ -22,6 +23,7 @@ jobs:
           - eda-leakage-profiling-showcase
           - feature-engineering-dimred-showcase
           - learning-to-rank-foundations-showcase
+          - modern-nlp-pipeline-showcase
           - nyc-demand-forecasting-foundations-showcase
           - sota-supervised-learning-showcase
           - sota-unsupervised-semisup-showcase
@@ -55,7 +57,14 @@ jobs:
               uv run ty check src tests scripts --ignore unresolved-import --ignore unresolved-attribute
               uv run pytest -q
               ;;
-            automl-hpo-showcase|autoresearch|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|nyc-demand-forecasting-foundations-showcase)
+            agentic-course-assistant-showcase)
+              uv run ruff check src tests scripts
+              uv run mypy src tests scripts
+              uv run pytest -q
+              uv run python scripts/run_showcase.py --question "Help me debug why validation is too good."
+              uv run python scripts/verify_artifacts.py
+              ;;
+            automl-hpo-showcase|autoresearch|credit-risk-classification-capstone-showcase|eda-leakage-profiling-showcase|feature-engineering-dimred-showcase|learning-to-rank-foundations-showcase|modern-nlp-pipeline-showcase|nyc-demand-forecasting-foundations-showcase)
               uv run ruff check src tests scripts
               uv run mypy src tests scripts
               uv run pytest -q

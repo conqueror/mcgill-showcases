@@ -18,7 +18,7 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - Ranking: grouped ranking modeling and API productization.
 - Forecasting: time-aware demand modeling and observability-ready APIs.
 - Responsible AI: fairness, explainability, and causal decision support.
-- Optimization: HPO and policy optimization workflows.
+- Optimization: HPO, agentic workflow, and policy optimization workflows.
 
 ## Project Deep Dives
 

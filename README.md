@@ -48,8 +48,10 @@ If you want the deep-learning sequence specifically, start with `deep-learning-m
 | `xai-fairness-audit-showcase` | Explainability, subgroup fairness metrics, mitigation tradeoffs | Intermediate | 2-3 hours | Python, classification metrics | [`projects/xai-fairness-audit-showcase/README.md`](projects/xai-fairness-audit-showcase/README.md) |
 | `automl-hpo-showcase` | Hyperparameter optimization strategy benchmarking (grid/random/TPE) | Intermediate | 1.5-2.5 hours | Python, model tuning basics | [`projects/automl-hpo-showcase/README.md`](projects/automl-hpo-showcase/README.md) |
 | `autoresearch` | Fixed-budget autonomous research loops with Codex/Claude launch briefs for macOS and Unix | Intermediate-Advanced | 2-3 hours | Python, basic ML, Git, access to Apple Silicon or an NVIDIA GPU for the real upstream path | [`projects/autoresearch/README.md`](projects/autoresearch/README.md) |
+| `agentic-course-assistant-showcase` | Agent routing, tools, guardrails, traces, eval rubrics, A2A/session/memory concepts, and optional OpenAI Agents SDK / Google ADK examples | Intermediate | 1-1.5 hours | Python, basic ML workflow vocabulary | [`projects/agentic-course-assistant-showcase/README.md`](projects/agentic-course-assistant-showcase/README.md) |
 | `eda-leakage-profiling-showcase` | Data profiling, missingness diagnostics, leakage analysis, split strategy comparison | Beginner-Intermediate | 1.5-2.0 hours | Python, pandas basics | [`projects/eda-leakage-profiling-showcase/README.md`](projects/eda-leakage-profiling-showcase/README.md) |
 | `feature-engineering-dimred-showcase` | Encoding, feature selection, PCA/t-SNE/UMAP comparison | Beginner-Intermediate | 1.5-2.5 hours | Python, preprocessing basics | [`projects/feature-engineering-dimred-showcase/README.md`](projects/feature-engineering-dimred-showcase/README.md) |
+| `modern-nlp-pipeline-showcase` | Shared text pipeline for classification, retrieval, QA, and summarization on research abstracts | Intermediate | 2-3 hours | Python, basic ML, interest in NLP systems | [`projects/modern-nlp-pipeline-showcase/README.md`](projects/modern-nlp-pipeline-showcase/README.md) |
 | `rl-bandits-policy-showcase` | Multi-armed bandits, reward/regret analysis, policy recommendation | Intermediate | 1.5-2.5 hours | Python, probability basics | [`projects/rl-bandits-policy-showcase/README.md`](projects/rl-bandits-policy-showcase/README.md) |
 | `batch-vs-stream-ml-systems-showcase` | Batch vs stream KPI pipelines, parity and latency analysis | Intermediate | 2-3 hours | Python, data systems basics | [`projects/batch-vs-stream-ml-systems-showcase/README.md`](projects/batch-vs-stream-ml-systems-showcase/README.md) |
 | `model-release-rollout-showcase` | Canary rollout, promote/hold/rollback decisions, registry artifacts | Intermediate | 1.5-2.0 hours | Python, model metrics basics | [`projects/model-release-rollout-showcase/README.md`](projects/model-release-rollout-showcase/README.md) |
@@ -121,9 +123,11 @@ make docs-check
 - Production path: supervised -> mlops drift -> batch vs stream.
 - Forecasting path: nyc-demand forecasting foundations -> demand API observability -> model rollout.
 - Ranking path: learning-to-rank foundations -> ranking API productization -> model rollout.
+- NLP systems path: pytorch training regularization -> modern NLP pipeline -> learning to rank -> ranking API productization.
 - Release path: mlops drift -> batch vs stream -> model rollout.
 - Responsible AI path: supervised -> xai fairness -> causal.
 - Optimization path: supervised -> automl hpo -> autoresearch -> rl bandits.
+- Agent frameworks path: automl hpo -> autoresearch -> agentic course assistant -> model rollout.
 - Data quality path: eda leakage profiling -> feature engineering -> supervised contract artifacts.
 - See detailed guidance in `docs/learning-path.md`.
 
