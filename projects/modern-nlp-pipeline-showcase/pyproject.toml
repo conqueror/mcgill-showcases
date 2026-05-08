@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modern-nlp-pipeline-showcase"
+version = "0.1.0"
+description = "Student-friendly end-to-end NLP pipeline showcase on research abstracts and paper summaries."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+  "scikit-learn>=1.6.0",
+  "sentencepiece>=0.2.0",
+  "sentence-transformers>=3.4.1",
+  "torch>=2.5.1",
+  "transformers>=4.48.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.9.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/modern_nlp_pipeline_showcase"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
