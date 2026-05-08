@@ -1,0 +1,13 @@
+{
+  "required_files": [
+    "artifacts/course_assistant_response.md",
+    "artifacts/agent_trace.json",
+    "artifacts/resource_matches.csv",
+    "artifacts/concepts/agentic_concepts.csv",
+    "artifacts/concepts/openai_vs_adk_concepts.json",
+    "artifacts/concepts/refined_questions.md",
+    "artifacts/concepts/student_learning_path.md",
+    "artifacts/evals/agent_judge_rubric.json",
+    "artifacts/evals/concept_coverage.json"
+  ]
+}

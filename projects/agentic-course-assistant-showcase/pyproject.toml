@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-course-assistant-showcase"
+version = "0.1.0"
+description = "Educational showcase for agent routing, tools, guardrails, and SDK comparison."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+adk = [
+  "google-adk",
+]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.9.0",
+]
+live = [
+  "google-adk",
+  "openai-agents",
+]
+openai = [
+  "openai-agents",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_course_assistant"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
