@@ -1,3 +1,8 @@
+from pathlib import Path
+
+from pytest import MonkeyPatch
+
+from modern_nlp_pipeline_showcase import data as data_module
 from modern_nlp_pipeline_showcase.data import build_chunks, load_corpus, load_queries
 
 
@@ -21,6 +26,19 @@ def test_load_queries_has_expected_keys() -> None:
         "qa_question",
         "expected_answer",
     } <= set(queries[0])
+
+
+def test_loaders_use_bundled_sample_when_raw_files_are_missing(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(data_module, "CORPUS_PATH", tmp_path / "missing_corpus.csv")
+    monkeypatch.setattr(data_module, "QUERY_PATH", tmp_path / "missing_queries.json")
+
+    corpus = data_module.load_corpus()
+    queries = data_module.load_queries()
+
+    assert len(corpus) >= 18
+    assert len(queries) >= 5
 
 
 def test_build_chunks_produces_multiple_rows_per_document() -> None:

@@ -32,6 +32,8 @@ Notes:
 
 - `make run` may download compact Hugging Face model weights the first time.
 - `make smoke` uses lightweight fallback backends so the project remains runnable even when model downloads are unavailable.
+- Clean checkouts use a bundled sample corpus. Add local CSV/JSON files under `data/raw/`
+  only when you want to override the sample inputs.
 
 ## Quickstart
 

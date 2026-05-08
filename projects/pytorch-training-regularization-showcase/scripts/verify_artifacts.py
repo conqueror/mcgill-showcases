@@ -9,6 +9,17 @@ from pathlib import Path
 
 from pytorch_training_regularization_showcase import config
 
+DEFAULT_REQUIRED_ARTIFACTS = (
+    "baseline_metrics.json",
+    "training_history.csv",
+    "optimizer_comparison.csv",
+    "learning_rate_schedule_comparison.csv",
+    "regularization_ablation.csv",
+    "gradient_health_report.md",
+    "error_analysis.csv",
+    "summary.md",
+)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse CLI arguments for artifact verification."""
@@ -27,6 +38,9 @@ def required_artifact_files() -> list[str]:
     """Read the artifact manifest and return the required filenames."""
 
     manifest_path = config.ARTIFACTS_DIR / "manifest.json"
+    if not manifest_path.exists():
+        return list(DEFAULT_REQUIRED_ARTIFACTS)
+
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     return [Path(path).name for path in manifest["required_files"]]
 

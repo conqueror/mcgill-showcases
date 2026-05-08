@@ -9,6 +9,16 @@ from pathlib import Path
 
 from deep_learning_math_foundations_showcase import config
 
+DEFAULT_REQUIRED_ARTIFACTS = (
+    "vector_operations.csv",
+    "matrix_transformations.csv",
+    "derivative_examples.csv",
+    "gradient_descent_trace.csv",
+    "probability_simulations.csv",
+    "information_theory_summary.md",
+    "summary.md",
+)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse CLI arguments for artifact verification."""
@@ -27,6 +37,9 @@ def required_artifact_files() -> list[str]:
     """Read the artifact manifest and return the required filenames."""
 
     manifest_path = config.ARTIFACTS_DIR / "manifest.json"
+    if not manifest_path.exists():
+        return list(DEFAULT_REQUIRED_ARTIFACTS)
+
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     return [Path(path).name for path in manifest["required_files"]]
 

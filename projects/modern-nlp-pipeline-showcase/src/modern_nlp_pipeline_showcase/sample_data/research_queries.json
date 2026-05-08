@@ -1,0 +1,74 @@
+[
+  {
+    "query_id": "Q001",
+    "query": "Which paper compares lexical and dense retrieval for scientific literature?",
+    "topic_label": "retrieval",
+    "relevant_paper_id": "P004",
+    "qa_question": "What does the paper conclude about dense retrieval versus lexical retrieval?",
+    "expected_answer": "Dense retrieval improves semantic recall, while lexical retrieval stays competitive on keyword-specific queries."
+  },
+  {
+    "query_id": "Q002",
+    "query": "Find work about reranking retrieved passages for scholarly search.",
+    "topic_label": "retrieval",
+    "relevant_paper_id": "P005",
+    "qa_question": "What is the main benefit of the reranker?",
+    "expected_answer": "It improves mean reciprocal rank on scientific passage retrieval."
+  },
+  {
+    "query_id": "Q003",
+    "query": "Which study uses retrieval-augmented question answering on paper abstracts?",
+    "topic_label": "language_modeling",
+    "relevant_paper_id": "P008",
+    "qa_question": "What factor most strongly affects answer accuracy?",
+    "expected_answer": "Retrieval quality strongly influences answer accuracy."
+  },
+  {
+    "query_id": "Q004",
+    "query": "Find a paper about instruction-tuned models for related work writing.",
+    "topic_label": "language_modeling",
+    "relevant_paper_id": "P007",
+    "qa_question": "How do grounded prompts help the model?",
+    "expected_answer": "Grounded prompting reduces hallucination and preserves citation intent."
+  },
+  {
+    "query_id": "Q005",
+    "query": "Which paper studies topic classifiers under temporal or domain shift?",
+    "topic_label": "robustness",
+    "relevant_paper_id": "P013",
+    "qa_question": "What happens when new terminology appears?",
+    "expected_answer": "Performance drops sharply when new terminology appears."
+  },
+  {
+    "query_id": "Q006",
+    "query": "Find work on robustness to terminology swaps in literature search.",
+    "topic_label": "robustness",
+    "relevant_paper_id": "P014",
+    "qa_question": "Which retrieval approach is more stable under terminology swaps?",
+    "expected_answer": "Dense retrieval remains more stable than lexical ranking."
+  },
+  {
+    "query_id": "Q007",
+    "query": "Which paper learns contrastive sentence embeddings for scientific search?",
+    "topic_label": "representation_learning",
+    "relevant_paper_id": "P001",
+    "qa_question": "What downstream tasks improve with the encoder?",
+    "expected_answer": "Nearest-neighbor retrieval and topic clustering improve."
+  },
+  {
+    "query_id": "Q008",
+    "query": "Find a study about evidence verification for research question answering.",
+    "topic_label": "reasoning",
+    "relevant_paper_id": "P011",
+    "qa_question": "What does the evidence verifier reduce?",
+    "expected_answer": "It reduces unsupported claims."
+  },
+  {
+    "query_id": "Q009",
+    "query": "Which multimodal paper matches figures to captions and summaries?",
+    "topic_label": "multimodal",
+    "relevant_paper_id": "P016",
+    "qa_question": "What retrieval task does the model improve?",
+    "expected_answer": "It improves figure-caption matching for scientific assets."
+  }
+]

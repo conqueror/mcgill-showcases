@@ -9,6 +9,18 @@ from pathlib import Path
 
 from neural_network_foundations_showcase import config
 
+DEFAULT_REQUIRED_ARTIFACTS = (
+    "activation_comparison.csv",
+    "loss_function_comparison.csv",
+    "backprop_gradient_trace.csv",
+    "initialization_comparison.csv",
+    "underfit_overfit_examples.csv",
+    "training_curves.csv",
+    "decision_boundary_summary.csv",
+    "decision_boundaries.png",
+    "summary.md",
+)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse CLI arguments for artifact verification."""
@@ -27,6 +39,9 @@ def required_artifact_files() -> list[str]:
     """Read the artifact manifest and return the required filenames."""
 
     manifest_path = config.ARTIFACTS_DIR / "manifest.json"
+    if not manifest_path.exists():
+        return list(DEFAULT_REQUIRED_ARTIFACTS)
+
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     return [Path(path).name for path in manifest["required_files"]]
 

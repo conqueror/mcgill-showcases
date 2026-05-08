@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Sequence
+from importlib import resources
 
 import pandas as pd
 
@@ -16,7 +17,10 @@ _REQUIRED_COLUMNS = ("paper_id", "title", "topic", "abstract", "summary")
 
 def load_corpus() -> pd.DataFrame:
     """Load the local research corpus and enforce the expected schema."""
-    corpus = pd.read_csv(CORPUS_PATH)
+    if CORPUS_PATH.exists():
+        corpus = pd.read_csv(CORPUS_PATH)
+    else:
+        corpus = _load_sample_corpus()
     missing = set(_REQUIRED_COLUMNS) - set(corpus.columns)
     if missing:
         raise ValueError(f"Corpus is missing columns: {sorted(missing)}")
@@ -25,8 +29,11 @@ def load_corpus() -> pd.DataFrame:
 
 def load_queries() -> list[dict[str, str]]:
     """Load retrieval and QA prompts for evaluation."""
-    with QUERY_PATH.open("r", encoding="utf-8") as handle:
-        raw = json.load(handle)
+    if QUERY_PATH.exists():
+        with QUERY_PATH.open("r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+    else:
+        raw = _load_sample_queries()
     if not isinstance(raw, list):
         raise ValueError("Query file must contain a list of query objects.")
     return [dict(item) for item in raw]
@@ -61,3 +68,19 @@ def _paper_segments(abstract: str, summary: str) -> Sequence[str]:
     abstract_sentences = split_into_sentences(abstract)
     summary_sentences = split_into_sentences(summary)
     return [*abstract_sentences, *summary_sentences]
+
+
+def _load_sample_corpus() -> pd.DataFrame:
+    sample_path = resources.files("modern_nlp_pipeline_showcase").joinpath(
+        "sample_data/research_corpus.csv"
+    )
+    with sample_path.open("r", encoding="utf-8") as handle:
+        return pd.read_csv(handle)
+
+
+def _load_sample_queries() -> object:
+    sample_path = resources.files("modern_nlp_pipeline_showcase").joinpath(
+        "sample_data/research_queries.json"
+    )
+    with sample_path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
