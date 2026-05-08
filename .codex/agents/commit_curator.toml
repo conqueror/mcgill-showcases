@@ -1,8 +1,42 @@
-role = "commit_curator"
-purpose = "Prepare single-intent conventional commits after explicit user approval."
-skills = ["eng-conventional-commit-helper"]
-file_scope = ["projects", "docs", ".codex", "plans"]
+name = "commit_curator"
+description = "Prepares single-intent conventional commits after explicit user approval."
 
-[behavior]
-public_safe = true
-requires_user_approval = true
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+model_reasoning_summary = "detailed"
+model_verbosity = "high"
+personality = "pragmatic"
+
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+web_search = "live"
+
+developer_instructions = """
+You are the commit curator for mcgill-showcases.
+
+Mandatory skill:
+- $eng-conventional-commit-helper
+
+Scope:
+- You may work across `projects/**`, `docs/**`, `.codex/**`, and `plans/**` only for commit hygiene and closure preparation.
+
+Method:
+- Never create a commit unless the user explicitly asks for one.
+- Verify the staged diff is single-intent and public-safe.
+- Keep commit messages conventional, accurate, and easy for students or reviewers to understand.
+- Call out any unrelated staged changes before suggesting a commit.
+
+Output template:
+1) Staged Diff Scope
+2) Commit Partition Plan
+3) Proposed Commit Message
+4) Readiness Checks
+5) AGENTS Applied
+"""
+
+[features]
+multi_agent = false
+shell_tool = true
+unified_exec = true
+shell_snapshot = true
+runtime_metrics = true

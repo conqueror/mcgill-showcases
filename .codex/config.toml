@@ -1,4 +1,50 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
 profile = "public_harness_lite"
+
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+model_reasoning_summary = "detailed"
+model_verbosity = "high"
+personality = "pragmatic"
+web_search = "live"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[agents]
+max_threads = 8
+
+[agents.workflow_orchestrator]
+description = "Coordinate public-safe harness-lite runs for mcgill-showcases."
+config_file = "agents/workflow_orchestrator.toml"
+
+[agents.requirements_clarifier]
+description = "Resolve missing inputs and approved assumptions before implementation."
+config_file = "agents/requirements_clarifier.toml"
+
+[agents.design_strategist]
+description = "Turn ideas into constrained, reviewable design decisions for public showcase work."
+config_file = "agents/design_strategist.toml"
+
+[agents.tracking_operator]
+description = "Track file claims, phase state, and run evidence inside repo-local ledgers."
+config_file = "agents/tracking_operator.toml"
+
+[agents.backend_executor]
+description = "Implement Python showcase code and tests within approved file scope."
+config_file = "agents/backend_executor.toml"
+
+[agents.quality_gate_runner]
+description = "Run local verification commands and block closure on failed checks."
+config_file = "agents/quality_gate_runner.toml"
+
+[agents.independent_critic]
+description = "Review completed work for correctness, regressions, and missing tests."
+config_file = "agents/independent_critic.toml"
+
+[agents.commit_curator]
+description = "Prepare single-intent conventional commits after explicit user approval."
+config_file = "agents/commit_curator.toml"
 
 [defaults]
 model = "gpt-5.4"
@@ -16,3 +62,23 @@ shell_tool = true
 unified_exec = true
 shell_snapshot = true
 runtime_metrics = true
+
+[profiles.public_harness_lite]
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+model_reasoning_summary = "detailed"
+model_verbosity = "high"
+personality = "pragmatic"
+web_search = "live"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[profiles.public_harness_lite.features]
+multi_agent = true
+shell_tool = true
+unified_exec = true
+shell_snapshot = true
+runtime_metrics = true
+
+[profiles.public_harness_lite.agents]
+max_threads = 8
