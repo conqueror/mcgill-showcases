@@ -12,6 +12,7 @@ This repository contains tutorial-style projects with reproducible tooling (`uv`
 ## Table of Contents
 - [Start Here](#start-here)
 - [Project Catalog](#project-catalog)
+- [Clean-Checkout Data And Artifacts](#clean-checkout-data-and-artifacts)
 - [Repository Commands](#repository-commands)
 - [Documentation Site](#documentation-site)
 - [Learning Path](#learning-path)
@@ -58,6 +59,30 @@ If you want the deep-learning sequence specifically, start with `deep-learning-m
 | `learning-to-rank-foundations-showcase` | Learning-to-rank foundations with grouped splits and NDCG | Intermediate | 1.5-2.5 hours | Python, ranking/recommendation basics | [`projects/learning-to-rank-foundations-showcase/README.md`](projects/learning-to-rank-foundations-showcase/README.md) |
 | `ranking-api-productization-showcase` | FastAPI ranking service, schema contracts, structured logging, OpenAPI | Intermediate | 1.5-2.5 hours | Python, API basics, model serving basics | [`projects/ranking-api-productization-showcase/README.md`](projects/ranking-api-productization-showcase/README.md) |
 | `demand-api-observability-showcase` | Demand prediction API with Prometheus metrics and optional OTel tracing | Intermediate | 1.5-2.5 hours | Python, API basics, observability basics | [`projects/demand-api-observability-showcase/README.md`](projects/demand-api-observability-showcase/README.md) |
+
+## Clean-Checkout Data And Artifacts
+
+This repo keeps generated outputs out of git so students can reproduce them locally.
+Most projects write files under `artifacts/` only after `make run`, `make smoke`, or a
+similar project command. A clean checkout may therefore contain only placeholders such
+as `.gitkeep`.
+
+Raw local inputs are also kept out of git by default. Projects that need starter data
+either generate it in code or ship a small bundled sample dataset inside `src/` so
+tests and smoke runs work on a normal laptop without private files.
+
+Use each project README as the source of truth, but the usual flow is:
+
+```bash
+make sync
+make smoke  # or make run
+make verify
+make test
+```
+
+If `make verify` reports missing artifacts before a run, generate the artifacts first.
+The verifier is checking the stable contract for what the project is expected to
+produce, not requiring generated outputs to be committed.
 
 ## Repository Commands
 
