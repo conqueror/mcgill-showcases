@@ -9,6 +9,13 @@ This track teaches agentic systems through a public-safe progression: determinis
 3. `projects/modern-nlp-pipeline-showcase`
 4. `projects/model-release-rollout-showcase`
 
+```mermaid
+flowchart LR
+    A["Autoresearch<br/>agent-guided research loop"] --> B["Agentic Course Assistant<br/>tools, guardrails, traces, evals"]
+    B --> C["Modern NLP Pipeline<br/>language pipeline mechanics"]
+    C --> D["Model Release Rollout<br/>deployment evidence and rollback"]
+```
+
 ## Core Skills Covered
 
 - Separating deterministic workflow logic from model-backed agent behavior.
@@ -72,6 +79,18 @@ uv run adk run adk_course_assistant
 ```
 
 Do not add live SDK execution to default CI. The public classroom contract is the offline harness and its artifact verifier.
+
+```mermaid
+flowchart TD
+    Offline["Offline harness"] --> Evidence["Stable artifacts"]
+    Evidence --> Verify["make verify"]
+    Verify --> Optional{"Optional live extension?"}
+    Optional -- "OpenAI" --> OAI["OpenAI Agents SDK<br/>tools + handoffs + tracing"]
+    Optional -- "Google" --> ADK["Google ADK<br/>root_agent + tools + sessions"]
+    OAI --> Compare["Compare against offline trace"]
+    ADK --> Compare
+    Compare --> CI["Default CI stays offline"]
+```
 
 ## Suggested Reflection Prompts
 

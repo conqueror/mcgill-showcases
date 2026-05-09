@@ -19,6 +19,21 @@ Use the OpenAI Agents SDK when the lesson is about Python-first orchestration wi
 
 In this showcase, `openai_agents_example.py` maps the offline course assistant to a triage agent plus specialist handoffs.
 
+```mermaid
+flowchart TD
+    Runner["Runner.run"] --> Triage["Triage Agent"]
+    Triage --> Tool["function_tool: search_resources"]
+    Triage --> HConcept["Handoff: Concept Specialist"]
+    Triage --> HExercise["Handoff: Exercise Specialist"]
+    Triage --> HDebug["Handoff: Debug Specialist"]
+    Triage --> HProject["Handoff: Project Specialist"]
+    Tool --> Trace["Trace + review evidence"]
+    HConcept --> Trace
+    HExercise --> Trace
+    HDebug --> Trace
+    HProject --> Trace
+```
+
 Install the optional OpenAI Agents SDK extra when you are ready to run it:
 
 ```bash
@@ -40,6 +55,16 @@ Use Google ADK when the lesson is about an agent project that can run through AD
 - A2A, MCP, and multi-agent workflows as students advance.
 
 In this showcase, `google_adk_example.py` keeps the first ADK shape to one `root_agent` and one lookup tool. The `adk_course_assistant/agent.py` wrapper gives ADK the `agent.py` layout it expects:
+
+```mermaid
+flowchart TD
+    CLI["uv run adk run adk_course_assistant"] --> Root["root_agent"]
+    Root --> Tool["course catalog function tool"]
+    Root --> Model["Gemini / Vertex-backed model"]
+    Tool --> Events["ADK events and artifacts"]
+    Model --> Events
+    Events --> Compare["Compare with offline harness artifacts"]
+```
 
 ```bash
 cd projects/agentic-course-assistant-showcase

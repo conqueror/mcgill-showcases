@@ -15,6 +15,20 @@ By the end of the lab, you should be able to:
 
 Expected runtime: 10-20 minutes for the offline path on a normal laptop.
 
+```mermaid
+flowchart TD
+    Start["Run offline harness"] --> Inspect["Inspect response, trace, resources"]
+    Inspect --> Concepts["Map local artifacts to SDK concepts"]
+    Concepts --> Extend["Design one safe extension"]
+    Extend --> Gate["Run make check + make verify"]
+    Gate --> Choice{"Try optional live SDK?"}
+    Choice -- "Not yet" --> Offline["Keep classroom path deterministic"]
+    Choice -- "OpenAI" --> OAI["Install openai extra + use OPENAI_API_KEY"]
+    Choice -- "Google ADK" --> ADK["Install adk extra + use GEMINI_API_KEY"]
+    OAI --> Compare["Compare live behavior to offline evidence"]
+    ADK --> Compare
+```
+
 ## Part 1: Run The Offline Harness
 
 ```bash
@@ -64,6 +78,18 @@ Open:
 - `artifacts/evals/concept_coverage.json`
 
 Use the concept artifacts to connect local code to framework terms:
+
+```mermaid
+flowchart LR
+    Local["Local deterministic code"] --> Trace["agent_trace.json"]
+    Local --> Resources["resource_matches.csv"]
+    Trace --> OpenAI["OpenAI lens:<br/>traces, handoffs, function tools"]
+    Resources --> OpenAI
+    Trace --> ADK["ADK lens:<br/>events, sessions, tools"]
+    Resources --> ADK
+    OpenAI --> Rubric["agent_judge_rubric.json"]
+    ADK --> Rubric
+```
 
 | Local Pattern | OpenAI Agents SDK Lens | Google ADK Lens |
 |---|---|---|

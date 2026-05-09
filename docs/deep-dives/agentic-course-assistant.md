@@ -19,6 +19,17 @@ The course assistant is intentionally small:
 
 The default path is offline and deterministic. It is the path students should run first, and it is the path that belongs in default CI.
 
+```mermaid
+flowchart LR
+    Student["Student question"] --> Triage["Triage + intent classification"]
+    Triage --> Tool["Course catalog tool"]
+    Tool --> Specialist["Specialist response"]
+    Specialist --> Guardrail["Scope + secret guardrails"]
+    Guardrail --> Artifacts["Trace, resources, response, eval artifacts"]
+    Artifacts --> Verify["make verify"]
+    Verify --> Live["Optional OpenAI / Google ADK extension"]
+```
+
 ## Quickstart
 
 ```bash
@@ -84,6 +95,18 @@ This is the recommended order for students:
 3. Add or edit one specialist route.
 4. Add one deterministic test.
 5. Only then install optional live SDK extras.
+
+```mermaid
+flowchart TD
+    A["Understand local trace"] --> B["Pass artifact contract"]
+    B --> C["Extend one route"]
+    C --> D["Add one regression test"]
+    D --> E["Run make check + make verify"]
+    E --> F{"Need live SDK behavior?"}
+    F -- "No" --> G["Keep default CI offline"]
+    F -- "Yes" --> H["Install optional SDK extra"]
+    H --> I["Compare live behavior against offline trace"]
+```
 
 ## Optional Live SDK Path
 

@@ -4,17 +4,37 @@ This map connects the deterministic course-assistant harness to the agent-framew
 
 ## Big Picture
 
-```text
-student question
-  -> triage and intent classification
-  -> deterministic course-catalog tool
-  -> specialist response
-  -> guardrail notes
-  -> trace, resources, concepts, eval rubric, manifest
-  -> optional live OpenAI or Google ADK extension
+```mermaid
+flowchart TD
+    Q["Student question"] --> Triage["Triage and intent classification"]
+    Triage --> Tool["Deterministic course-catalog tool"]
+    Tool --> Specialist["Specialist response"]
+    Specialist --> Guardrails["Guardrail notes"]
+    Guardrails --> Evidence["Trace, resources, concepts, eval rubric, manifest"]
+    Evidence --> Verify["Artifact contract"]
+    Verify --> Live["Optional live OpenAI or Google ADK extension"]
 ```
 
 The offline path is not a weaker version of the project. It is the control sample that lets students understand routing, tools, traces, and evals before hosted model behavior adds variability.
+
+## Concept Relationships
+
+```mermaid
+flowchart LR
+    Agent["Agent contract"] --> Routing["Triage / routing"]
+    Routing --> Handoff["Handoff or specialist selection"]
+    Routing --> Tool["Function tool"]
+    Tool --> Grounding["Grounded resource evidence"]
+    Handoff --> Answer["Specialist answer"]
+    Grounding --> Answer
+    Answer --> Guardrails["Guardrails"]
+    Guardrails --> Trace["Trace evidence"]
+    Trace --> Evals["Evals + agent-as-judge"]
+    Evals --> Harness["Harness contract"]
+    Harness --> Live["Optional SDK execution"]
+    Sessions["Sessions / memory"] -. "later extension" .-> Live
+    A2A["A2A / MCP"] -. "later interoperability" .-> Live
+```
 
 ## Core Concept Map
 

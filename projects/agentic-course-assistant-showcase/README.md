@@ -88,6 +88,25 @@ After `make run`, inspect:
 
 The default offline workflow is intentionally small:
 
+```mermaid
+flowchart TD
+    Q["Student question"] --> T["triage_agent"]
+    T --> C["classify_question"]
+    C --> I{"Intent"}
+    I --> Concept["concept specialist"]
+    I --> Exercise["exercise specialist"]
+    I --> Debug["debug specialist"]
+    I --> Project["project specialist"]
+    Concept --> R["search_resources tool"]
+    Exercise --> R
+    Debug --> R
+    Project --> R
+    R --> A["compose answer"]
+    A --> G["guardrail_notes"]
+    G --> W["write_artifacts"]
+    W --> V["make verify"]
+```
+
 1. `triage_agent` receives the question.
 2. `classify_question` routes it to `concept`, `exercise`, `debug`, or `project`.
 3. `search_resources` acts as a deterministic course-catalog tool.
@@ -101,6 +120,15 @@ This shape maps cleanly to hosted SDKs without making the first student run depe
 ## SDK Examples
 
 The repository did not previously include a direct OpenAI Agents SDK or Google ADK example. This showcase adds both as optional reference modules:
+
+```mermaid
+flowchart LR
+    Offline["Offline control sample"] --> OAI["OpenAI Agents SDK module"]
+    Offline --> ADK["Google ADK root_agent"]
+    OAI --> Same["Same mental model:<br/>route, tool, guardrail, trace"]
+    ADK --> Same
+    Same --> Review["Compare live output with offline artifacts"]
+```
 
 - `src/agentic_course_assistant/openai_agents_example.py` uses `Agent`, `Runner`, `function_tool`, tools, and handoffs.
 - `src/agentic_course_assistant/google_adk_example.py` defines the ADK `root_agent` and function tool.
