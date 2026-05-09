@@ -4,6 +4,16 @@ Welcome to the documentation site for `mcgill-showcases`.
 
 This repo is organized as learning-by-doing showcase projects with reproducible scripts, clear artifacts, and track-based progression paths.
 
+## Flagship Agentic Systems Showcase
+
+!!! tip "Agentic Course Assistant"
+    Start here when you want to learn agent frameworks without making your first run depend on hosted credentials. The [Agentic Course Assistant deep dive](deep-dives/agentic-course-assistant.md) teaches routing, tools, guardrails, trace evidence, eval rubrics, and framework comparison through a deterministic offline harness first, then shows how the same design maps to optional OpenAI Agents SDK and Google ADK usage.
+
+    - Track: [Agent Frameworks](tracks/agent-frameworks.md)
+    - Project: `projects/agentic-course-assistant-showcase`
+    - Default path: local, deterministic, and CI-safe with no API keys
+    - Optional extension: live OpenAI or Google ADK runs after students install SDK extras and configure credentials
+
 ## Start Here
 
 1. Run local setup from [README.md](https://github.com/conqueror/mcgill-showcases/blob/main/README.md) or [Getting Started](getting-started.md).
@@ -19,6 +29,7 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - Forecasting: time-aware demand modeling and observability-ready APIs.
 - Responsible AI: fairness, explainability, and causal decision support.
 - Optimization: HPO, agentic workflow, and policy optimization workflows.
+- Agent Frameworks: deterministic agent workflows, course-assistant tools, guardrails, traces, eval rubrics, OpenAI Agents SDK concepts, and Google ADK concepts.
 
 ## Project Deep Dives
 
@@ -28,6 +39,7 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - [MLOps drift deep dive](deep-dives/mlops-drift.md)
 - [Ranking track deep dive](deep-dives/ranking-track.md)
 - [Forecasting track deep dive](deep-dives/forecasting-track.md)
+- [Agentic course assistant deep dive](deep-dives/agentic-course-assistant.md)
 
 ## Contributor Entry
 
