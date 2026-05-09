@@ -16,6 +16,9 @@ except ImportError as exc:  # pragma: no cover - optional SDK dependency
     ) from exc
 
 from agentic_course_assistant.course_catalog import search_resources
+from agentic_course_assistant.runtime_config import apply_live_environment
+
+_RUNTIME_CONFIG = apply_live_environment()
 
 
 def lookup_course_resources(question: str) -> dict[str, object]:
@@ -37,7 +40,7 @@ def lookup_course_resources(question: str) -> dict[str, object]:
 
 
 root_agent = Agent(
-    model="gemini-flash-latest",
+    model=_RUNTIME_CONFIG.gemini_model,
     name="course_assistant",
     description="Routes student ML questions to a grounded course-assistant response.",
     instruction=(

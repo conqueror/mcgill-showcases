@@ -15,6 +15,12 @@ __pycache__/
 .venv/
 
 # Project-local envs and caches
+.env
+.env.*
+!.env.example
+projects/**/.env
+projects/**/.env.*
+!projects/**/.env.example
 projects/**/.venv/
 projects/**/.pytest_cache/
 projects/**/.ruff_cache/
@@ -27,6 +33,8 @@ projects/**/artifacts/**
 !projects/**/artifacts/.gitkeep
 !projects/**/artifacts/**/.gitkeep
 !projects/agentic-course-assistant-showcase/artifacts/manifest.json
+!projects/agentic-course-assistant-showcase/artifacts/harness/
+!projects/agentic-course-assistant-showcase/artifacts/harness/**
 
 # Local raw datasets (keep placeholders)
 projects/**/data/raw/**

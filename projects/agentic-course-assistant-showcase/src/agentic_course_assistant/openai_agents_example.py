@@ -16,6 +16,9 @@ except ImportError as exc:  # pragma: no cover - optional SDK dependency
     ) from exc
 
 from agentic_course_assistant.course_catalog import search_resources
+from agentic_course_assistant.runtime_config import apply_live_environment
+
+_RUNTIME_CONFIG = apply_live_environment()
 
 
 @function_tool  # type: ignore[untyped-decorator, unused-ignore]
@@ -30,6 +33,7 @@ def lookup_course_resources(question: str) -> str:
 
 concept_coach = Agent(
     name="Concept coach",
+    model=_RUNTIME_CONFIG.openai_model,
     handoff_description="Explains ML and agentic AI concepts clearly.",
     instructions="Explain the concept, name the artifact to inspect, and keep the answer concise.",
     tools=[lookup_course_resources],
@@ -37,6 +41,7 @@ concept_coach = Agent(
 
 practice_designer = Agent(
     name="Practice designer",
+    model=_RUNTIME_CONFIG.openai_model,
     handoff_description="Creates small practice tasks for students.",
     instructions="Turn the question into a runnable exercise with one expected output.",
     tools=[lookup_course_resources],
@@ -44,6 +49,7 @@ practice_designer = Agent(
 
 debug_mentor = Agent(
     name="Debug mentor",
+    model=_RUNTIME_CONFIG.openai_model,
     handoff_description="Helps debug suspicious metrics, leakage, and split issues.",
     instructions="Ask for evidence, inspect likely failure modes, and never request secrets.",
     tools=[lookup_course_resources],
@@ -51,6 +57,7 @@ debug_mentor = Agent(
 
 project_planner = Agent(
     name="Project planner",
+    model=_RUNTIME_CONFIG.openai_model,
     handoff_description="Scopes student portfolio projects and showcase extensions.",
     instructions="Keep the build small, testable, and artifact-driven.",
     tools=[lookup_course_resources],
@@ -58,6 +65,7 @@ project_planner = Agent(
 
 triage_agent = Agent(
     name="Course assistant triage",
+    model=_RUNTIME_CONFIG.openai_model,
     instructions=(
         "Route each student question to the best specialist. Use the course lookup tool when "
         "grounding the answer in project resources."
@@ -70,5 +78,10 @@ triage_agent = Agent(
 async def run_openai_agents_course_assistant(question: str) -> str:
     """Run the SDK agent and return its final answer."""
 
+    if not _RUNTIME_CONFIG.openai_enabled:
+        raise RuntimeError(
+            "Set OPENAI_API_KEY in your environment or project .env before running "
+            "the optional OpenAI Agents SDK example."
+        )
     result = await Runner.run(triage_agent, question)
     return str(result.final_output)

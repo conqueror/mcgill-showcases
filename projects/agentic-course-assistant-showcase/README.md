@@ -45,6 +45,18 @@ Run quality checks:
 make check
 ```
 
+## Student Path
+
+Use the docs in this order:
+
+1. Run the deterministic offline harness with `make smoke`.
+2. Follow [`docs/lab-guide.md`](docs/lab-guide.md) to inspect the answer, trace, tool output, and eval rubric.
+3. Read [`docs/concept-map.md`](docs/concept-map.md) to connect each local artifact to OpenAI Agents SDK and Google ADK concepts.
+4. Use [`docs/learning-guide.md`](docs/learning-guide.md) for reflection prompts and a small route-extension exercise.
+5. Use [`docs/sdk-comparison.md`](docs/sdk-comparison.md) before installing optional live SDK extras.
+
+The MkDocs site also includes a first-class [Agentic Course Assistant deep dive](../../docs/deep-dives/agentic-course-assistant.md) and [Agent Frameworks track](../../docs/tracks/agent-frameworks.md).
+
 Install live SDK extras only when you are ready to run the hosted examples:
 
 ```bash
@@ -52,6 +64,10 @@ make sync-openai  # installs openai-agents
 make sync-adk     # installs google-adk
 make sync-live    # installs both optional SDK extras
 ```
+
+For local hosted runs, copy `.env.example` to `.env` and set `OPENAI_API_KEY`
+and/or `GEMINI_API_KEY`. The project keeps `.env` ignored and maps
+`GEMINI_API_KEY` to `GOOGLE_API_KEY` for Google ADK compatibility at runtime.
 
 ## Key Artifacts
 
@@ -90,7 +106,25 @@ The repository did not previously include a direct OpenAI Agents SDK or Google A
 - `src/agentic_course_assistant/google_adk_example.py` defines the ADK `root_agent` and function tool.
 - `adk_course_assistant/agent.py` is an ADK-discoverable wrapper for `uv run adk run adk_course_assistant`.
 
-The default tests do not import these modules because credentials are optional and the first classroom path stays offline. Use `make sync-openai`, `make sync-adk`, or `make sync-live` to install the dependency-managed SDK extras.
+The default tests do not import these modules because credentials are optional and the first classroom path stays offline. Default CI should keep using the deterministic harness, `make check`, and `make verify`; live SDK execution is an opt-in local extension. Use `make sync-openai`, `make sync-adk`, or `make sync-live` to install the dependency-managed SDK extras.
+
+Optional OpenAI run shape after configuring `OPENAI_API_KEY` outside source control:
+
+```bash
+uv run python - <<'PY'
+import asyncio
+from agentic_course_assistant.openai_agents_example import run_openai_agents_course_assistant
+
+question = "How should I debug a suspicious validation score?"
+print(asyncio.run(run_openai_agents_course_assistant(question)))
+PY
+```
+
+Optional Google ADK run shape after configuring the Gemini or Vertex credentials expected by ADK:
+
+```bash
+uv run adk run adk_course_assistant
+```
 
 ## Comprehensive Concept Atlas
 

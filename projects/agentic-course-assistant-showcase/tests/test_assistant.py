@@ -17,6 +17,7 @@ from agentic_course_assistant.concept_atlas import (
     write_concept_artifacts,
 )
 from agentic_course_assistant.course_catalog import search_resources
+from agentic_course_assistant.harness_lab import run_harness_lab
 
 
 def test_classifies_debug_question() -> None:
@@ -107,6 +108,7 @@ def test_verify_artifacts_validates_trace_and_resource_schema(tmp_path: Path) ->
 
     errors = verify(tmp_path)
 
+    assert any("missing canonical files" in error for error in errors)
     assert any("agent_trace.json missing keys" in error for error in errors)
     assert any("resource_matches.csv columns" in error for error in errors)
 
@@ -138,26 +140,7 @@ def test_concept_atlas_covers_requested_topics() -> None:
 
 
 def test_concept_artifacts_are_written_and_verified(tmp_path: Path) -> None:
-    result = answer_question("What is A2A and how is it different from a tool call?")
-    write_artifacts(result, tmp_path / "artifacts")
-    (tmp_path / "artifacts/manifest.json").write_text(
-        json.dumps(
-            {
-                "required_files": [
-                    "artifacts/course_assistant_response.md",
-                    "artifacts/agent_trace.json",
-                    "artifacts/resource_matches.csv",
-                    "artifacts/concepts/agentic_concepts.csv",
-                    "artifacts/concepts/openai_vs_adk_concepts.json",
-                    "artifacts/concepts/refined_questions.md",
-                    "artifacts/concepts/student_learning_path.md",
-                    "artifacts/evals/agent_judge_rubric.json",
-                    "artifacts/evals/concept_coverage.json",
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
+    run_harness_lab(tmp_path, question="What is A2A and how is it different from a tool call?")
 
     errors = verify(tmp_path)
 
@@ -172,26 +155,7 @@ def test_concept_artifacts_are_written_and_verified(tmp_path: Path) -> None:
 
 
 def test_verify_artifacts_rejects_corrupted_teaching_markdown(tmp_path: Path) -> None:
-    result = answer_question("Explain agent memory and sessions")
-    write_artifacts(result, tmp_path / "artifacts")
-    (tmp_path / "artifacts/manifest.json").write_text(
-        json.dumps(
-            {
-                "required_files": [
-                    "artifacts/course_assistant_response.md",
-                    "artifacts/agent_trace.json",
-                    "artifacts/resource_matches.csv",
-                    "artifacts/concepts/agentic_concepts.csv",
-                    "artifacts/concepts/openai_vs_adk_concepts.json",
-                    "artifacts/concepts/refined_questions.md",
-                    "artifacts/concepts/student_learning_path.md",
-                    "artifacts/evals/agent_judge_rubric.json",
-                    "artifacts/evals/concept_coverage.json",
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
+    run_harness_lab(tmp_path, question="Explain agent memory and sessions")
 
     (tmp_path / "artifacts/course_assistant_response.md").write_text("junk\n", encoding="utf-8")
     (tmp_path / "artifacts/concepts/student_learning_path.md").write_text(

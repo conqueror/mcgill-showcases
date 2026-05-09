@@ -1,0 +1,29 @@
+{
+  "schema_name": "agentic_course_assistant_trace",
+  "version": 1,
+  "required_top_level_keys": [
+    "question",
+    "intent",
+    "agent_name",
+    "guardrails",
+    "harness_events",
+    "trace",
+    "resource_ids"
+  ],
+  "required_harness_events": [
+    "tool_call",
+    "handoff",
+    "guardrail_check"
+  ],
+  "harness_lifecycle_artifacts": [
+    "artifacts/harness/judge_verdicts.json",
+    "artifacts/harness/run_ledger.jsonl"
+  ],
+  "workflow_patterns": [
+    "sequential_course_plan",
+    "loop_refinement",
+    "parallel_resource_review",
+    "router_triage",
+    "custom_policy_agent"
+  ]
+}

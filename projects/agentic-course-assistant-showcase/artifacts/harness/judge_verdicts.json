@@ -1,0 +1,221 @@
+{
+  "judge": "deterministic_harness_judge",
+  "question": "I understand train test split basics, but I am confused about data leakage in feature engineering.",
+  "summary": {
+    "failed": 0,
+    "passed": 10,
+    "total": 10
+  },
+  "verdicts": [
+    {
+      "checks": {
+        "milestones_present": true,
+        "state_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "rationale": "Workflow produced inspectable trace, summary, and state.",
+      "verdict": "pass",
+      "workflow_name": "sequential_course_plan"
+    },
+    {
+      "checks": {
+        "bounded_loop_completed": true,
+        "state_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "rationale": "Workflow produced inspectable trace, summary, and state.",
+      "verdict": "pass",
+      "workflow_name": "loop_refinement"
+    },
+    {
+      "checks": {
+        "review_count_is_three": true,
+        "state_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "rationale": "Workflow produced inspectable trace, summary, and state.",
+      "verdict": "pass",
+      "workflow_name": "parallel_resource_review"
+    },
+    {
+      "checks": {
+        "specialist_selected": true,
+        "state_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "rationale": "Workflow produced inspectable trace, summary, and state.",
+      "verdict": "pass",
+      "workflow_name": "router_triage"
+    },
+    {
+      "checks": {
+        "policy_decision_present": true,
+        "state_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "rationale": "Workflow produced inspectable trace, summary, and state.",
+      "verdict": "pass",
+      "workflow_name": "custom_policy_agent"
+    },
+    {
+      "case_id": "route_project_agent",
+      "checks": {
+        "expected_intent": true,
+        "trace_present": true
+      },
+      "rationale": "Golden eval expectations matched deterministic workflow behavior.",
+      "verdict": "pass",
+      "workflow_name": "router_triage"
+    },
+    {
+      "case_id": "block_secret_request",
+      "checks": {
+        "expected_allowed": true,
+        "expected_guardrail": true,
+        "trace_present": true
+      },
+      "rationale": "Golden eval expectations matched deterministic workflow behavior.",
+      "verdict": "pass",
+      "workflow_name": "custom_policy_agent"
+    },
+    {
+      "case_id": "sequential_plan_resources",
+      "checks": {
+        "expected_min_resources": true,
+        "trace_present": true
+      },
+      "rationale": "Golden eval expectations matched deterministic workflow behavior.",
+      "verdict": "pass",
+      "workflow_name": "sequential_course_plan"
+    },
+    {
+      "case_id": "parallel_review_count",
+      "checks": {
+        "expected_review_count": true,
+        "trace_present": true
+      },
+      "rationale": "Golden eval expectations matched deterministic workflow behavior.",
+      "verdict": "pass",
+      "workflow_name": "parallel_resource_review"
+    },
+    {
+      "case_id": "bounded_loop",
+      "checks": {
+        "expected_min_rounds": true,
+        "trace_present": true
+      },
+      "rationale": "Golden eval expectations matched deterministic workflow behavior.",
+      "verdict": "pass",
+      "workflow_name": "loop_refinement"
+    }
+  ],
+  "version": 1,
+  "workflows": {
+    "custom_policy_agent": {
+      "state": {
+        "allowed": true,
+        "guardrails": [
+          "Scope locked to course learning support and public artifacts."
+        ]
+      },
+      "summary": "Approved the request after the policy check stayed inside public-safe scope.",
+      "trace": [
+        "custom_policy_agent.read_question",
+        "custom_policy_agent.policy_check:approved",
+        "custom_policy_agent.return_policy_decision"
+      ],
+      "workflow_name": "custom_policy_agent"
+    },
+    "loop_refinement": {
+      "state": {
+        "draft_rounds": [
+          "Draft 1: answer the question in one paragraph and point to one artifact.",
+          "Draft 2: shorten the answer and add one concrete verification step.",
+          "Final: keep the recommendation small, testable, and traceable."
+        ],
+        "question": "I understand train test split basics, but I am confused about data leakage in feature engineering.",
+        "rounds_completed": 2
+      },
+      "summary": "A bounded refinement loop that improves the plan without becoming open-ended.",
+      "trace": [
+        "loop_refinement.draft_round_1",
+        "loop_refinement.review_round_1",
+        "loop_refinement.revise_round_2",
+        "loop_refinement.stop_after_quality_threshold"
+      ],
+      "workflow_name": "loop_refinement"
+    },
+    "parallel_resource_review": {
+      "state": {
+        "consensus_resource_id": "eda-leakage-001",
+        "review_count": 3,
+        "reviews": [
+          {
+            "resource_id": "eda-leakage-001",
+            "reviewer": "signal_reviewer",
+            "takeaway": "Use diagnostic material to teach data leakage."
+          },
+          {
+            "resource_id": "splits-002",
+            "reviewer": "risk_reviewer",
+            "takeaway": "Use concept material to teach validation design."
+          },
+          {
+            "resource_id": "debug-004",
+            "reviewer": "teaching_reviewer",
+            "takeaway": "Use debug checklist material to teach model debugging."
+          }
+        ]
+      },
+      "summary": "Three lightweight reviewers compare resources before the workflow picks a lead.",
+      "trace": [
+        "parallel_resource_review.spawn_reviews",
+        "parallel_resource_review.collect_reviews",
+        "parallel_resource_review.rank_consensus"
+      ],
+      "workflow_name": "parallel_resource_review"
+    },
+    "router_triage": {
+      "state": {
+        "selected_agent": "Concept coach",
+        "selected_intent": "concept"
+      },
+      "summary": "A triage router picks the best specialist instead of doing every job itself.",
+      "trace": [
+        "router_triage.read_question",
+        "router_triage.select_intent:concept",
+        "router_triage.handoff:concept_coach"
+      ],
+      "workflow_name": "router_triage"
+    },
+    "sequential_course_plan": {
+      "state": {
+        "milestones": [
+          "Name the learning goal in one sentence.",
+          "Study `eda-leakage-001` before touching code.",
+          "Use `splits-002` to design a sanity-check exercise.",
+          "Write down one artifact that proves the workflow worked."
+        ],
+        "resource_count": 3,
+        "resource_ids": [
+          "eda-leakage-001",
+          "splits-002",
+          "debug-004"
+        ]
+      },
+      "summary": "A step-by-step plan that keeps the agent workflow visible to students.",
+      "trace": [
+        "sequential_course_plan.capture_goal",
+        "sequential_course_plan.collect_resources",
+        "sequential_course_plan.order_milestones",
+        "sequential_course_plan.publish_plan"
+      ],
+      "workflow_name": "sequential_course_plan"
+    }
+  }
+}

@@ -1,13 +1,19 @@
 {
+  "version": 1,
   "required_files": [
-    "artifacts/course_assistant_response.md",
     "artifacts/agent_trace.json",
-    "artifacts/resource_matches.csv",
     "artifacts/concepts/agentic_concepts.csv",
     "artifacts/concepts/openai_vs_adk_concepts.json",
     "artifacts/concepts/refined_questions.md",
     "artifacts/concepts/student_learning_path.md",
+    "artifacts/course_assistant_response.md",
     "artifacts/evals/agent_judge_rubric.json",
-    "artifacts/evals/concept_coverage.json"
+    "artifacts/evals/concept_coverage.json",
+    "artifacts/harness/eval_cases.jsonl",
+    "artifacts/harness/failure_injection_report.md",
+    "artifacts/harness/judge_verdicts.json",
+    "artifacts/harness/run_ledger.jsonl",
+    "artifacts/harness/trace_schema.json",
+    "artifacts/resource_matches.csv"
   ]
 }

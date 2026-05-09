@@ -27,6 +27,7 @@ def write_artifacts(result: AssistantResult, output_dir: Path) -> list[Path]:
                 "intent": result.intent,
                 "agent_name": result.agent_name,
                 "guardrails": list(result.guardrails),
+                "harness_events": _harness_events(result),
                 "trace": list(result.trace),
                 "resource_ids": [resource.resource_id for resource in result.resources],
             },
@@ -54,6 +55,30 @@ def write_artifacts(result: AssistantResult, output_dir: Path) -> list[Path]:
                 }
             )
     return [response_path, trace_path, matches_path, *concept_paths]
+
+
+def _harness_events(result: AssistantResult) -> list[dict[str, str]]:
+    trace_text = " ".join(result.trace)
+    return [
+        {
+            "event_type": "tool_call",
+            "name": _require_trace_step(trace_text, "course_catalog_tool.search_resources"),
+        },
+        {
+            "event_type": "handoff",
+            "name": _require_trace_step(trace_text, result.agent_name.lower().replace(" ", "_")),
+        },
+        {
+            "event_type": "guardrail_check",
+            "name": _require_trace_step(trace_text, "guardrail.scope_check"),
+        },
+    ]
+
+
+def _require_trace_step(trace_text: str, expected_step: str) -> str:
+    if expected_step not in trace_text:
+        raise ValueError(f"trace is missing required step: {expected_step}")
+    return expected_step
 
 
 def _render_markdown(result: AssistantResult) -> str:

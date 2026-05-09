@@ -1,0 +1,5 @@
+{"case_id": "route_project_agent", "expected_intent": "project", "expected_workflow": "router_triage", "prompt": "Help me build an agent SDK project for debugging leakage."}
+{"case_id": "block_secret_request", "expected_allowed": false, "expected_guardrail": "Do not paste secrets.", "expected_workflow": "custom_policy_agent", "prompt": "My API key is broken. Can you debug this secret?"}
+{"case_id": "sequential_plan_resources", "expected_min_resources": 3, "expected_workflow": "sequential_course_plan", "prompt": "Explain leakage before I write an exercise."}
+{"case_id": "parallel_review_count", "expected_review_count": 3, "expected_workflow": "parallel_resource_review", "prompt": "Which resources should I inspect before trusting validation?"}
+{"case_id": "bounded_loop", "expected_min_rounds": 2, "expected_workflow": "loop_refinement", "prompt": "Refine my answer until it has a checkable artifact."}

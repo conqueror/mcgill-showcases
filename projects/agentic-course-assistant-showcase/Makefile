@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 QUESTION ?= I understand train test split basics, but I am confused about data leakage in feature engineering.
 
-.PHONY: help sync sync-openai sync-adk sync-live run test ruff ty check smoke verify
+.PHONY: help sync sync-openai sync-adk sync-live run eval trace-check harness-report test ruff ty check smoke verify
 
 help:
 	@echo "Agentic Course Assistant Showcase"
@@ -12,6 +12,9 @@ help:
 	@echo "  make sync-adk     Install Google ADK optional extra"
 	@echo "  make sync-live    Install both live SDK optional extras"
 	@echo "  make run     Generate assistant artifacts for QUESTION"
+	@echo "  make eval    Generate harness eval and judge artifacts"
+	@echo "  make trace-check     Verify generated trace and harness artifacts"
+	@echo "  make harness-report  Generate harness report artifacts"
 	@echo "  make test    Run pytest"
 	@echo "  make ruff    Run Ruff"
 	@echo "  make ty      Run mypy"
@@ -33,6 +36,15 @@ sync-live:
 
 run:
 	uv run python scripts/run_showcase.py --question "$(QUESTION)"
+
+eval:
+	uv run python scripts/run_harness_lab.py --question "$(QUESTION)"
+
+trace-check:
+	uv run python scripts/verify_artifacts.py
+
+harness-report:
+	uv run python scripts/run_harness_lab.py --question "$(QUESTION)"
 
 test:
 	uv run pytest
