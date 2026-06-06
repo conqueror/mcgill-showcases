@@ -29,6 +29,7 @@
 2. `projects/automl-hpo-showcase`
 3. `projects/autoresearch`
 4. `projects/rl-bandits-policy-showcase`
+5. `projects/student-support-rl-showcase`
 
 ## Path F: Feature and Representation Focus
 1. `projects/sota-supervised-learning-showcase`
@@ -88,6 +89,12 @@
 1. `projects/autoresearch`
 2. `projects/agentic-course-assistant-showcase`
 3. `projects/modern-nlp-pipeline-showcase`
+4. `projects/model-release-rollout-showcase`
+
+## Path P: Reinforcement Learning Decision Workflow
+1. `projects/rl-bandits-policy-showcase`
+2. `projects/student-support-rl-showcase`
+3. Re-run `projects/student-support-rl-showcase` with `make sync-drl && make run-drl-optional` to study DQN and PPO on the same environment
 4. `projects/model-release-rollout-showcase`
 
 ## How To Know You Are Progressing

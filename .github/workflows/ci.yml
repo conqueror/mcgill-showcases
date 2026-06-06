@@ -145,6 +145,7 @@ jobs:
           - batch-vs-stream-ml-systems-showcase
           - model-release-rollout-showcase
           - rl-bandits-policy-showcase
+          - student-support-rl-showcase
 
     defaults:
       run:
@@ -169,10 +170,20 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ matrix.project }}" in
-            batch-vs-stream-ml-systems-showcase|model-release-rollout-showcase|rl-bandits-policy-showcase)
+            batch-vs-stream-ml-systems-showcase|model-release-rollout-showcase|rl-bandits-policy-showcase|student-support-rl-showcase)
               uv run ruff check src tests scripts
               uv run mypy src tests scripts
               uv run pytest -q
+              if [[ "${{ matrix.project }}" == "student-support-rl-showcase" ]]; then
+                uv sync --extra dev --extra drl
+                uv run python scripts/run_mdp_simulation.py --quick
+                uv run python scripts/run_bandit.py --quick
+                uv run python scripts/run_q_learning.py --quick
+                uv run python scripts/run_reward_hacking_check.py --quick
+                uv run python scripts/run_policy_evaluation.py --quick
+                uv run python scripts/run_drl_optional.py --quick
+                uv run python scripts/verify_artifacts.py
+              fi
               ;;
             *)
               echo "Unknown project in systems-ci: ${{ matrix.project }}" >&2

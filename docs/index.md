@@ -28,7 +28,7 @@ This repo is organized as learning-by-doing showcase projects with reproducible 
 - Ranking: grouped ranking modeling and API productization.
 - Forecasting: time-aware demand modeling and observability-ready APIs.
 - Responsible AI: fairness, explainability, and causal decision support.
-- Optimization: HPO, agentic workflow, and policy optimization workflows.
+- Optimization: HPO, agentic workflow, policy optimization, reward design, and offline policy-evaluation workflows.
 - Agent Frameworks: deterministic agent workflows, course-assistant tools, guardrails, traces, eval rubrics, OpenAI Agents SDK concepts, and Google ADK concepts.
 
 ## Project Deep Dives

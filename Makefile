@@ -11,6 +11,7 @@ AUTORESEARCH_DIR := projects/autoresearch
 AGENTIC_COURSE_DIR := projects/agentic-course-assistant-showcase
 FE_DIR := projects/feature-engineering-dimred-showcase
 RL_DIR := projects/rl-bandits-policy-showcase
+STUDENT_SUPPORT_RL_DIR := projects/student-support-rl-showcase
 DL_MATH_DIR := projects/deep-learning-math-foundations-showcase
 NN_FOUNDATIONS_DIR := projects/neural-network-foundations-showcase
 PYTORCH_TRAIN_DIR := projects/pytorch-training-regularization-showcase
@@ -68,6 +69,7 @@ sync:
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) sync
 	$(MAKE) -C $(FE_DIR) sync
 	$(MAKE) -C $(RL_DIR) sync
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) sync
 	$(MAKE) -C $(SYSTEMS_DIR) sync
 	$(MAKE) -C $(ROLLOUT_DIR) sync
 	$(MAKE) -C $(EDA_DIR) sync
@@ -96,6 +98,7 @@ lint:
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) ruff
 	$(MAKE) -C $(FE_DIR) ruff
 	$(MAKE) -C $(RL_DIR) ruff
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) ruff
 	$(MAKE) -C $(SYSTEMS_DIR) ruff
 	$(MAKE) -C $(ROLLOUT_DIR) ruff
 	$(MAKE) -C $(EDA_DIR) ruff
@@ -120,6 +123,7 @@ type ty:
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) ty
 	$(MAKE) -C $(FE_DIR) ty
 	$(MAKE) -C $(RL_DIR) ty
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) ty
 	$(MAKE) -C $(SYSTEMS_DIR) ty
 	$(MAKE) -C $(ROLLOUT_DIR) ty
 	$(MAKE) -C $(EDA_DIR) ty
@@ -144,6 +148,7 @@ test:
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) test
 	$(MAKE) -C $(FE_DIR) test
 	$(MAKE) -C $(RL_DIR) test
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) test
 	$(MAKE) -C $(SYSTEMS_DIR) test
 	$(MAKE) -C $(ROLLOUT_DIR) test
 	$(MAKE) -C $(EDA_DIR) test
@@ -185,6 +190,7 @@ verify:
 	@if [ -f "$(AGENTIC_COURSE_DIR)/artifacts/agent_trace.json" ]; then $(MAKE) -C $(AGENTIC_COURSE_DIR) verify; else echo "Skipping $(AGENTIC_COURSE_DIR) verify: run showcase first"; fi
 	@if [ -f "$(FE_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(FE_DIR) verify; else echo "Skipping $(FE_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(RL_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(RL_DIR) verify; else echo "Skipping $(RL_DIR) verify: run pipeline first"; fi
+	@if [ -f "$(STUDENT_SUPPORT_RL_DIR)/artifacts/concepts/mdp_spec.md" ]; then $(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) verify; else echo "Skipping $(STUDENT_SUPPORT_RL_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(SYSTEMS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(SYSTEMS_DIR) verify; else echo "Skipping $(SYSTEMS_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(ROLLOUT_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(ROLLOUT_DIR) verify; else echo "Skipping $(ROLLOUT_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(EDA_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(EDA_DIR) verify; else echo "Skipping $(EDA_DIR) verify: run pipeline first"; fi
@@ -208,6 +214,7 @@ smoke:
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) smoke
 	$(MAKE) -C $(FE_DIR) smoke
 	$(MAKE) -C $(RL_DIR) smoke
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) smoke
 	$(MAKE) -C $(SYSTEMS_DIR) smoke
 	$(MAKE) -C $(ROLLOUT_DIR) smoke
 	$(MAKE) -C $(EDA_DIR) smoke

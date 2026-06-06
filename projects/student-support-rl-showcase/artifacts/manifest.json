@@ -1,0 +1,33 @@
+{
+  "optional_files": [
+    "artifacts/drl_optional/bridge_report.md",
+    "artifacts/drl_optional/rl_family_comparison.csv",
+    "artifacts/drl_optional/scenario_rollups.csv",
+    "artifacts/drl_optional/training_summary.csv",
+    "artifacts/drl_optional/policy_gradient_notes.md"
+  ],
+  "required_files": [
+    "artifacts/concepts/mdp_spec.md",
+    "artifacts/concepts/concept_map.csv",
+    "artifacts/concepts/algorithm_progression.md",
+    "artifacts/bandit/reward_trace.csv",
+    "artifacts/bandit/regret_trace.csv",
+    "artifacts/mdp/sample_episodes.csv",
+    "artifacts/q_learning/training_curve.csv",
+    "artifacts/q_learning/q_table.csv",
+    "artifacts/dp/optimal_action_values.csv",
+    "artifacts/dp/q_learning_gap.csv",
+    "artifacts/sarsa/training_curve.csv",
+    "artifacts/sarsa/q_table.csv",
+    "artifacts/policy_gradient/training_curve.csv",
+    "artifacts/eval/policy_comparison.csv",
+    "artifacts/eval/scenario_results.csv",
+    "artifacts/reward/reward_hacking_report.md",
+    "artifacts/reward/reward_spec_good.md",
+    "artifacts/reward/reward_spec_bad.md",
+    "artifacts/governance/safety_controls.md",
+    "artifacts/governance/offline_eval_plan.md",
+    "artifacts/business/deploy_shadow_reject_memo.md"
+  ],
+  "version": 1
+}

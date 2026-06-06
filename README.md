@@ -54,6 +54,7 @@ If you want the deep-learning sequence specifically, start with `deep-learning-m
 | `feature-engineering-dimred-showcase` | Encoding, feature selection, PCA/t-SNE/UMAP comparison | Beginner-Intermediate | 1.5-2.5 hours | Python, preprocessing basics | [`projects/feature-engineering-dimred-showcase/README.md`](projects/feature-engineering-dimred-showcase/README.md) |
 | `modern-nlp-pipeline-showcase` | Shared text pipeline for classification, retrieval, QA, and summarization on research abstracts | Intermediate | 2-3 hours | Python, basic ML, interest in NLP systems | [`projects/modern-nlp-pipeline-showcase/README.md`](projects/modern-nlp-pipeline-showcase/README.md) |
 | `rl-bandits-policy-showcase` | Multi-armed bandits, reward/regret analysis, policy recommendation | Intermediate | 1.5-2.5 hours | Python, probability basics | [`projects/rl-bandits-policy-showcase/README.md`](projects/rl-bandits-policy-showcase/README.md) |
+| `student-support-rl-showcase` | Contextual bandits, MDPs, dynamic programming (exact Q*), tabular Q-learning and SARSA, REINFORCE policy gradients, optional DQN/PPO comparison, reward hacking, offline evaluation, and deployment caution | Intermediate | 1.5-2.5 hours | Python, probability basics, `rl-bandits-policy-showcase` helpful | [`projects/student-support-rl-showcase/README.md`](projects/student-support-rl-showcase/README.md) |
 | `batch-vs-stream-ml-systems-showcase` | Batch vs stream KPI pipelines, parity and latency analysis | Intermediate | 2-3 hours | Python, data systems basics | [`projects/batch-vs-stream-ml-systems-showcase/README.md`](projects/batch-vs-stream-ml-systems-showcase/README.md) |
 | `model-release-rollout-showcase` | Canary rollout, promote/hold/rollback decisions, registry artifacts | Intermediate | 1.5-2.0 hours | Python, model metrics basics | [`projects/model-release-rollout-showcase/README.md`](projects/model-release-rollout-showcase/README.md) |
 | `learning-to-rank-foundations-showcase` | Learning-to-rank foundations with grouped splits and NDCG | Intermediate | 1.5-2.5 hours | Python, ranking/recommendation basics | [`projects/learning-to-rank-foundations-showcase/README.md`](projects/learning-to-rank-foundations-showcase/README.md) |
@@ -151,7 +152,7 @@ make docs-check
 - NLP systems path: pytorch training regularization -> modern NLP pipeline -> learning to rank -> ranking API productization.
 - Release path: mlops drift -> batch vs stream -> model rollout.
 - Responsible AI path: supervised -> xai fairness -> causal.
-- Optimization path: supervised -> automl hpo -> autoresearch -> rl bandits.
+- Optimization path: supervised -> automl hpo -> autoresearch -> rl bandits -> student support rl.
 - Agent frameworks path: automl hpo -> autoresearch -> agentic course assistant -> model rollout.
 - Data quality path: eda leakage profiling -> feature engineering -> supervised contract artifacts.
 - See detailed guidance in `docs/learning-path.md`.

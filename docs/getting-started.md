@@ -31,6 +31,7 @@ make sync
 - Demand API with metrics and tracing hooks: `projects/demand-api-observability-showcase`
 - Agent-guided research loops for tiny language models: `projects/autoresearch`
 - Agent routing, tools, guardrails, traces, eval rubrics, A2A/session/memory concepts, and SDK comparison: `projects/agentic-course-assistant-showcase`
+- Contextual bandits, MDPs, dynamic programming, tabular Q-learning and SARSA, REINFORCE policy gradients, optional DQN/PPO comparison, reward design, and deployment caution: `projects/student-support-rl-showcase`
 
 ## First Run Pattern
 ```bash

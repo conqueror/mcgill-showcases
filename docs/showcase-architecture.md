@@ -47,6 +47,17 @@ This note maps related showcases into cohesive, in-repo learning tracks.
 - Optional OpenAI Agents SDK and Google ADK reference modules.
 - Stable local artifacts that make agent decisions inspectable before live API usage.
 
+## Sequential Decision Track
+
+1. `projects/rl-bandits-policy-showcase`
+- Small exploration-versus-exploitation warm-up with reward and regret traces.
+- Stationary multi-armed bandit policies that stay easy to benchmark.
+
+2. `projects/student-support-rl-showcase`
+- Small synthetic student-support MDP with readable transitions.
+- Real contextual bandit warm-up plus random, heuristic, tabular Q-learning, and optional DQN/PPO comparison.
+- Reward-hacking audit, governance notes, and deploy/shadow/reject memo.
+
 ## Intentional Scope Boundaries
 
 - Full-size raw datasets are excluded to keep clone and run workflows lightweight.
