@@ -11,6 +11,7 @@ body:
         - Repository-wide / multiple projects
         - agentic-course-assistant-showcase
         - adaptive-course-assistant-rl-showcase
+        - learning-agents-showcase
         - automl-hpo-showcase
         - batch-vs-stream-ml-systems-showcase
         - causalml-kaggle-showcase
