@@ -135,6 +135,18 @@ print(asyncio.run(run_openai_agents_course_assistant(question)))
 PY
 ```
 
+If you want hosted artifacts that line up with the offline teaching bundle, use the dedicated
+script:
+
+```bash
+make run-openai QUESTION="How should I debug a suspicious validation score?"
+make verify-openai
+```
+
+That hosted path writes its own bundle root at `artifacts/live_openai/`, so you can compare the
+offline and hosted runs without mixing their evidence. The local teaching adapter still handles the
+route and grounding steps before the hosted specialist call, and the trace says that plainly.
+
 Compare the live answer with the offline artifacts:
 
 - Did the live path still use a course-resource tool?

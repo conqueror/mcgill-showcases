@@ -2,11 +2,13 @@
 
 ## Existing Repo Coverage
 
-Before this showcase, the repository had an `autoresearch` project about autonomous research loops, but it did not contain a direct OpenAI Agents SDK or Google ADK implementation. This project adds lightweight reference modules for both frameworks.
+Before this showcase, the repository had an `autoresearch` project about autonomous research loops,
+but it did not have a direct OpenAI Agents SDK or Google ADK example. This project adds small
+reference modules for both frameworks.
 
 ## OpenAI Agents SDK Shape
 
-Use the OpenAI Agents SDK when the lesson is about Python-first orchestration with:
+Use the OpenAI Agents SDK when the lesson is about Python-first orchestration:
 
 - `Agent` definitions,
 - `Runner.run`,
@@ -17,7 +19,29 @@ Use the OpenAI Agents SDK when the lesson is about Python-first orchestration wi
 - guardrails and human review for safety,
 - tracing and trace grading as the workflow grows.
 
-In this showcase, `openai_agents_example.py` maps the offline course assistant to a triage agent plus specialist handoffs.
+In this showcase, `openai_agents_example.py` maps the offline course assistant to a triage agent
+and a small set of specialist handoffs.
+
+If students want the hosted path to produce the same kind of inspectable artifacts as the offline
+build, `scripts/run_openai_showcase.py` writes a separate bundle root at `artifacts/live_openai/`
+and reuses the offline teaching contract inside that namespace. The local teaching adapter still
+handles intent selection and catalog grounding before the hosted specialist call, and the trace
+says that clearly.
+
+What it does **not** do:
+
+- no RL or DRL training loop,
+- no learned intervention policy,
+- no MARL setup,
+- no claim that `Runner.run(...)` alone makes the assistant a learning agent.
+
+The hosted artifact bundle also avoids a common overclaim:
+
+- it writes a comparable student-facing `agent_trace.json`,
+- it does **not** claim that this local JSON file is the raw OpenAI tracing backend.
+
+Use this project to learn the runtime shape. Use
+`projects/adaptive-course-assistant-rl-showcase` to learn where a policy learner could attach.
 
 ```mermaid
 flowchart TD
@@ -43,7 +67,7 @@ make sync-openai
 
 ## Google ADK Shape
 
-Use Google ADK when the lesson is about an agent project that can run through ADK tooling with:
+Use Google ADK when the lesson is about an agent project that runs through ADK tooling:
 
 - a discoverable `root_agent`,
 - function tools,
@@ -54,7 +78,9 @@ Use Google ADK when the lesson is about an agent project that can run through AD
 - evaluation files, custom metrics, traces, and user simulation,
 - A2A, MCP, and multi-agent workflows as students advance.
 
-In this showcase, `google_adk_example.py` keeps the first ADK shape to one `root_agent` and one lookup tool. The `adk_course_assistant/agent.py` wrapper gives ADK the `agent.py` layout it expects:
+In this showcase, `google_adk_example.py` keeps the first ADK example small: one `root_agent` and
+one lookup tool. The `adk_course_assistant/agent.py` wrapper gives ADK the `agent.py` layout it
+expects:
 
 ```mermaid
 flowchart TD
@@ -74,7 +100,7 @@ uv run adk run adk_course_assistant
 
 Use `make sync-live` if you want both `openai-agents` and `google-adk` available in the same environment.
 
-## Good Student Showcase Ideas
+## Good first showcase ideas
 
 - Course assistant: route questions to concept, exercise, debug, or project-planning specialists.
 - Research digest agent: retrieve project docs and produce evidence-grounded summaries.
@@ -82,7 +108,8 @@ Use `make sync-live` if you want both `openai-agents` and `google-adk` available
 - Dataset triage helper: classify data-quality issues and suggest EDA checks.
 - API support assistant: answer local API contract questions from OpenAPI and README artifacts.
 
-The course assistant is the best first build because it is useful immediately, small enough to test, and safe to run without private data.
+The course assistant is a strong first build because it is immediately useful, small enough to
+test, and safe to run without private data.
 
 ## Concept Coverage Matrix
 

@@ -1,8 +1,12 @@
 # Agentic Course Assistant Showcase
 
-Learn how agent frameworks route work, call tools, apply guardrails, and leave evidence a student can inspect.
+Learn how agent frameworks route work, call tools, apply guardrails, and leave behind evidence you
+can actually inspect.
 
-This project builds a small course assistant for machine-learning students. The default path is deterministic and offline, so you can understand the workflow before connecting to a hosted model. Optional modules show the same design shape with the OpenAI Agents SDK and Google ADK, and the generated concept atlas maps the broader agent-engineering curriculum.
+This project builds a small course assistant for machine-learning students. The default path is
+deterministic and offline, so you can learn the workflow before you ever need an API key. The
+optional modules show the same basic shape with the OpenAI Agents SDK and Google ADK, and the
+generated concept atlas ties that work back to the larger agent-engineering course.
 
 ## Learning Outcomes
 
@@ -45,6 +49,14 @@ Run quality checks:
 make check
 ```
 
+Generate the opt-in hosted OpenAI artifact bundle after configuring `OPENAI_API_KEY`:
+
+```bash
+make sync-openai
+make run-openai QUESTION="How should I debug a suspicious validation score?"
+make verify-openai
+```
+
 ## Student Path
 
 Use the docs in this order:
@@ -55,7 +67,7 @@ Use the docs in this order:
 4. Use [`docs/learning-guide.md`](docs/learning-guide.md) for reflection prompts and a small route-extension exercise.
 5. Use [`docs/sdk-comparison.md`](docs/sdk-comparison.md) before installing optional live SDK extras.
 
-The MkDocs site also includes a first-class [Agentic Course Assistant deep dive](../../docs/deep-dives/agentic-course-assistant.md) and [Agent Frameworks track](../../docs/tracks/agent-frameworks.md).
+The MkDocs site also includes an [Agentic Course Assistant deep dive](../../docs/deep-dives/agentic-course-assistant.md) and the [Agent Frameworks track](../../docs/tracks/agent-frameworks.md).
 
 Install live SDK extras only when you are ready to run the hosted examples:
 
@@ -115,11 +127,12 @@ flowchart TD
 6. `write_artifacts` writes the response, trace, and matched resources.
 7. `write_concept_artifacts` writes the concept atlas, refined questions, learning path, and eval rubric.
 
-This shape maps cleanly to hosted SDKs without making the first student run depend on API credentials.
+That gives students the right mental model without making the first run depend on API credentials.
 
 ## SDK Examples
 
-The repository did not previously include a direct OpenAI Agents SDK or Google ADK example. This showcase adds both as optional reference modules:
+This showcase now includes small optional reference modules for both the OpenAI Agents SDK and
+Google ADK:
 
 ```mermaid
 flowchart LR
@@ -134,7 +147,41 @@ flowchart LR
 - `src/agentic_course_assistant/google_adk_example.py` defines the ADK `root_agent` and function tool.
 - `adk_course_assistant/agent.py` is an ADK-discoverable wrapper for `uv run adk run adk_course_assistant`.
 
-The default tests do not import these modules because credentials are optional and the first classroom path stays offline. Default CI should keep using the deterministic harness, `make check`, and `make verify`; live SDK execution is an opt-in local extension. Use `make sync-openai`, `make sync-adk`, or `make sync-live` to install the dependency-managed SDK extras.
+Important boundary:
+
+- these optional SDK examples show runtime orchestration,
+- they do **not** train a policy,
+- they do **not** make the assistant a learning agent by themselves.
+
+If you want the learned-policy layer, the next project is `../adaptive-course-assistant-rl-showcase/README.md`.
+
+The default classroom path and the main CI lane do not run these modules. That is intentional.
+Credentials are optional, and the first student workflow stays offline. Keep the main path on
+`make check` and `make verify`. Use `make sync-openai`, `make sync-adk`, or `make sync-live` only
+when you are ready to try the hosted examples locally.
+
+If you want the hosted OpenAI path to write the same kind of student-facing artifacts as the
+offline build, use the dedicated bundle command instead of the inline snippet:
+
+```bash
+make run-openai QUESTION="How should I debug a suspicious validation score?"
+make verify-openai
+```
+
+That command writes a separate bundle root at `artifacts/live_openai/`. Inside it, the hosted run
+reuses the offline teaching contract under `artifacts/`, including:
+
+- `artifacts/course_assistant_response.md`
+- `artifacts/agent_trace.json`
+- `artifacts/resource_matches.csv`
+- `artifacts/evals/agent_judge_rubric.json`
+- `artifacts/evals/concept_coverage.json`
+- `artifacts/manifest.json`
+
+One important boundary stays visible in that bundle: the local teaching adapter still performs
+intent selection and course-catalog grounding before the hosted specialist call. The emitted JSON
+trace is a teaching artifact for that combined workflow. It is not a raw OpenAI platform trace
+dump.
 
 Optional OpenAI run shape after configuring `OPENAI_API_KEY` outside source control:
 
@@ -156,7 +203,8 @@ uv run adk run adk_course_assistant
 
 ## Comprehensive Concept Atlas
 
-The concept atlas covers the requested topics and the missing-but-important surrounding topics:
+The concept atlas covers the requested topics, plus the adjacent ones students usually ask about
+after the first run:
 
 - tool calls and function tools,
 - guardrails, human approval, callbacks, plugins, and policy checks,
