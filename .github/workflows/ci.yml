@@ -145,6 +145,7 @@ jobs:
           - batch-vs-stream-ml-systems-showcase
           - model-release-rollout-showcase
           - adaptive-course-assistant-rl-showcase
+          - learning-agents-showcase
           - rl-bandits-policy-showcase
           - student-support-rl-showcase
 
@@ -171,7 +172,7 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ matrix.project }}" in
-            batch-vs-stream-ml-systems-showcase|model-release-rollout-showcase|adaptive-course-assistant-rl-showcase|rl-bandits-policy-showcase|student-support-rl-showcase)
+            batch-vs-stream-ml-systems-showcase|model-release-rollout-showcase|adaptive-course-assistant-rl-showcase|learning-agents-showcase|rl-bandits-policy-showcase|student-support-rl-showcase)
               uv run ruff check src tests scripts
               uv run mypy src tests scripts
               uv run pytest -q
@@ -193,6 +194,11 @@ jobs:
                 uv run python scripts/run_showcase.py --quick
                 uv run python scripts/run_drl_optional.py --quick
                 uv run python scripts/verify_artifacts.py --require-optional-drl
+              elif [[ "${{ matrix.project }}" == "learning-agents-showcase" ]]; then
+                make smoke
+                make verify
+                uv run python scripts/run_deep_rl.py --quick
+                uv run python scripts/verify_artifacts.py
               fi
               ;;
             *)
