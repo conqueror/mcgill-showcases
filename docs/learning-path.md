@@ -102,18 +102,6 @@
 5. Re-run `projects/student-support-rl-showcase` with `make sync-drl && make run-drl-optional` to compare that broader RL ladder against the more focused agentic-tutoring bridge
 6. `projects/model-release-rollout-showcase`
 
-## Path Q: Learning-Agent Bridge Workflow
-1. `projects/agentic-course-assistant-showcase`
-2. `projects/adaptive-course-assistant-rl-showcase`
-3. `projects/learning-agents-showcase`
-4. Re-run `projects/adaptive-course-assistant-rl-showcase` with `make sync-drl && make run-drl-optional`
-5. If you have not already run it, run `projects/student-support-rl-showcase`; otherwise re-run it with `make sync-drl && make run-drl-optional`
-
-This path is the cleanest answer to: "how do agent frameworks and learned intervention policies fit together without overclaiming?"
-
-`projects/learning-agents-showcase` is the standalone capstone in that bridge. Its deterministic
-core path is runnable today; the optional SDK/RLHF/MARL extension lanes are still scaffolded.
-
 ## How To Know You Are Progressing
 - You can explain outputs in plain language.
 - You can justify model choices with evidence.

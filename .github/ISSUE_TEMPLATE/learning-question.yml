@@ -13,7 +13,6 @@ body:
         - pytorch-training-regularization-showcase
         - agentic-course-assistant-showcase
         - adaptive-course-assistant-rl-showcase
-        - learning-agents-showcase
         - automl-hpo-showcase
         - autoresearch
         - batch-vs-stream-ml-systems-showcase

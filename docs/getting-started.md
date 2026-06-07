@@ -32,7 +32,6 @@ make sync
 - Agent-guided research loops for tiny language models: `projects/autoresearch`
 - Agent routing, tools, guardrails, traces, eval rubrics, A2A/session/memory concepts, and SDK comparison: `projects/agentic-course-assistant-showcase`
 - Learned intervention control around a deterministic tutoring assistant: `projects/adaptive-course-assistant-rl-showcase`
-- Standalone capstone on learning an agent's orchestration policy (core path ready; SDK/RLHF/MARL lanes scaffolded): `projects/learning-agents-showcase`
 - Contextual bandits, MDPs, dynamic programming, tabular Q-learning and SARSA, REINFORCE policy gradients, optional DQN/PPO comparison, reward design, and deployment caution: `projects/student-support-rl-showcase`
 
 ## First Run Pattern
