@@ -49,3 +49,6 @@ tmp/
 
 # Docs build output
 site/
+
+# Local planning notes (kept on disk, not tracked)
+plans/
