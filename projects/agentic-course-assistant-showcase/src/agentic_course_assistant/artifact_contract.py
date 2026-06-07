@@ -21,6 +21,7 @@ EXPECTED_TRACE_KEYS = {
     "resource_ids",
     "trace",
 }
+LIVE_OPENAI_TRACE_SOURCE = "hosted_response_with_local_teaching_adapter"
 EXPECTED_HARNESS_EVENTS = {
     "guardrail_check",
     "handoff",
@@ -58,7 +59,7 @@ EXPECTED_INTENTS = {"concept", "exercise", "debug", "project"}
 MIN_CONCEPT_COUNT = 25
 
 
-def verify(root: Path) -> list[str]:
+def verify(root: Path, *, require_harness: bool = True) -> list[str]:
     """Return artifact contract errors for the given project root."""
 
     errors: list[str] = []
@@ -77,7 +78,9 @@ def verify(root: Path) -> list[str]:
     ):
         return ["artifacts/manifest.json must define a string list named required_files"]
 
-    canonical_required = set(BASE_REQUIRED_FILES) | set(REQUIRED_HARNESS_FILES)
+    canonical_required = set(BASE_REQUIRED_FILES)
+    if require_harness:
+        canonical_required |= set(REQUIRED_HARNESS_FILES)
     missing_from_manifest = sorted(canonical_required - set(required_files))
     if missing_from_manifest:
         errors.append(f"artifacts/manifest.json missing canonical files: {missing_from_manifest}")
@@ -98,7 +101,8 @@ def verify(root: Path) -> list[str]:
     errors.extend(_validate_learning_path(root / "artifacts/concepts/student_learning_path.md"))
     errors.extend(_validate_judge_rubric(root / "artifacts/evals/agent_judge_rubric.json"))
     errors.extend(_validate_coverage(root / "artifacts/evals/concept_coverage.json"))
-    errors.extend(_validate_harness_artifacts(root))
+    if require_harness:
+        errors.extend(_validate_harness_artifacts(root))
     return errors
 
 
@@ -150,6 +154,7 @@ def _validate_trace(trace_path: Path) -> list[str]:
         if unexpected_events:
             errors.append(f"agent_trace.json has unexpected harness events: {unexpected_events}")
         errors.extend(_validate_harness_events_match_trace(trace, harness_events))
+    errors.extend(_validate_live_trace_honesty(trace))
     return errors
 
 
@@ -179,6 +184,27 @@ def _validate_harness_events_match_trace(
     handoff_name = event_names.get("handoff")
     if not isinstance(handoff_name, str) or handoff_name not in trace_text:
         errors.append("agent_trace.json handoff event is not tied to the trace")
+    return errors
+
+
+def _validate_live_trace_honesty(trace: dict[str, object]) -> list[str]:
+    if trace.get("trace_source") != LIVE_OPENAI_TRACE_SOURCE:
+        return []
+
+    errors: list[str] = []
+    if trace.get("runtime") != "openai_agents_sdk":
+        errors.append("live OpenAI trace must declare runtime=openai_agents_sdk")
+    note = trace.get("sdk_trace_note")
+    if not isinstance(note, str) or "not a raw openai trace" not in note.lower():
+        errors.append("live OpenAI trace must explain that it is not a raw OpenAI trace export")
+    trace_steps = trace.get("trace")
+    if not isinstance(trace_steps, list):
+        return errors
+    trace_text = " ".join(str(step) for step in trace_steps)
+    if "teaching_adapter." not in trace_text:
+        errors.append("live OpenAI trace must show the teaching adapter boundary explicitly")
+    if "triage_agent." in trace_text:
+        errors.append("live OpenAI trace must not pretend hosted triage steps were observed")
     return errors
 
 
