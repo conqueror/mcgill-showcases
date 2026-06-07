@@ -33,6 +33,8 @@ projects/**/artifacts/**
 !projects/**/artifacts/.gitkeep
 !projects/**/artifacts/**/.gitkeep
 !projects/agentic-course-assistant-showcase/artifacts/manifest.json
+!projects/adaptive-course-assistant-rl-showcase/artifacts/manifest.json
+!projects/learning-agents-showcase/artifacts/manifest.json
 !projects/student-support-rl-showcase/artifacts/manifest.json
 !projects/agentic-course-assistant-showcase/artifacts/harness/
 !projects/agentic-course-assistant-showcase/artifacts/harness/**

@@ -1,0 +1,40 @@
+{
+  "optional_files": [
+    "artifacts/drl_optional/dqn_training_summary.csv",
+    "artifacts/drl_optional/ppo_training_summary.csv",
+    "artifacts/drl_optional/rl_family_comparison.csv",
+    "artifacts/drl_optional/scenario_rollups.csv",
+    "artifacts/drl_optional/policy_gradient_bridge_notes.md"
+  ],
+  "required_files": [
+    "artifacts/manifest.json",
+    "artifacts/concepts/mdp_spec.md",
+    "artifacts/concepts/algorithm_progression.md",
+    "artifacts/concepts/state_action_reward_schema.csv",
+    "artifacts/concepts/agentic_rl_bridge.md",
+    "artifacts/concepts/interpretation_prompts.md",
+    "artifacts/assistant/episode_trace.json",
+    "artifacts/assistant/resource_matches.csv",
+    "artifacts/bandit/contextual_policy_metrics.csv",
+    "artifacts/bandit/regret_trace.csv",
+    "artifacts/bandit/action_breakdown.csv",
+    "artifacts/mdp/sample_episodes.csv",
+    "artifacts/policy/rule_policy_summary.csv",
+    "artifacts/policy/intervention_decisions.csv",
+    "artifacts/q_learning/training_curve.csv",
+    "artifacts/q_learning/q_table.csv",
+    "artifacts/sarsa/training_curve.csv",
+    "artifacts/policy_gradient/training_curve.csv",
+    "artifacts/reward/reward_hacking_report.md",
+    "artifacts/reward/reward_spec_bad.md",
+    "artifacts/reward/reward_spec_good.md",
+    "artifacts/eval/offline_policy_eval.csv",
+    "artifacts/eval/scenario_rollups.csv",
+    "artifacts/eval/safety_summary.md",
+    "artifacts/bridge/policy_router.json",
+    "artifacts/bridge/action_mapping.md",
+    "artifacts/bridge/learning_agent_story.md",
+    "artifacts/business/deployment_recommendation.md"
+  ],
+  "version": 1
+}
