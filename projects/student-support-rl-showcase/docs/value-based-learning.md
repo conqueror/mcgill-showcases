@@ -137,7 +137,7 @@ Tabular Q-learning and SARSA converge to `Q*` and `Q^π` respectively under the 
 qualifier is the word *visited*. In a finite run a tabular method can only update entries it has
 actually sampled; every other entry stays at its initialization (`0.0` here).
 
-This is exactly why [`artifacts/dp/q_learning_gap.csv`](../artifacts/dp/q_learning_gap.csv) shows
+This is exactly why `artifacts/dp/q_learning_gap.csv` shows
 large residual error on rarely-reached **tail states** while `Q*` is defined **everywhere**. Two
 load-bearing facts from that file:
 
@@ -167,16 +167,16 @@ Open these together — the whole point is the side-by-side:
   `future_value = max(q_table[next_key])` — that single `max` is what makes it off-policy.
 - **`src/student_support_rl/sarsa.py`** → `train_sarsa`. Find
   `future_value = q_table[next_key][next_action]` — the same line, but indexed by the *chosen* `A'`.
-- **[`artifacts/dp/optimal_action_values.csv`](../artifacts/dp/optimal_action_values.csv)** — the
+- **`artifacts/dp/optimal_action_values.csv`** — the
   ground-truth optimum, one row per `(state, action)`. This is "what the agent *should* do."
-- **[`artifacts/dp/q_learning_gap.csv`](../artifacts/dp/q_learning_gap.csv)** — sort by `abs_gap`
+- **`artifacts/dp/q_learning_gap.csv`** — sort by `abs_gap`
   descending to find the exact decisions the learner still gets wrong; note the `learned_q_value` is
   `0.0` on the worst-offending tail rows (the coverage caveat made concrete).
-- **[`artifacts/q_learning/q_table.csv`](../artifacts/q_learning/q_table.csv)** and
-  **[`artifacts/q_learning/training_curve.csv`](../artifacts/q_learning/training_curve.csv)** — the
+- **`artifacts/q_learning/q_table.csv`** and
+  **`artifacts/q_learning/training_curve.csv`** — the
   learned values and the per-episode `total_reward` / `epsilon` / `steps` trace.
-- **[`artifacts/sarsa/q_table.csv`](../artifacts/sarsa/q_table.csv)** and
-  **[`artifacts/sarsa/training_curve.csv`](../artifacts/sarsa/training_curve.csv)** — the on-policy
+- **`artifacts/sarsa/q_table.csv`** and
+  **`artifacts/sarsa/training_curve.csv`** — the on-policy
   counterparts. The curves share the same schema as Q-learning's, so you can diff them directly.
 
 Regenerate everything with `make run` (or the smaller `make smoke`).

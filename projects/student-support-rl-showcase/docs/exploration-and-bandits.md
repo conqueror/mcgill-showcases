@@ -127,13 +127,13 @@ iteration of the loop:
 
 **Artifacts** (regenerate with `make run` / `make smoke`):
 
-- [`artifacts/bandit/reward_trace.csv`](../artifacts/bandit/reward_trace.csv) — one row per step
+- `artifacts/bandit/reward_trace.csv` — one row per step
   with `action_label`, sampled `reward`, the model's `estimated_value` (`μ̂`), `expected_reward`
   (`μ` for the chosen arm), `cumulative_reward`, and the oracle `optimal_action_label`. **Look for**
   the chosen `action_label` converging to `optimal_action_label` as steps grow, and `estimated_value`
   tightening toward the true `expected_reward` on frequently-pulled arms. Mismatches between chosen
   and optimal early on are exploration (or an undertrained estimate) in action.
-- [`artifacts/bandit/regret_trace.csv`](../artifacts/bandit/regret_trace.csv) — `instantaneous_regret`
+- `artifacts/bandit/regret_trace.csv` — `instantaneous_regret`
   (`μ*(x) − μ_{a_t}(x)`) and its running sum `cumulative_regret`. **Look for** the *slope* of
   `cumulative_regret` flattening over time — that flattening, not the absolute value, is the signal
   the agent is learning. It will not flatten to a perfectly horizontal line, because the fixed `ε`

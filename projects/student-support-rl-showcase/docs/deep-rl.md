@@ -150,12 +150,12 @@ What to open:
   action space — this normalized feature vector is the input `s` to `Q_φ`, the concrete face of
   function approximation in this codebase. The dependencies are loaded lazily and a missing stack
   raises `OptionalDRLError` so the tabular path still runs without PyTorch/SB3 installed.
-- **[`artifacts/drl_optional/rl_family_comparison.csv`](../artifacts/drl_optional/rl_family_comparison.csv)**
+- **`artifacts/drl_optional/rl_family_comparison.csv`**
   — the head-to-head summary, one row per policy, each tagged with a `family`
   (`deep_value_based` for DQN, `actor_critic_policy_gradient` for PPO, `tabular_value_based` for
   Q-learning). This is the artifact to read first: it lets you compare the deep value-based method
   against the deep actor-critic method and the tabular baseline on identical test conditions.
-- **[`artifacts/drl_optional/training_summary.csv`](../artifacts/drl_optional/training_summary.csv)**
+- **`artifacts/drl_optional/training_summary.csv`**
   — the deep agents' learning trace (mean reward / mean final risk sampled at each training chunk).
   Read it to *see* the instability discussed above: the DQN reward column is non-monotonic across
   steps, a concrete reminder that the bootstrapped, function-approximated objective does not descend
