@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "learning-agents-showcase"
+version = "0.1.0"
+description = "Self-contained showcase: learning an agent's decision policy with RL/DRL, plus offline RL, RLHF concepts, and MARL."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11.2",
+  "pytest>=8.3.3",
+  "ruff>=0.9.0",
+]
+# Optional Lane A only. The core path never installs this; the SDK bridge degrades to a
+# deterministic fallback (sample traces + simulator) when it is absent.
+sdk = [
+  "openai-agents>=0.0.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/learning_agents"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
