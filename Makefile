@@ -9,6 +9,8 @@ XAI_DIR := projects/xai-fairness-audit-showcase
 AUTOML_DIR := projects/automl-hpo-showcase
 AUTORESEARCH_DIR := projects/autoresearch
 AGENTIC_COURSE_DIR := projects/agentic-course-assistant-showcase
+ADAPTIVE_AGENTIC_RL_DIR := projects/adaptive-course-assistant-rl-showcase
+LEARNING_AGENTS_DIR := projects/learning-agents-showcase
 FE_DIR := projects/feature-engineering-dimred-showcase
 RL_DIR := projects/rl-bandits-policy-showcase
 STUDENT_SUPPORT_RL_DIR := projects/student-support-rl-showcase
@@ -67,6 +69,8 @@ sync:
 	$(MAKE) -C $(AUTOML_DIR) sync
 	$(MAKE) -C $(AUTORESEARCH_DIR) sync
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) sync
+	$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) sync
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) sync
 	$(MAKE) -C $(FE_DIR) sync
 	$(MAKE) -C $(RL_DIR) sync
 	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) sync
@@ -96,6 +100,8 @@ lint:
 	$(MAKE) -C $(AUTOML_DIR) ruff
 	$(MAKE) -C $(AUTORESEARCH_DIR) ruff
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) ruff
+	$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) ruff
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) ruff
 	$(MAKE) -C $(FE_DIR) ruff
 	$(MAKE) -C $(RL_DIR) ruff
 	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) ruff
@@ -121,6 +127,8 @@ type ty:
 	$(MAKE) -C $(AUTOML_DIR) ty
 	$(MAKE) -C $(AUTORESEARCH_DIR) ty
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) ty
+	$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) ty
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) ty
 	$(MAKE) -C $(FE_DIR) ty
 	$(MAKE) -C $(RL_DIR) ty
 	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) ty
@@ -146,6 +154,8 @@ test:
 	$(MAKE) -C $(AUTOML_DIR) test
 	$(MAKE) -C $(AUTORESEARCH_DIR) test
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) test
+	$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) test
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) test
 	$(MAKE) -C $(FE_DIR) test
 	$(MAKE) -C $(RL_DIR) test
 	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) test
@@ -188,6 +198,14 @@ verify:
 	@if [ -f "$(AUTOML_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTOML_DIR) verify; else echo "Skipping $(AUTOML_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(AUTORESEARCH_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTORESEARCH_DIR) verify; else echo "Skipping $(AUTORESEARCH_DIR) verify: run showcase first"; fi
 	@if [ -f "$(AGENTIC_COURSE_DIR)/artifacts/agent_trace.json" ]; then $(MAKE) -C $(AGENTIC_COURSE_DIR) verify; else echo "Skipping $(AGENTIC_COURSE_DIR) verify: run showcase first"; fi
+	@if [ -f "$(ADAPTIVE_AGENTIC_RL_DIR)/artifacts/drl_optional/rl_family_comparison.csv" ]; then \
+		$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) verify-full; \
+	elif [ -f "$(ADAPTIVE_AGENTIC_RL_DIR)/artifacts/eval/offline_policy_eval.csv" ]; then \
+		$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) verify; \
+	else \
+		echo "Skipping $(ADAPTIVE_AGENTIC_RL_DIR) verify: run showcase first"; \
+	fi
+	@if [ -f "$(LEARNING_AGENTS_DIR)/artifacts/concepts/mdp_spec.md" ]; then $(MAKE) -C $(LEARNING_AGENTS_DIR) verify; else echo "Skipping $(LEARNING_AGENTS_DIR) verify: run showcase first"; fi
 	@if [ -f "$(FE_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(FE_DIR) verify; else echo "Skipping $(FE_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(RL_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(RL_DIR) verify; else echo "Skipping $(RL_DIR) verify: run pipeline first"; fi
 	@if [ -f "$(STUDENT_SUPPORT_RL_DIR)/artifacts/concepts/mdp_spec.md" ]; then $(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) verify; else echo "Skipping $(STUDENT_SUPPORT_RL_DIR) verify: run pipeline first"; fi
@@ -212,6 +230,8 @@ smoke:
 	$(MAKE) -C $(AUTOML_DIR) smoke
 	$(MAKE) -C $(AUTORESEARCH_DIR) smoke
 	$(MAKE) -C $(AGENTIC_COURSE_DIR) smoke
+	$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) smoke
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) smoke
 	$(MAKE) -C $(FE_DIR) smoke
 	$(MAKE) -C $(RL_DIR) smoke
 	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) smoke
