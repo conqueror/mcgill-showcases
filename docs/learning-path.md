@@ -133,4 +133,6 @@ For track-level documentation with artifact-focused guidance:
 - `docs/tracks/forecasting.md`
 - `docs/tracks/responsible-ai.md`
 - `docs/tracks/optimization.md`
+- `docs/tracks/reinforcement-learning.md`
 - `docs/tracks/agent-frameworks.md`
+- `docs/tracks/agentic-rl.md`

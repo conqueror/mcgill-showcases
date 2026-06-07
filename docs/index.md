@@ -79,13 +79,13 @@ Tune models and run autonomous, budgeted research loops.
 - [`autoresearch`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/autoresearch/README.md) — fixed-budget autonomous research loops with Codex/Claude launch briefs.
 
 ### Reinforcement Learning
-Sequential decision-making from bandits to policy gradients.
+Sequential decision-making from bandits to policy gradients. **Track guide:** [Reinforcement Learning](tracks/reinforcement-learning.md).
 
 - [`rl-bandits-policy-showcase`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/rl-bandits-policy-showcase/README.md) — multi-armed bandits, reward/regret analysis, and policy recommendation.
 - [`student-support-rl-showcase`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/student-support-rl-showcase/README.md) — contextual bandits, MDPs, dynamic programming (exact Q*), Q-learning/SARSA, REINFORCE, optional DQN/PPO, reward hacking, and offline evaluation.
 
 ### Agents and Agentic RL
-Build agents, then learn the policies that drive them.
+Build agents, then learn the policies that drive them. **Track guides:** [Agent Frameworks](tracks/agent-frameworks.md) · [Agentic RL](tracks/agentic-rl.md).
 
 - [`agentic-course-assistant-showcase`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/agentic-course-assistant-showcase/README.md) — agent routing, tools, guardrails, traces, eval rubrics, and optional OpenAI Agents SDK / Google ADK examples.
 - [`adaptive-course-assistant-rl-showcase`](https://github.com/conqueror/mcgill-showcases/blob/main/projects/adaptive-course-assistant-rl-showcase/README.md) — learned pedagogical intervention around a deterministic assistant: bandit, tutoring MDP, Q-learning/SARSA/REINFORCE, optional DQN/PPO bridge, and governance.
@@ -114,7 +114,9 @@ Hand-picked, artifact-focused tours through related projects (each is a full pag
 - [Forecasting](tracks/forecasting.md) — time-aware demand modeling and observability-ready APIs.
 - [Responsible AI](tracks/responsible-ai.md) — fairness, explainability, and causal decision support.
 - [Optimization](tracks/optimization.md) — HPO, agentic workflows, policy optimization, reward design, and offline policy evaluation.
+- [Reinforcement Learning](tracks/reinforcement-learning.md) — bandits, MDPs, dynamic programming (exact Q*), Q-learning/SARSA, REINFORCE, reward design, and an optional NumPy DQN/PPO bridge.
 - [Agent Frameworks](tracks/agent-frameworks.md) — deterministic agent workflows, course-assistant tools, guardrails, traces, eval rubrics, and OpenAI Agents SDK / Google ADK concepts.
+- [Agentic RL](tracks/agentic-rl.md) — where learning lives inside an agent: learned intervention control, offline RL and off-policy evaluation, cost-aware cascades, RLHF/DPO/GRPO/RLVR, and multi-agent RL.
 
 ## Learning Paths
 

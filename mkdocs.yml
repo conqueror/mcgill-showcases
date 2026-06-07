@@ -75,7 +75,9 @@ nav:
       - Forecasting: tracks/forecasting.md
       - Responsible AI: tracks/responsible-ai.md
       - Optimization: tracks/optimization.md
+      - Reinforcement Learning: tracks/reinforcement-learning.md
       - Agent Frameworks: tracks/agent-frameworks.md
+      - Agentic RL: tracks/agentic-rl.md
   - Project Deep Dives:
       - Overview: deep-dives/index.md
       - Supervised Learning Deep Dive: deep-dives/sota-supervised.md
