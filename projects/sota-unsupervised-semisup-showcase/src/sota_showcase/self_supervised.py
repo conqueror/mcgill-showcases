@@ -88,12 +88,21 @@ def _train_contrastive_encoder(
     epochs: int,
     batch_size: int,
 ) -> ContrastiveMLP:
+    if X_train.shape[0] < 2 or batch_size < 2:
+        raise ValueError(
+            "Contrastive training needs at least two rows and a batch size of at least two"
+        )
     torch.manual_seed(random_state)
     model = ContrastiveMLP(input_dim=X_train.shape[1], embedding_dim=embedding_dim)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     dataset = TensorDataset(torch.from_numpy(X_train).float())
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    loader = DataLoader(
+        dataset,
+        batch_size=min(batch_size, len(dataset)),
+        shuffle=True,
+        drop_last=True,
+    )
 
     model.train()
     for _ in range(epochs):

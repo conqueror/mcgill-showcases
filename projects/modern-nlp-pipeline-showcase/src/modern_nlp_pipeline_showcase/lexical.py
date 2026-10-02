@@ -34,9 +34,13 @@ def lexical_search(
     top_k: int = 5,
 ) -> pd.DataFrame:
     """Rank chunks for a query with cosine similarity over TF-IDF features."""
+    if top_k <= 0:
+        raise ValueError("top_k must be positive")
+    if chunks.empty:
+        return chunks.assign(score=pd.Series(dtype=float))
     query_vector = index.vectorizer.transform([query])
     scores = linear_kernel(query_vector, index.matrix).ravel()
-    top_indices = np.argsort(scores)[::-1][:top_k]
+    top_indices = np.argsort(-scores, kind="stable")[:top_k]
     results = chunks.iloc[top_indices].copy()
     results["score"] = scores[top_indices]
-    return results.sort_values("score", ascending=False).reset_index(drop=True)
+    return results.reset_index(drop=True)

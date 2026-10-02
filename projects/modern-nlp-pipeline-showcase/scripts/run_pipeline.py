@@ -26,7 +26,10 @@ def parse_args() -> argparse.Namespace:
         help="Use lightweight fallback backends only.",
     )
     parser.add_argument("--top-k", type=int, default=3, help="Top-k depth for retrieval metrics.")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.top_k <= 0:
+        parser.error("--top-k must be positive")
+    return args
 
 
 def main() -> None:
@@ -129,12 +132,7 @@ def _resolve_encoder(quick: bool) -> SentenceEncoder:
 
     if quick:
         return HashingSentenceEncoder()
-    encoder = load_dense_encoder(prefer_transformer=True)
-    try:
-        encoder.encode(["healthcheck"])
-        return encoder
-    except Exception:
-        return HashingSentenceEncoder()
+    return load_dense_encoder(prefer_transformer=True)
 
 
 def _resolve_qa_backend(quick: bool) -> QABackend:
@@ -142,12 +140,7 @@ def _resolve_qa_backend(quick: bool) -> QABackend:
 
     if quick:
         return HeuristicQABackend()
-    backend = load_qa_backend(prefer_transformer=True)
-    try:
-        backend.answer("What is being studied?", "This work studies retrieval quality.")
-        return backend
-    except Exception:
-        return HeuristicQABackend()
+    return load_qa_backend(prefer_transformer=True)
 
 
 def _resolve_summarizer_backend(quick: bool) -> SummarizerBackend:
@@ -158,12 +151,7 @@ def _resolve_summarizer_backend(quick: bool) -> SummarizerBackend:
 
     if quick:
         return HeuristicSummarizerBackend()
-    backend = load_summarizer_backend(prefer_transformer=True)
-    try:
-        backend.summarize("retrieval quality", "This work studies retrieval quality.")
-        return backend
-    except Exception:
-        return HeuristicSummarizerBackend()
+    return load_summarizer_backend(prefer_transformer=True)
 
 
 if __name__ == "__main__":

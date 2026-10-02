@@ -28,8 +28,12 @@ def generate_grounded_outputs(
         if not isinstance(passages, list):
             passages = [str(passages)]
         context = "\n".join(str(item) for item in passages)
-        predicted_answer = qa_backend.answer(query["qa_question"], context)
-        summary_text = summarizer_backend.summarize(query["query"], context)
+        predicted_answer = (
+            qa_backend.answer(query["qa_question"], context) if context.strip() else ""
+        )
+        summary_text = (
+            summarizer_backend.summarize(query["query"], context) if context.strip() else ""
+        )
         qa_rows.append(
             {
                 "query_id": query["query_id"],
@@ -51,7 +55,7 @@ def generate_grounded_outputs(
 
 
 def _select_best_example(examples: list[dict[str, object]]) -> dict[str, object]:
-    dense_like = [item for item in examples if str(item["strategy"]) != "lexical_tfidf"]
-    ranked = dense_like or examples
-    ranked.sort(key=lambda item: (item["hit_rank"] is None, item["hit_rank"] or 999))
-    return ranked[0]
+    """Choose the best known hit for this labelled teaching example."""
+    if not examples:
+        return {"strategy": "none", "top_passages": []}
+    return min(examples, key=lambda item: (item["hit_rank"] is None, item["hit_rank"] or 999))

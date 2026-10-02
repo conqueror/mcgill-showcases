@@ -16,7 +16,7 @@
 - Which queries require semantic matching and help dense retrieval?
 - Does the better retriever also support better grounded answers?
 - Which classification baseline is easier to explain?
-- Which artifact gives the clearest evidence that a model is grounded?
+- Which retrieved passages support an answer, and which answers should be rejected? The artifacts do not include an automatic support check.
 
 ## Interpretation prompts
 

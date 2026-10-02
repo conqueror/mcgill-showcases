@@ -36,4 +36,4 @@ Why that matters:
 
 ## Generation caveat
 
-Retrieval-grounded QA and summarization are only as good as the retrieved evidence. If the retriever surfaces weak passages, the generation step will usually degrade too.
+QA and summarization use retrieved passages as context; the pipeline does not validate citations or answer support. The heuristic QA backend returns an empty answer when there is no word overlap, but overlap alone does not prove support. Generation examples select the best known relevant rank across strategies for this labelled teaching dataset, not a production routing rule.

@@ -42,10 +42,15 @@ def _load_dataset(config: ShowcaseConfig) -> tuple[LabeledDataset, int | None]:
             sample_size=config.business_sample_size,
             scale=True,
             random_state=config.random_state,
+            test_size=config.test_size,
         )
         return dataset, 1
 
-    dataset = load_digits_dataset(scale=True)
+    dataset = load_digits_dataset(
+        scale=True,
+        test_size=config.test_size,
+        random_state=config.random_state,
+    )
     return dataset, 9
 
 

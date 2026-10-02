@@ -22,7 +22,7 @@ By working through this project, you should learn how to:
 3. Train models with only a small labeled subset (semi-supervised learning).
 4. Choose which unlabeled examples to label next (active learning).
 5. Learn useful representations without labels (self-supervised learning).
-6. Refine clusters with a deep objective (DEC).
+6. Refine clusters with a minibatch DEC variant that also retains reconstruction loss.
 7. Transfer the same ideas across domains like retail, healthcare, finance, and manufacturing.
 
 ## Learning Flow
@@ -128,7 +128,7 @@ Key targets:
 - `make diagrams`: validate Mermaid diagrams.
 - `make smoke-digits`: quick run for `digits` mode.
 - `make smoke-business`: quick run for `business` mode.
-- `make quality`: full quality pipeline.
+- `make quality`: lint, type checks, tests, and a digits smoke run.
 
 ## Run Experiments
 
@@ -162,12 +162,11 @@ uv run sota-showcase \
   --active-learning-query-size 20
 ```
 
-Default CLI settings are already tuned for typical student laptops (moderate runtime).
-Use lower epochs for very fast checks or higher epochs when you want stronger model quality.
+The epoch options reduce contrastive and DEC training; the separate semi-supervised autoencoder still trains for 25 epochs. Runtime depends on the dataset and laptop and has not been benchmarked here.
 
 ## Where to Look After a Run
 
-Files are mode-prefixed so runs do not overwrite each other.
+Files are mode-prefixed so digits and business runs do not overwrite each other; rerunning the same mode replaces its previous outputs.
 
 - Reports: `artifacts/reports/`
 - Figures: `artifacts/figures/`
@@ -192,12 +191,12 @@ Important outputs:
 Use this exact order when learning solo:
 
 1. Run `digits` mode and open `digits_kmeans_model_selection.csv` + `digits_clustering_ari.png`.
-2. Open `digits_anomaly_metrics.csv` and compare precision/recall tradeoffs.
+2. Open `digits_anomaly_metrics.csv` and compare precision/recall tradeoffs. These are in-sample teaching comparisons, with contamination set from the labelled anomaly fraction, not held-out novelty-detection scores.
 3. Open `digits_semi_supervised_metrics.csv` and compare with small labeled fraction.
 4. Open `digits_active_learning_metrics.csv` and `digits_active_learning_curve.png`.
    - Check if `uncertainty` beats `random` at the same label budget.
 5. Open `digits_self_supervised_metrics.csv` and compare raw vs embedding-based models.
-6. Open `digits_dec_metrics.csv` and compare DEC vs latent KMeans.
+6. Open `digits_dec_metrics.csv` and compare the minibatch, reconstruction-regularized DEC variant vs latent KMeans. Its targets use minibatch frequencies and its loss is KL plus 0.1 times reconstruction loss, rather than canonical DEC.
 7. Repeat steps 1-6 in `business` mode and compare what changes.
 
 ## Why This Tutorial Is Self-Learning Friendly
@@ -205,7 +204,7 @@ Use this exact order when learning solo:
 This project is designed so you can learn intuitively without extra mentor guidance:
 
 1. Every concept has a runnable experiment and a concrete output file.
-2. Every module has both metric tables (`.csv`) and visual artifacts (`.png`).
+2. Every module has metric tables (`.csv`); clustering, semi-supervised learning, self-supervised learning, and active learning also have visual artifacts (`.png`).
 3. You compare at least two strategies every time (for example uncertainty vs random in active learning).
 4. You repeat the same workflow on two very different datasets.
 5. You get both fast smoke settings and fuller settings for deeper understanding.
@@ -238,7 +237,7 @@ Rendered SVGs will appear in:
 
 ## One-Command Project Health Check
 
-Run this if you want to confirm the whole project is healthy on your machine:
+After installing the dev dependencies, run the local digits health check:
 
 ```bash
 ./scripts/review_quality.sh
@@ -248,8 +247,9 @@ It runs:
 - lint checks,
 - type checks (`ty`),
 - unit tests,
-- Mermaid render validation,
-- quick smoke runs for `digits` and `business` modes.
+- a quick smoke run for `digits` mode.
+
+Run `make smoke-business` separately when you have a local loan CSV. Run `make diagrams` separately for Mermaid rendering; that command may download diagram tooling.
 
 ## Method Selection Map
 

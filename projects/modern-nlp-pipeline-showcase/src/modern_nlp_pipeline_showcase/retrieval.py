@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics.pairwise import linear_kernel
+from sklearn.metrics.pairwise import cosine_similarity
 
 from modern_nlp_pipeline_showcase.lexical import TfidfIndex, lexical_search
 from modern_nlp_pipeline_showcase.models import SentenceEncoder
@@ -20,8 +20,12 @@ def evaluate_retrieval(
     top_k: int = 5,
 ) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     """Evaluate lexical and dense retrieval on the query set."""
+    if top_k <= 0:
+        raise ValueError("top_k must be positive")
     examples: list[dict[str, object]] = []
-    dense_chunk_vectors = encoder.encode(chunks["chunk_text"].tolist())
+    dense_chunk_vectors = (
+        encoder.encode(chunks["chunk_text"].tolist()) if not chunks.empty else np.empty((0, 0))
+    )
     dense_query_vectors = encoder.encode([item["query"] for item in queries])
 
     metrics_store: dict[str, list[float]] = defaultdict(list)
@@ -51,8 +55,8 @@ def evaluate_retrieval(
                     "relevant_paper_id": query["relevant_paper_id"],
                     "hit_rank": rank,
                     "retrieved_paper_ids": results["paper_id"].tolist(),
-                    "top_chunk_id": results["chunk_id"].iloc[0],
-                    "top_chunk_text": results["chunk_text"].iloc[0],
+                    "top_chunk_id": results["chunk_id"].iloc[0] if not results.empty else None,
+                    "top_chunk_text": results["chunk_text"].iloc[0] if not results.empty else None,
                     "top_passages": results["chunk_text"].tolist(),
                 }
             )
@@ -77,13 +81,17 @@ def dense_search(
     query_vector: np.ndarray,
     top_k: int = 5,
 ) -> pd.DataFrame:
-    """Rank chunks with cosine-style similarity over dense vectors."""
+    """Rank chunks with cosine similarity over dense vectors."""
     _ = query
-    scores = linear_kernel(query_vector.reshape(1, -1), chunk_vectors).ravel()
-    top_indices = np.argsort(scores)[::-1][:top_k]
+    if top_k <= 0:
+        raise ValueError("top_k must be positive")
+    if chunks.empty:
+        return chunks.assign(score=pd.Series(dtype=float))
+    scores = cosine_similarity(query_vector.reshape(1, -1), chunk_vectors).ravel()
+    top_indices = np.argsort(-scores, kind="stable")[:top_k]
     results = chunks.iloc[top_indices].copy()
     results["score"] = scores[top_indices]
-    return results.sort_values("score", ascending=False).reset_index(drop=True)
+    return results.reset_index(drop=True)
 
 
 def _find_relevant_rank(results: pd.DataFrame, relevant_paper_id: str) -> int | None:
