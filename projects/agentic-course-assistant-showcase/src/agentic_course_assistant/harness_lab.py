@@ -102,6 +102,7 @@ __all__ = [
     "REQUIRED_HARNESS_FILES",
     "TRACE_SCHEMA",
     "run_harness_lab",
+    "write_showcase_artifacts",
 ]
 
 
@@ -111,9 +112,16 @@ def run_harness_lab(
 ) -> dict[str, Any]:
     """Generate deterministic harness artifacts and return a summary."""
 
-    artifacts_dir = project_root / "artifacts"
-    artifacts_dir.mkdir(parents=True, exist_ok=True)
-    _write_base_artifacts(project_root, question)
+    summary = write_showcase_artifacts(question, project_root / "artifacts")
+    summary["verification_errors"] = verify(project_root)
+    summary["live_config"] = _live_config_summary(project_root)
+    return summary
+
+
+def write_showcase_artifacts(question: str, artifacts_dir: Path) -> dict[str, Any]:
+    """Refresh the assistant and harness artifacts together for one question."""
+
+    base_paths = write_artifacts(answer_question(question), artifacts_dir)
 
     workflows = run_offline_workflows(question)
     run = _run_identity(question)
@@ -157,23 +165,25 @@ def run_harness_lab(
         encoding="utf-8",
     )
     _append_run_ledger(run_ledger_path, question, judge_payload)
-    merge_required_files(project_root / "artifacts/manifest.json", all_required_files())
+    manifest_path = artifacts_dir / "manifest.json"
+    merge_required_files(manifest_path, all_required_files())
 
-    errors = verify(project_root)
-    summary: dict[str, Any] = {
+    return {
         "question": question,
         "harness_dir": str(harness_dir),
         "judge_summary": judge_payload["summary"],
-        "verification_errors": errors,
-        "written_files": [str(project_root / path) for path in REQUIRED_HARNESS_FILES],
-        "live_config": _live_config_summary(project_root),
+        "written_files": [
+            str(path) for path in (
+                *base_paths,
+                trace_schema_path,
+                eval_cases_path,
+                judge_verdicts_path,
+                failure_report_path,
+                run_ledger_path,
+                manifest_path,
+            )
+        ],
     }
-    return summary
-
-
-def _write_base_artifacts(project_root: Path, question: str) -> None:
-    result = answer_question(question)
-    write_artifacts(result, project_root / "artifacts")
 
 
 def _judge_workflows(workflows: dict[str, Any]) -> list[dict[str, Any]]:

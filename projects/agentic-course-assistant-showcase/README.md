@@ -132,8 +132,9 @@ That gives students the right mental model without making the first run depend o
 
 The harness's reviewer records are sequential simulations, and `consensus_resource_id` names the
 first ranked catalog resource. The refinement loop checks for an artifact and a verification step;
-these checks do not measure reasoning quality or multi-agent agreement. Harness evidence must be
-regenerated with `make eval` before `make verify` after changing the question or source code.
+these checks do not measure reasoning quality or multi-agent agreement. `make run`, `make smoke`,
+and `make eval` each regenerate the assistant and harness artifacts together for the current
+question and source code, so each can be followed directly by `make verify`.
 The run ledger records the current UTC time and appends an entry, so it is not byte-repeatable.
 
 ## SDK Examples

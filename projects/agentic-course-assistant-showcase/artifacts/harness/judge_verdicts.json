@@ -1,6 +1,44 @@
 {
+  "failure_injections": {
+    "Guardrail trip": {
+      "observed": "question contains sensitive terms; use a public example instead",
+      "passed": true
+    },
+    "Loop runaway": {
+      "observed": {
+        "bounded_loop_completed": false,
+        "state_present": true,
+        "stop_reason_present": true,
+        "summary_present": true,
+        "trace_present": true
+      },
+      "passed": true
+    },
+    "Routing ambiguity": {
+      "observed": "Tied project/debug keywords selected debug.",
+      "passed": true
+    },
+    "Tool failure": {
+      "observed": [
+        "agent_trace.json resource_ids must be a non-empty list",
+        "resource_matches.csv must contain at least one resource row"
+      ],
+      "passed": true
+    },
+    "Trace corruption": {
+      "observed": [
+        "agent_trace.json trace missing step for tool_call"
+      ],
+      "passed": true
+    }
+  },
   "judge": "deterministic_harness_judge",
-  "question": "I understand train test split basics, but I am confused about data leakage in feature engineering.",
+  "question": "Help me build an agent project for debugging leakage without pasting any API keys.",
+  "run": {
+    "run_id": "6a17318eb67930dfb6a041f977bde5c675c97ed451872301507aa0b5cdda72f2",
+    "scenario_version": 1,
+    "source_sha256": "946c93aae912db2709b51df6df52ba3c3fdce0a42c8ca7888aafb5f2badc7ff3"
+  },
   "summary": {
     "failed": 0,
     "passed": 10,
@@ -22,6 +60,7 @@
       "checks": {
         "bounded_loop_completed": true,
         "state_present": true,
+        "stop_reason_present": true,
         "summary_present": true,
         "trace_present": true
       },
@@ -106,7 +145,8 @@
     {
       "case_id": "bounded_loop",
       "checks": {
-        "expected_min_rounds": true,
+        "expected_max_rounds": true,
+        "expected_stop_reason": true,
         "trace_present": true
       },
       "rationale": "Golden eval expectations matched deterministic workflow behavior.",
@@ -134,45 +174,46 @@
     "loop_refinement": {
       "state": {
         "draft_rounds": [
-          "Draft 1: answer the question in one paragraph and point to one artifact.",
-          "Draft 2: shorten the answer and add one concrete verification step.",
-          "Final: keep the recommendation small, testable, and traceable."
+          "Answer the question in one paragraph and point to one artifact.",
+          "Shorten the answer, name one artifact, and add one concrete verification step."
         ],
-        "question": "I understand train test split basics, but I am confused about data leakage in feature engineering.",
-        "rounds_completed": 2
+        "question": "Help me build an agent project for debugging leakage without pasting any API keys.",
+        "rounds_completed": 2,
+        "stop_reason": "quality_threshold"
       },
       "summary": "A bounded refinement loop that improves the plan without becoming open-ended.",
       "trace": [
         "loop_refinement.draft_round_1",
         "loop_refinement.review_round_1",
-        "loop_refinement.revise_round_2",
+        "loop_refinement.draft_round_2",
+        "loop_refinement.review_round_2",
         "loop_refinement.stop_after_quality_threshold"
       ],
       "workflow_name": "loop_refinement"
     },
     "parallel_resource_review": {
       "state": {
-        "consensus_resource_id": "eda-leakage-001",
+        "consensus_resource_id": "debug-004",
         "review_count": 3,
         "reviews": [
           {
-            "resource_id": "eda-leakage-001",
-            "reviewer": "signal_reviewer",
-            "takeaway": "Use diagnostic material to teach data leakage."
-          },
-          {
-            "resource_id": "splits-002",
-            "reviewer": "risk_reviewer",
-            "takeaway": "Use concept material to teach validation design."
-          },
-          {
             "resource_id": "debug-004",
-            "reviewer": "teaching_reviewer",
+            "reviewer": "signal_reviewer",
             "takeaway": "Use debug checklist material to teach model debugging."
+          },
+          {
+            "resource_id": "agents-005",
+            "reviewer": "risk_reviewer",
+            "takeaway": "Use project pattern material to teach agentic AI."
+          },
+          {
+            "resource_id": "eda-leakage-001",
+            "reviewer": "teaching_reviewer",
+            "takeaway": "Use diagnostic material to teach data leakage."
           }
         ]
       },
-      "summary": "Three lightweight reviewers compare resources before the workflow picks a lead.",
+      "summary": "Three sequential review records illustrate the top catalog match as the lead.",
       "trace": [
         "parallel_resource_review.spawn_reviews",
         "parallel_resource_review.collect_reviews",
@@ -182,14 +223,14 @@
     },
     "router_triage": {
       "state": {
-        "selected_agent": "Concept coach",
-        "selected_intent": "concept"
+        "selected_agent": "Project planner",
+        "selected_intent": "project"
       },
       "summary": "A triage router picks the best specialist instead of doing every job itself.",
       "trace": [
         "router_triage.read_question",
-        "router_triage.select_intent:concept",
-        "router_triage.handoff:concept_coach"
+        "router_triage.select_intent:project",
+        "router_triage.handoff:project_planner"
       ],
       "workflow_name": "router_triage"
     },
@@ -197,15 +238,15 @@
       "state": {
         "milestones": [
           "Name the learning goal in one sentence.",
-          "Study `eda-leakage-001` before touching code.",
-          "Use `splits-002` to design a sanity-check exercise.",
+          "Study `debug-004` before touching code.",
+          "Use `agents-005` to design a sanity-check exercise.",
           "Write down one artifact that proves the workflow worked."
         ],
         "resource_count": 3,
         "resource_ids": [
-          "eda-leakage-001",
-          "splits-002",
-          "debug-004"
+          "debug-004",
+          "agents-005",
+          "eda-leakage-001"
         ]
       },
       "summary": "A step-by-step plan that keeps the agent workflow visible to students.",
