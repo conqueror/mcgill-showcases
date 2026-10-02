@@ -35,15 +35,16 @@ flowchart TD
 cd projects/agentic-course-assistant-showcase
 make sync
 make smoke
+make eval
 make verify
 ```
 
-The smoke path writes a course-assistant answer and the evidence needed to inspect it. The verifier checks the artifact contract without using an API key.
+The smoke path writes the assistant artifacts. `make eval` regenerates the assistant and harness artifacts for one question; `make verify` checks that evidence without using an API key.
 
 ## Part 2: Ask Your Own Question
 
 ```bash
-make run QUESTION="I understand train/test splits, but why is leakage so dangerous?"
+make eval QUESTION="I understand train/test splits, but why is leakage so dangerous?"
 make verify
 ```
 

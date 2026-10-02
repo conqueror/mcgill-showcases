@@ -109,6 +109,4 @@ def search_resources(query: str, limit: int = 3) -> list[CourseResource]:
 
     ranked = sorted(scored, key=lambda item: (-item[0], item[1]))
     matches = [resource for score, _, resource in ranked if score > 0]
-    if not matches:
-        matches = [resource for _, _, resource in ranked]
     return matches[:limit]

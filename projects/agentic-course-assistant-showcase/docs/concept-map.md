@@ -6,7 +6,8 @@ This map connects the deterministic course-assistant harness to the agent-framew
 
 ```mermaid
 flowchart TD
-    Q["Student question"] --> Triage["Triage and intent classification"]
+    Q["Student question"] --> Policy["Input policy check"]
+    Policy --> Triage["Triage and intent classification"]
     Triage --> Tool["Deterministic course-catalog tool"]
     Tool --> Specialist["Specialist response"]
     Specialist --> Guardrails["Guardrail notes"]
@@ -44,7 +45,7 @@ flowchart LR
 | Triage | `classify_question` selects `concept`, `exercise`, `debug`, or `project`. | A triage agent can hand off to specialists. | Routing can use sub-agents or workflow branches. | `artifacts/agent_trace.json` |
 | Tool use | `search_resources` returns public course resources. | A `function_tool` wraps local code. | A function tool exposes Python logic to an agent. | `artifacts/resource_matches.csv` |
 | Specialist behavior | The selected route shapes the answer. | Handoffs transfer ownership or agents-as-tools keep a manager in control. | Sub-agents or `AgentTool` model specialist composition. | `artifacts/course_assistant_response.md` |
-| Guardrails | Scope and secret-handling reminders are written into the trace. | Guardrails and human review block or pause risky paths. | Callbacks, plugins, and confirmation flows can enforce policy. | `artifacts/agent_trace.json` |
+| Guardrails | Recognized sensitive terms are rejected before lookup; accepted questions get a scope reminder in the trace. | Guardrails and human review block or pause risky paths. | Callbacks, plugins, and confirmation flows can enforce policy. | `artifacts/agent_trace.json` |
 | Tracing | The JSON trace records route, resources, and guardrail notes. | SDK traces show model calls, tool calls, handoffs, and spans. | ADK traces and events show runtime behavior and services. | `artifacts/agent_trace.json` |
 | Evals | The rubric separates deterministic checks from judge-style checks. | Trace grading and eval datasets can score agent behavior. | ADK eval sets and custom metrics can score agent behavior. | `artifacts/evals/agent_judge_rubric.json` |
 | Sessions | The first run is single-turn and stateless. | Sessions can continue or resume conversations. | `Session`, `State`, and `Events` model conversation context. | `artifacts/concepts/agentic_concepts.csv` |

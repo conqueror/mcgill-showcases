@@ -4,12 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_course_assistant.assistant import AGENT_BY_INTENT, classify_question, guardrail_notes
+from agentic_course_assistant.assistant import (
+    AGENT_BY_INTENT,
+    _has_sensitive_terms,
+    classify_question,
+    guardrail_notes,
+)
 from agentic_course_assistant.course_catalog import (
     COURSE_RESOURCES,
     CourseResource,
     search_resources,
 )
+
+MAX_REFINEMENT_ROUNDS = 2
 
 
 @dataclass(frozen=True)
@@ -59,33 +66,41 @@ def sequential_course_plan(question: str) -> WorkflowExampleResult:
 
 
 def loop_refinement(question: str) -> WorkflowExampleResult:
-    """Show an iterative draft-review-revise loop with deterministic rounds."""
+    """Refine a teaching draft until it names an artifact and a verification step."""
 
-    draft_rounds = [
-        "Draft 1: answer the question in one paragraph and point to one artifact.",
-        "Draft 2: shorten the answer and add one concrete verification step.",
-        "Final: keep the recommendation small, testable, and traceable.",
-    ]
-    trace = (
-        "loop_refinement.draft_round_1",
-        "loop_refinement.review_round_1",
-        "loop_refinement.revise_round_2",
-        "loop_refinement.stop_after_quality_threshold",
-    )
+    draft = "Answer the question in one paragraph and point to one artifact."
+    draft_rounds: list[str] = []
+    trace: list[str] = []
+    stop_reason = "round_limit"
+    for round_number in range(1, MAX_REFINEMENT_ROUNDS + 1):
+        draft_rounds.append(draft)
+        trace.append(f"loop_refinement.draft_round_{round_number}")
+        trace.append(f"loop_refinement.review_round_{round_number}")
+        if _draft_meets_quality(draft):
+            stop_reason = "quality_threshold"
+            break
+        draft = "Shorten the answer, name one artifact, and add one concrete verification step."
+    trace.append(f"loop_refinement.stop_after_{stop_reason}")
     return WorkflowExampleResult(
         workflow_name="loop_refinement",
         summary="A bounded refinement loop that improves the plan without becoming open-ended.",
-        trace=trace,
+        trace=tuple(trace),
         state={
             "question": question,
             "draft_rounds": draft_rounds,
-            "rounds_completed": 2,
+            "rounds_completed": len(draft_rounds),
+            "stop_reason": stop_reason,
         },
     )
 
 
+def _draft_meets_quality(draft: str) -> bool:
+    # ponytail: checks two draft requirements; use a rubric to judge answer quality.
+    return "artifact" in draft and "verification" in draft
+
+
 def parallel_resource_review(question: str) -> WorkflowExampleResult:
-    """Review several resources in parallel and then merge the findings."""
+    """Simulate three reviewer records sequentially; select the top catalog match."""
 
     resources = _resource_trio(question)
     reviewer_names = ("signal_reviewer", "risk_reviewer", "teaching_reviewer")
@@ -104,7 +119,7 @@ def parallel_resource_review(question: str) -> WorkflowExampleResult:
     )
     return WorkflowExampleResult(
         workflow_name="parallel_resource_review",
-        summary="Three lightweight reviewers compare resources before the workflow picks a lead.",
+        summary="Three sequential review records illustrate the top catalog match as the lead.",
         trace=trace,
         state={
             "reviews": reviews,
@@ -139,7 +154,7 @@ def custom_policy_agent(question: str) -> WorkflowExampleResult:
     """Apply a deterministic policy gate before the workflow proceeds."""
 
     notes = guardrail_notes(question)
-    blocked = any("secrets" in note.lower() for note in notes)
+    blocked = _has_sensitive_terms(question)
     status = "blocked" if blocked else "approved"
     trace = (
         "custom_policy_agent.read_question",
@@ -165,12 +180,15 @@ def custom_policy_agent(question: str) -> WorkflowExampleResult:
 def run_offline_workflows(question: str) -> dict[str, WorkflowExampleResult]:
     """Return the full deterministic workflow set used by the harness lab."""
 
+    policy = custom_policy_agent(question)
+    if not policy.state["allowed"]:
+        return {"custom_policy_agent": policy}
     return {
         "sequential_course_plan": sequential_course_plan(question),
         "loop_refinement": loop_refinement(question),
         "parallel_resource_review": parallel_resource_review(question),
         "router_triage": router_triage(question),
-        "custom_policy_agent": custom_policy_agent(question),
+        "custom_policy_agent": policy,
     }
 
 

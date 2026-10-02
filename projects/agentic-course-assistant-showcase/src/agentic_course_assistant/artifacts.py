@@ -7,7 +7,8 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
-from agentic_course_assistant.assistant import AssistantResult
+from agentic_course_assistant.artifact_manifest import _run_identity
+from agentic_course_assistant.assistant import AssistantResult, _require_safe_question
 from agentic_course_assistant.concept_atlas import write_concept_artifacts
 
 
@@ -20,6 +21,7 @@ def write_artifacts(
 ) -> list[Path]:
     """Write one run's markdown, trace, resource table, and concept artifacts."""
 
+    _require_safe_question(result.question)
     output_dir.mkdir(parents=True, exist_ok=True)
     response_path = output_dir / "course_assistant_response.md"
     trace_path = output_dir / "agent_trace.json"
@@ -32,6 +34,7 @@ def write_artifacts(
     )
     trace_payload: dict[str, object] = {
         "question": result.question,
+        "run": _run_identity(result.question),
         "intent": result.intent,
         "agent_name": result.agent_name,
         "guardrails": list(result.guardrails),
