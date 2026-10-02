@@ -20,6 +20,8 @@ def _load_feature_names(path: Path) -> list[str]:
         raise ValueError(f"Invalid feature schema at {path}; expected JSON list[str].")
     if len(raw) == 0:
         raise ValueError(f"Invalid feature schema at {path}; empty feature list.")
+    if len(set(raw)) != len(raw):
+        raise ValueError(f"Invalid feature schema at {path}; duplicate feature names.")
     return list(raw)
 
 
@@ -40,5 +42,7 @@ def load_artifacts(model_path: Path, feature_names_path: Path, meta_path: Path) 
 
     booster = Booster(model_file=str(model_path))
     feature_names = _load_feature_names(feature_names_path)
+    if feature_names != booster.feature_name():
+        raise ValueError("Feature schema must match the Booster feature names in order.")
     meta = _load_meta(meta_path)
     return ModelArtifacts(booster=booster, feature_names=feature_names, meta=meta)

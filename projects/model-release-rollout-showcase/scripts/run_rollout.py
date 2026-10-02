@@ -31,20 +31,24 @@ def main() -> None:
     rng = np.random.default_rng(args.seed)
 
     n = 200 if args.quick else 900
-    champion_scores = pd.Series(rng.normal(loc=0.71, scale=0.05, size=n), name="champion_auc")
-    challenger_scores = pd.Series(rng.normal(loc=0.725, scale=0.05, size=n), name="challenger_auc")
+    champion_scores = pd.Series(rng.normal(loc=0.71, scale=0.05, size=n), name="champion_score")
+    challenger_scores = pd.Series(
+        rng.normal(loc=0.725, scale=0.05, size=n), name="challenger_score"
+    )
+    min_gain = 0.005
+    max_regression = 0.01
 
     decision = evaluate_canary(
         champion_scores,
         challenger_scores,
-        min_gain=0.005,
-        max_regression=0.01,
+        min_gain=min_gain,
+        max_regression=max_regression,
     )
 
     eval_df = pd.DataFrame(
         {
-            "champion_auc": champion_scores,
-            "challenger_auc": challenger_scores,
+            "champion_score": champion_scores,
+            "challenger_score": challenger_scores,
             "delta": challenger_scores - champion_scores,
         }
     )
@@ -63,15 +67,22 @@ def main() -> None:
     decision_payload = {
         "decision": decision.decision,
         "reason": decision.reason,
-        "champion_mean_auc": float(champion_scores.mean()),
-        "challenger_mean_auc": float(challenger_scores.mean()),
+        "champion_mean_score": float(champion_scores.mean()),
+        "challenger_mean_score": float(challenger_scores.mean()),
         "mean_delta": float((challenger_scores - champion_scores).mean()),
+        "min_gain": min_gain,
+        "max_regression": max_regression,
+        "metric": "synthetic_score",
+        "metric_direction": "higher_is_better",
+        "metric_definition": "mean of generated scores; not measured ROC AUC",
     }
     decision_path.write_text(json.dumps(decision_payload, indent=2), encoding="utf-8")
 
     registry_payload = {
         "champion": "v1.4.0",
         "challenger": "v1.5.0",
+        "active_version": "v1.5.0" if decision.decision == "promote" else "v1.4.0",
+        "rollback_target": "v1.4.0",
         "decision": decision.decision,
     }
     registry_path.write_text(json.dumps(registry_payload, indent=2), encoding="utf-8")
@@ -80,7 +91,7 @@ def main() -> None:
         [
             "# Rollback Plan",
             "",
-            "1. Route 100% traffic back to champion version.",
+            "1. Route 100% traffic back to version v1.4.0.",
             "2. Freeze challenger rollout and capture failure evidence.",
             "3. Open incident review and patch challenger issues.",
         ]

@@ -5,11 +5,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, roc_auc_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
 from mlops_drift_showcase.data import generate_reference_data
 from mlops_drift_showcase.tracking import append_run_tracking
 from mlops_drift_showcase.train import save_model, train_and_evaluate
@@ -48,9 +43,17 @@ def main() -> None:
     sample_size = 600 if args.quick else 1200
     bundle = generate_reference_data(n_samples=sample_size, random_state=args.seed)
 
-    model, metrics_df, holdout_df = train_and_evaluate(
+    contract_split = build_supervised_split(
         bundle.features,
         bundle.target,
+        strategy="stratified",
+        random_state=args.seed,
+    )
+    model, metrics_df, holdout_df = train_and_evaluate(
+        contract_split.x_train,
+        contract_split.y_train,
+        test_features=contract_split.x_test,
+        test_target=contract_split.y_test,
         random_state=args.seed,
     )
 
@@ -65,7 +68,7 @@ def main() -> None:
     ref_path.parent.mkdir(parents=True, exist_ok=True)
 
     metrics_df.to_csv(metrics_path, index=False)
-    bundle.features.to_csv(ref_path, index=False)
+    contract_split.x_train.to_csv(ref_path, index=False)
     holdout_df.to_csv(holdout_path, index=False)
     save_model(model, model_path)
 
@@ -81,24 +84,10 @@ def main() -> None:
         notes="pipeline_run",
     )
 
-    contract_split = build_supervised_split(
-        bundle.features,
-        bundle.target,
-        strategy="stratified",
-        random_state=args.seed,
-    )
-    contract_model = Pipeline(
-        steps=[
-            ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=400, random_state=args.seed)),
-        ]
-    )
-    contract_model.fit(contract_split.x_train, contract_split.y_train)
-    contract_probs = contract_model.predict_proba(contract_split.x_test)[:, 1]
-    contract_preds = (contract_probs >= 0.5).astype(int)
+    contract_probs = holdout_df["y_pred_proba"].to_numpy()
     contract_metrics = {
-        "test_roc_auc": float(roc_auc_score(contract_split.y_test, contract_probs)),
-        "test_accuracy": float(accuracy_score(contract_split.y_test, contract_preds)),
+        "test_roc_auc": metric_map["roc_auc"],
+        "test_accuracy": metric_map["accuracy"],
     }
     contract_required = write_supervised_contract_artifacts(
         project_root=root,

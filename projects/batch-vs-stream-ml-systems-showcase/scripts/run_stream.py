@@ -5,8 +5,6 @@ import argparse
 import json
 from pathlib import Path
 
-import pandas as pd
-
 from batch_stream_showcase.data_generator import generate_events
 from batch_stream_showcase.stream_pipeline import run_stream_pipeline
 
@@ -24,13 +22,10 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
 
     events_path = root / "artifacts/events/events.csv"
-    if events_path.exists():
-        events = pd.read_csv(events_path)
-    else:
-        n_events = 400 if args.quick else 1200
-        events = generate_events(n_events=n_events, seed=args.seed)
-        events_path.parent.mkdir(parents=True, exist_ok=True)
-        events.to_csv(events_path, index=False)
+    n_events = 400 if args.quick else 1200
+    events = generate_events(n_events=n_events, seed=args.seed)
+    events_path.parent.mkdir(parents=True, exist_ok=True)
+    events.to_csv(events_path, index=False)
 
     result = run_stream_pipeline(events, allowed_lateness=args.allowed_lateness)
 
@@ -40,7 +35,14 @@ def main() -> None:
 
     result.window_kpis.to_csv(stream_path, index=False)
     metrics_path.write_text(
-        json.dumps({"dropped_late_events": result.dropped_late_events}, indent=2),
+        json.dumps(
+            {
+                "dropped_late_events": result.dropped_late_events,
+                "seed": args.seed,
+                "events_processed": len(events),
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
 

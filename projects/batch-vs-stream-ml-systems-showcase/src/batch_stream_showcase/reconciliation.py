@@ -22,6 +22,8 @@ def compare_batch_stream(
     merged["event_count_abs_diff"] = (
         merged["event_count_batch"] - merged["event_count_stream"]
     ).abs()
-    merged["within_tolerance"] = merged["total_value_abs_diff"] <= value_tolerance
+    merged["within_tolerance"] = (merged["total_value_abs_diff"] <= value_tolerance) & (
+        merged["event_count_abs_diff"] == 0
+    )
 
     return merged.sort_values("window").reset_index(drop=True)

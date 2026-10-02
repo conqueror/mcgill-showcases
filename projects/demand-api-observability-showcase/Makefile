@@ -37,13 +37,12 @@ ruff:
 ty:
 	uv run mypy src tests scripts
 
-check: ruff ty test
+check: ruff ty test openapi-check
 
 smoke:
+	uv run python scripts/export_openapi.py --check
 	uv run python scripts/train_demo_model.py
 	uv run pytest tests/test_predict_with_model.py tests/test_predict_no_model.py tests/test_health.py
-	uv run python scripts/export_openapi.py
-	uv run python scripts/export_openapi.py --check
 
 verify:
 	uv run python scripts/verify_artifacts.py

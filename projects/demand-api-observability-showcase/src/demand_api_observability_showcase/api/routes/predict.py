@@ -2,13 +2,21 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
+from fastapi import Request as FastAPIRequest
 from pydantic import BaseModel, Field
 
 from demand_api_observability_showcase.model.features import features_from_datetime
 from demand_api_observability_showcase.model.store import ModelStore
+
+# FastAPI requires the concrete Request class when evaluating route annotations.
+if TYPE_CHECKING:
+    Request = FastAPIRequest[Any]
+else:
+    Request = FastAPIRequest
 
 router = APIRouter()
 
@@ -25,7 +33,11 @@ class PredictResponse(BaseModel):
     model_version: str
 
 
-@router.post("/predict", response_model=PredictResponse)
+@router.post(
+    "/predict",
+    response_model=PredictResponse,
+    responses={503: {"description": "Model not loaded"}},
+)
 def predict(body: PredictRequest, request: Request) -> PredictResponse:
     model_store: ModelStore = request.app.state.model_store
     bundle = model_store.bundle

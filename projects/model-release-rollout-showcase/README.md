@@ -3,9 +3,9 @@
 Simulate canary rollout, promotion/hold/rollback decisions, and model registry updates.
 
 ## Learning outcomes
-- Compare champion vs challenger metrics under canary traffic.
+- Compare generated champion and challenger scores in a canary simulation.
 - Apply decision thresholds for promote/hold/rollback.
-- Produce auditable rollout and rollback artifacts.
+- Record decision thresholds, the simulated active version, and an instructional rollback plan.
 
 ## Quickstart
 ```bash

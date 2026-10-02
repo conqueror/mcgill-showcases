@@ -14,6 +14,9 @@ def build_feature_matrix(
     expected = set(feature_names)
 
     for idx, features in enumerate(feature_dicts):
+        missing = expected.difference(features)
+        if missing:
+            raise ValueError(f"Record {idx} has missing feature keys: {sorted(missing)}.")
         extra = set(features).difference(expected)
         if extra:
             extra_preview = sorted(extra)[:20]
@@ -25,7 +28,7 @@ def build_feature_matrix(
     matrix = np.zeros((len(feature_dicts), len(feature_names)), dtype=np.float64)
     for row_index, features in enumerate(feature_dicts):
         for col_index, name in enumerate(feature_names):
-            matrix[row_index, col_index] = float(features.get(name, 0.0))
+            matrix[row_index, col_index] = float(features[name])
     return matrix
 
 

@@ -15,11 +15,11 @@ class ModelSchemaResponse(BaseModel):
 
 class PlayerRecord(BaseModel):
     player_id: str = Field(min_length=1)
-    features: dict[str, float] = Field(default_factory=dict)
+    features: dict[str, float]
 
 
 class ScoreRequest(BaseModel):
-    records: list[PlayerRecord] = Field(min_length=1)
+    records: list[PlayerRecord] = Field(min_length=1, max_length=1000)
 
 
 class PlayerScore(BaseModel):
