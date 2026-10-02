@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class UpstreamProfile:
-    """Grounded summary of one upstream autoresearch variant."""
+    """Description of one upstream autoresearch variant at its recorded snapshot."""
 
     key: str
     display_name: str

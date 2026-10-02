@@ -47,6 +47,12 @@ def qini_curve(
     """
     if len(y) != len(treatment) or len(y) != len(uplift_scores):
         raise ValueError("y, treatment, and uplift_scores must have equal length.")
+    if n_bins < 2 or not len(y) or not np.isin(treatment, [0, 1]).all():
+        raise ValueError("Qini curves need nonempty binary treatment data and at least two bins.")
+    if not (treatment == 1).any() or not (treatment == 0).any():
+        raise ValueError("Qini curves require both treatment arms.")
+    if not np.isfinite(y).all() or not np.isfinite(uplift_scores).all():
+        raise ValueError("Outcomes and uplift scores must be finite.")
 
     order = np.argsort(-uplift_scores)
     y_sorted = y[order]
@@ -59,25 +65,29 @@ def qini_curve(
 
     control_rate = np.divide(
         cum_outcome_control,
-        np.maximum(cum_control, 1),
-        out=np.zeros_like(cum_outcome_control, dtype=float),
-        where=np.maximum(cum_control, 1) > 0,
+        cum_control,
+        out=np.full_like(cum_outcome_control, np.nan, dtype=float),
+        where=cum_control > 0,
     )
     expected_treated_outcome = control_rate * cum_treated
     incremental_gain = cum_outcome_treated - expected_treated_outcome
 
     population_fraction = np.arange(1, len(y_sorted) + 1) / len(y_sorted)
 
-    bin_edges = np.linspace(0, len(y_sorted) - 1, n_bins, dtype=int)
+    first_supported = int(np.flatnonzero((cum_treated > 0) & (cum_control > 0))[0])
+    bin_edges = np.unique(np.linspace(first_supported, len(y_sorted) - 1, n_bins - 1, dtype=int))
+    bin_edges[-1] = len(y_sorted) - 1
     curve = pd.DataFrame(
         {
-            "fraction": population_fraction[bin_edges],
-            "incremental_gain": incremental_gain[bin_edges],
+            "fraction": np.r_[0.0, population_fraction[bin_edges]],
+            "incremental_gain": np.r_[0.0, incremental_gain[bin_edges]],
         }
     )
     return curve
 
 
 def qini_auc(curve: pd.DataFrame) -> float:
-    """Area under the Qini curve."""
+    """Raw incremental-gain area; this does not subtract the random-targeting line."""
+    if len(curve) < 2 or not np.isfinite(curve[["fraction", "incremental_gain"]]).all().all():
+        raise ValueError("Qini area requires at least two finite curve points.")
     return float(np.trapezoid(curve["incremental_gain"], x=curve["fraction"]))

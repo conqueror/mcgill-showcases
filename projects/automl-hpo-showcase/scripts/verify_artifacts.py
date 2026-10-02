@@ -11,8 +11,13 @@ def main() -> None:
     if not manifest_path.exists():
         raise SystemExit("Missing artifacts/manifest.json")
 
-    required = json.loads(manifest_path.read_text(encoding="utf-8")).get("required_files", [])
-    missing = [path for path in required if not (root / path).exists()]
+    required = json.loads(manifest_path.read_text(encoding="utf-8")).get("required_files")
+    if not isinstance(required, list) or not required or not all(
+        isinstance(path, str) and path for path in required
+    ):
+        raise SystemExit("required_files must be a nonempty list of paths")
+    missing = [path for path in required if not (root / path).is_file()
+               or (root / path).stat().st_size == 0]
     if missing:
         raise SystemExit(f"Missing required artifacts: {missing}")
 

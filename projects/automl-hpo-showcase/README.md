@@ -1,11 +1,11 @@
 # AutoML HPO Showcase
 
-Benchmark hyperparameter optimization strategies under fixed compute budgets.
+Benchmark hyperparameter optimization strategies on the same candidate space under fixed trial budgets.
 
 ## Learning outcomes
 - Compare grid, random, TPE (Optuna), and optional Hyperopt searches.
 - Track best score and average score per strategy.
-- Understand cost-vs-performance behavior under tighter budgets.
+- Understand validation performance as the trial budget grows; elapsed time and compute cost are not measured.
 - Log experiments with optional MLflow backend.
 
 ## Quickstart

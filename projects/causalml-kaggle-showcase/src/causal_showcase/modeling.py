@@ -128,7 +128,9 @@ def fit_meta_learners(
         "S-Learner": cast(_MetaLearnerProtocol, BaseSRegressor(learner=_rf(), control_name=0)),
         "T-Learner": cast(_MetaLearnerProtocol, BaseTRegressor(learner=_rf(), control_name=0)),
         "X-Learner": cast(_MetaLearnerProtocol, BaseXRegressor(learner=_rf(), control_name=0)),
-        "R-Learner": cast(_MetaLearnerProtocol, BaseRRegressor(learner=_rf(), control_name=0)),
+        "R-Learner": cast(_MetaLearnerProtocol, BaseRRegressor(
+            learner=_rf(), control_name=0, random_state=42,
+        )),
     }
 
     results: dict[str, LearnerResult] = {}
@@ -164,17 +166,22 @@ def fit_meta_learners(
     return results
 
 
-def fit_uplift_tree(train_data: PreparedData, test_data: PreparedData) -> UpliftTreeResult:
+def fit_uplift_tree(
+    train_data: PreparedData, test_data: PreparedData, *, max_depth: int = 4,
+    min_samples_leaf: int = 500, min_samples_treatment: int = 250,
+    random_state: int = 42,
+) -> UpliftTreeResult:
     """Train KL-based uplift tree and return uplift scores for the test set."""
     train_treatment = np.where(train_data.treatment == 1, "ad", "control")
 
     model = UpliftTreeClassifier(
-        max_depth=4,
-        min_samples_leaf=500,
-        min_samples_treatment=250,
+        max_depth=max_depth,
+        min_samples_leaf=min_samples_leaf,
+        min_samples_treatment=min_samples_treatment,
         n_reg=100,
         evaluationFunction="KL",
         control_name="control",
+        random_state=random_state,
     )
     model.fit(
         train_data.X.to_numpy(),
@@ -183,7 +190,8 @@ def fit_uplift_tree(train_data: PreparedData, test_data: PreparedData) -> Uplift
     )
 
     predictions = model.predict(test_data.X.to_numpy())
-    uplift_scores = _flatten_predictions(predictions)
+    # CausalML 0.16.0 returns response probabilities in classes_ order, not contrasts.
+    uplift_scores = predictions[:, model.classes_.index("ad")] - predictions[:, 0]
 
     tree_summary = str(model.fitted_uplift_tree)
     return UpliftTreeResult(uplift_scores=uplift_scores, tree_summary=tree_summary)

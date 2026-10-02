@@ -195,7 +195,7 @@ def _summary_markdown() -> str:
 
 This run generated:
 
-- a grounded comparison of the macOS and Unix upstream repos,
+- a comparison from recorded macOS and Unix upstream snapshots, not a live source check,
 - a teaching version of the keep/discard policy,
 - a simulated `results.tsv` trace,
 - Codex and Claude Code launch briefs for both platforms.

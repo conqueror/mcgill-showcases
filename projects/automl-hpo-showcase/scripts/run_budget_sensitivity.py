@@ -65,7 +65,7 @@ def main() -> None:
         plt.plot(subset["budget"], subset["best_score"], marker="o", label=strategy)
     plt.xlabel("Budget (trials)")
     plt.ylabel("Best ROC-AUC")
-    plt.title("HPO Cost vs Score")
+    plt.title("HPO Trial Budget vs Score")
     plt.legend()
     plt.tight_layout()
     plt.savefig(fig_path)

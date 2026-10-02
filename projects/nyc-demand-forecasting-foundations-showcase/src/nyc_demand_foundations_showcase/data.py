@@ -63,12 +63,22 @@ def _group_tlc_trips(trips: pd.DataFrame) -> pd.DataFrame:
     work = trips[RAW_REQUIRED_COLUMNS].dropna(subset=RAW_REQUIRED_COLUMNS).copy()
     work["tpep_pickup_datetime"] = pd.to_datetime(work["tpep_pickup_datetime"], errors="coerce")
     work = work.dropna(subset=["tpep_pickup_datetime"])
+    if work.empty:
+        raise ValueError("No valid TLC trips to aggregate.")
 
     work["pickup_hour"] = work["tpep_pickup_datetime"].dt.floor("h")
+    grid = pd.MultiIndex.from_product(
+        [work["PULocationID"].unique(),
+         pd.date_range(work["pickup_hour"].min(), work["pickup_hour"].max(), freq="h")],
+        names=["PULocationID", "pickup_hour"],
+    )
     grouped = (
-        work.groupby(["PULocationID", "pickup_hour"], as_index=False)
+        work.groupby(["PULocationID", "pickup_hour"])
         .size()
-        .rename(columns={"PULocationID": "pickup_zone_id", "size": "pickups"})
+        .reindex(grid, fill_value=0)
+        .rename("pickups")
+        .reset_index()
+        .rename(columns={"PULocationID": "pickup_zone_id"})
         .sort_values("pickup_hour")
         .reset_index(drop=True)
     )

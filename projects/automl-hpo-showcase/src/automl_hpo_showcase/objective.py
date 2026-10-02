@@ -7,6 +7,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
+from automl_hpo_showcase.search_space import GRID_SPACE
+
 
 def make_synthetic_dataset(*, random_state: int = 42) -> tuple[pd.DataFrame, pd.Series]:
     x_values, y_values = make_classification(
@@ -96,8 +98,4 @@ def evaluate_on_test(
 
 def random_config(seed: int) -> dict[str, int]:
     rng = np.random.default_rng(seed)
-    return {
-        "n_estimators": int(rng.integers(30, 151)),
-        "max_depth": int(rng.integers(2, 13)),
-        "min_samples_split": int(rng.integers(2, 13)),
-    }
+    return {name: int(rng.choice(values)) for name, values in GRID_SPACE.items()}

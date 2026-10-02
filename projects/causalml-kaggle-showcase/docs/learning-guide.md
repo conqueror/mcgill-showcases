@@ -7,7 +7,7 @@ By the end of this guide, you should be able to:
 - Train and compare S/T/X/R learners and uplift trees.
 - Read Qini curves and choose a model for a real budget.
 - Run confounding diagnostics and explain when causal claims are weak.
-- Use SHAP to interpret which features drive uplift predictions.
+- Use SHAP to interpret a surrogate of uplift scores, checking its held-out fidelity first.
 
 ## Learning flow
 1. `10 min` Refresh core terms (`counterfactual`, `ATE`, `CATE`, `uplift`).

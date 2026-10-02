@@ -23,6 +23,8 @@ def covariate_balance_table(X: pd.DataFrame, treatment: np.ndarray) -> pd.DataFr
 
     treated_mask = treatment == 1
     control_mask = treatment == 0
+    if not treated_mask.any() or not control_mask.any() or not np.isin(treatment, [0, 1]).all():
+        raise ValueError("Balance requires observations from both binary treatment arms.")
 
     rows: list[dict[str, float | str]] = []
     for col in X.columns:
@@ -36,7 +38,11 @@ def covariate_balance_table(X: pd.DataFrame, treatment: np.ndarray) -> pd.DataFr
         control_var = float(np.var(control, ddof=1)) if len(control) > 1 else 0.0
 
         pooled_std = float(np.sqrt((treated_var + control_var) / 2.0))
-        smd = 0.0 if pooled_std == 0.0 else float((treated_mean - control_mean) / pooled_std)
+        difference = treated_mean - control_mean
+        if pooled_std == 0.0:
+            smd = 0.0 if difference == 0.0 else float(np.copysign(np.inf, difference))
+        else:
+            smd = float(difference / pooled_std)
 
         rows.append(
             {

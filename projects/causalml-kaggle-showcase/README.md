@@ -155,7 +155,7 @@ Uplift modeling predicts incremental change caused by treatment, not just outcom
 ### Interpretability of results
 Interpretability answers: "Why did the model recommend this action?"
 - Segment view: uplift trees show split-based segments.
-- Feature view: SHAP ranks features that increase/decrease uplift predictions.
+- Feature view: SHAP explains a random-forest surrogate of uplift scores; held-out R² measures how closely that surrogate matches those scores.
 - Policy view: budget simulation shows expected incremental conversions per model.
 
 ### Conditions (assumptions)

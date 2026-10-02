@@ -58,7 +58,12 @@ def load_marketing_ab_data(csv_path: Path) -> PreparedData:
         dtype=float,
     )
 
-    treatment = (df["test_group"].str.lower() == "ad").astype(int).to_numpy(dtype=int)
+    assignments = df["test_group"].astype("string").str.strip().str.lower()
+    if df.empty or not assignments.isin(["ad", "psa"]).all():
+        raise ValueError("test_group must contain only ad or psa, with no missing values.")
+    if not df["converted"].isin([0, 1]).all():
+        raise ValueError("converted must contain only binary outcomes 0 or 1.")
+    treatment = (assignments == "ad").astype(int).to_numpy(dtype=int)
     outcome = df["converted"].astype(int).to_numpy(dtype=int)
 
     return PreparedData(
@@ -98,3 +103,14 @@ def train_test_split_prepared(
         feature_names=prepared.feature_names,
     )
     return train_data, test_data
+
+
+def train_val_test_split_prepared(
+    prepared: PreparedData, *, random_state: int = 42,
+) -> tuple[PreparedData, PreparedData, PreparedData]:
+    """Reserve 20% for final testing and 20% for model/policy selection."""
+    train_val, test = train_test_split_prepared(prepared, test_size=0.2,
+                                               random_state=random_state)
+    train, val = train_test_split_prepared(train_val, test_size=0.25,
+                                          random_state=random_state)
+    return train, val, test

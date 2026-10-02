@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .models import UpstreamProfile
+from .platforms import upstream_snapshot
 
 
 def _agent_label(agent: str) -> str:
@@ -44,6 +45,9 @@ def render_agent_brief(profile: UpstreamProfile, agent: str) -> str:
 - Repo: `{profile.repo}`
 - URL: {profile.repo_url}
 - Snapshot commit: `{profile.repo_commit}`
+- Source check date: {upstream_snapshot()["sources_checked_on"]}.
+
+This generator does not recheck upstream sources.
 
 ## Why this track
 
@@ -55,7 +59,9 @@ def render_agent_brief(profile: UpstreamProfile, agent: str) -> str:
 
 1. Clone the upstream repo.
 2. Enter the repo root.
-3. Run:
+3. Pin the snapshot: `git checkout --detach {profile.repo_commit}`.
+4. Verify `git rev-parse HEAD` matches the snapshot commit above.
+5. Run:
 
 {commands}
 

@@ -106,16 +106,16 @@ def main() -> None:
     shap_status = "disabled"
     if args.with_shap:
         shap_status = run_shap_importance(
-            contract_model,
-            contract_split.x_test,
+            model,
+            data.x_test,
             output_path=root / "artifacts/explainability/shap_importance.csv",
         )
     lime_status = "disabled"
     if args.with_lime:
         lime_status = run_lime_local_explanations(
-            contract_model.predict_proba,
-            contract_split.x_train,
-            contract_split.x_test,
+            model.predict_proba,
+            data.x_train,
+            data.x_test,
             output_path=root / "artifacts/explainability/lime_local_explanations.csv",
         )
 
