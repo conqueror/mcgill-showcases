@@ -156,7 +156,7 @@ backward induction: a single ordered sweep from the last step backward.
 deterministic transition  s' = T(s, a):
   Q*(s, a) = R_{t+1} + (0 if done else gamma * max_a' Q*(s', a'))
   V*(s)    = max_a Q*(s, a)
-process states in descending step t = H, H-1, ..., 0
+process acting states in descending step t = H-1, H-2, ..., 0
 ```
 
 - `H` -- the horizon (episode length); `T(s,a)` -- the deterministic next state.
@@ -166,8 +166,8 @@ states are never acted on, each successor's `Q*` is already known when you need 
 one sweep gives the exact fixed point -- no iteration to convergence required. This is
 value iteration specialized to a finite horizon, implemented in `optimal_action_values`
 (`src/learning_agents/dynamic_programming.py`). At convergence the TD error is exactly 0
-for every `(s,a)`. The resulting plan, `dp_optimal`, is the **planning ceiling**:
-`avg_reward` 1.2142, the best of any policy in `artifacts/eval/policy_comparison.csv`.
+for every `(s,a)`. The evaluation policy `dp_optimal` uses `gamma=1.0`, matching the
+undiscounted reported reward. The separate Q-learning gap uses `gamma=0.9` for both tables.
 
 Planning vs learning, made measurable: online Q-learning converges to this exact `Q*`
 only around 5000 episodes; the showcase trains 400 on purpose, so the residual gap in
@@ -270,8 +270,8 @@ REINFORCE step:  theta_{s,a'} <- theta_{s,a'} + alpha * (G_t - b) * (1[a'=A_t] -
 ```
 
 - `theta_{s,a}` -- the logit (parameter) for action `a` in state `s`.
-- `b` -- a baseline subtracted from the return to cut variance; here the episode-mean
-  return.
+- `b` -- a baseline subtracted from the return to cut variance; here the
+  mean step return from earlier episodes, held fixed throughout the current episode.
 - `(G_t - b)` -- the advantage `A` for that step: how much better the realized return was
   than the baseline.
 
@@ -297,7 +297,7 @@ update:      one SGD step on L over a replay minibatch; sync Q_bar <- Q_theta pe
 ```
 
 PPO is the actor-critic, clipped descendant of REINFORCE. It keeps the score-function gradient but
-(1) replaces the episode-mean baseline with a learned critic `V_phi`, and (2) clips the probability
+(1) replaces the historical mean-return baseline with a learned critic `V_phi`, and (2) clips the probability
 ratio so one update cannot move the policy too far.
 
 ```text

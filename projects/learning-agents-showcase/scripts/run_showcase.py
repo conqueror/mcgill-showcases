@@ -128,10 +128,10 @@ def main(argv: list[str] | None = None) -> int:
     bandit_result = run_bandit_experiment(steps=bandit_steps)
     q_result = train_q_learning(episodes=train_episodes)
     learned = QTablePolicy(q_table=q_result.q_table, name="q_learning")
-    # Exact backward-induction Q* -- reused as both the planning-ceiling policy in the comparison
-    # and the ground truth for the learned-vs-optimal gap artifact below.
+    # Discounted Q* matches Q-learning's gamma=0.9 for the gap artifact.
     optimal_values = optimal_action_values()
-    dp_optimal = QTablePolicy(q_table=optimal_values, name="dp_optimal")
+    # The evaluation ceiling instead matches its undiscounted return (gamma=1).
+    dp_optimal = QTablePolicy(q_table=optimal_action_values(gamma=1.0), name="dp_optimal")
     # Offline RL: learn a policy from a fixed behaviour log (no new interaction) so the comparison
     # shows the full ladder -- online Q-learning vs offline FQI vs the planning optimum.
     offline_dataset = collect_logged_dataset(episodes=offline_episodes, epsilon=0.6, seed=7)
@@ -226,8 +226,8 @@ def main(argv: list[str] | None = None) -> int:
     ope_dataset = collect_logged_dataset(episodes=ope_episodes, epsilon=0.3, seed=7)
     ope_targets: list[tuple[str, Policy]] = [
         ("heuristic_router", HeuristicRouterPolicy()),
-        ("dp_optimal", QTablePolicy(q_table=optimal_values, name="dp_optimal")),
-        ("random", RandomPolicy(seed=1)),
+        ("dp_optimal", dp_optimal),
+        ("always_escalate", AlwaysEscalatePolicy()),
     ]
     write_csv_artifact(
         args.output_dir / "ope" / "estimator_comparison.csv",

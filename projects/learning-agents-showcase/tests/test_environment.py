@@ -178,7 +178,7 @@ def test_escalate_is_terminal_and_costly() -> None:
 
 
 def test_horizon_terminates_a_non_committing_agent() -> None:
-    """An agent that only retrieves/clarifies is force-terminated once step exceeds the horizon."""
+    """An agent that only retrieves/clarifies stops after exactly horizon decisions."""
     env = AgentDecisionEnvironment(horizon=5)
     env.reset(scenario_id=3)
     last = None
@@ -189,8 +189,8 @@ def test_horizon_terminates_a_non_committing_agent() -> None:
         last = env.step(action)
     assert last is not None
     assert last.done is True
-    assert last.state.step <= env.horizon + 1
-    assert last.info["termination"] in {"horizon", "budget_exhausted"}
+    assert last.state.step == env.horizon
+    assert last.info["termination"] == "horizon"
 
 
 def test_budget_violation_ends_episode_without_applying_action() -> None:
@@ -257,12 +257,8 @@ def test_state_normalized_vector_is_seven_unit_floats() -> None:
     assert vector[6] == pytest.approx(1.0)  # full starting budget
 
 
-def test_normalized_vector_step_is_clamped_past_horizon() -> None:
-    """A horizon-terminated state has step == horizon + 1, yet the step coord stays clamped to 1.0.
-
-    Regression guard: a horizon-5 episode ends on a state with step 6, so step / horizon = 1.2
-    without clamping; the documented [0, 1] contract must hold for this reachable terminal state.
-    """
+def test_horizon_counts_decisions_and_terminal_vector_stays_normalized() -> None:
+    """A horizon of five allows exactly five decisions, with terminal step coordinate 1.0."""
     env = AgentDecisionEnvironment(horizon=5)
     env.reset(scenario_id=3)
     last = None
@@ -272,7 +268,7 @@ def test_normalized_vector_step_is_clamped_past_horizon() -> None:
         last = env.step(action)
     assert last is not None
     assert last.info["termination"] == "horizon"
-    assert last.state.step == env.horizon + 1
+    assert last.state.step == env.horizon
     vector = last.state.as_normalized_vector(horizon=env.horizon)
     assert vector[0] == pytest.approx(1.0)
     assert all(0.0 <= component <= 1.0 for component in vector)

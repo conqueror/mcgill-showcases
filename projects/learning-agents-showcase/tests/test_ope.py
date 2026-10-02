@@ -14,6 +14,12 @@ RL concept:
 
 from __future__ import annotations
 
+import csv
+from collections.abc import Callable
+from pathlib import Path
+
+import pytest
+
 from learning_agents.dynamic_programming import optimal_action_values
 from learning_agents.environment import AgentDecisionEnvironment
 from learning_agents.offline_rl import collect_logged_dataset
@@ -24,11 +30,12 @@ from learning_agents.ope import (
     true_policy_value,
 )
 from learning_agents.policies import (
+    AlwaysEscalatePolicy,
     HeuristicRouterPolicy,
     Policy,
     QTablePolicy,
-    RandomPolicy,
 )
+from scripts import run_ope, run_showcase
 
 # A behaviour log from an epsilon-soft heuristic router: covers the router's neighbourhood well.
 _LOG = collect_logged_dataset(episodes=800, epsilon=0.3, seed=7)
@@ -86,21 +93,54 @@ def test_ope_evaluates_a_divergent_but_covered_target() -> None:
 def test_ope_degrades_under_poor_overlap() -> None:
     """A target far from the behaviour policy is estimated poorly -- the coverage requirement.
 
-    Evaluating a uniform-random target from a heuristic-router log violates overlap: the log rarely
-    follows random trajectories, so importance sampling is badly off. This pins the central OPE
-    caveat (no coverage -> no trust) and that weighted IS is more robust than ordinary IS under that
-    poor overlap.
+    A deterministic always-escalate target has no support in an answer-only log. No estimator
+    can recover its value from that log; self-normalising cannot repair absent coverage.
     """
-    random_target = RandomPolicy(seed=1)
-    truth = true_policy_value(random_target, episodes_per_scenario=_TRUTH_EPISODES)
-    estimates = ope_estimates(_LOG, random_target, gamma=1.0)
+    dataset = collect_logged_dataset(episodes=1, scenario_ids=(0,), epsilon=0.0, seed=0)
+    assert [row.action for row in dataset.transitions] == [0]
+    target = AlwaysEscalatePolicy()
+    truth = true_policy_value(target, scenario_ids=(0,), episodes_per_scenario=1)
+    # Easy escalation: 0.6 payoff - 1.5 cost = -0.9; the log has no escalation.
+    assert truth == -0.9
+    estimates = ope_estimates(dataset, target)
+    assert set(estimates.values()) == {0.0}
 
-    is_error = abs(estimates["importance_sampling"] - truth)
-    wis_error = abs(estimates["weighted_importance_sampling"] - truth)
-    # Ordinary IS is unreliable here -- a much larger error than on a covered target.
-    assert is_error > 0.2
-    # Self-normalisation makes weighted IS more robust under poor overlap.
-    assert wis_error < is_error
+
+@pytest.mark.parametrize("runner", [run_ope.main, run_showcase.main])
+def test_ope_runners_use_reproducible_deterministic_targets(
+    tmp_path: Path, runner: Callable[[list[str] | None], int]
+) -> None:
+    args = ["--quick", "--output-dir", str(tmp_path)]
+    assert runner(args) == 0
+    artifact = tmp_path / "ope" / "estimator_comparison.csv"
+    before = artifact.read_bytes()
+    with artifact.open(newline="") as handle:
+        targets = {row["target"] for row in csv.DictReader(handle)}
+    assert targets == {"heuristic_router", "dp_optimal", "always_escalate"}
+    assert runner(args) == 0
+    assert artifact.read_bytes() == before
+
+
+def test_ope_report_compares_the_same_discounted_return() -> None:
+    env = AgentDecisionEnvironment()
+    start = env.reset(seed=0, scenario_id=0)
+    assert (start.difficulty, start.ambiguity) == (0, 0)
+    target = QTablePolicy(q_table={start.as_tuple(): [0.0, 1.0, 0.0, 0.0]})
+    dataset = collect_logged_dataset(
+        episodes=1, scenario_ids=(0,), base_policy=target, epsilon=0.0, seed=0
+    )
+    assert [row.reward for row in dataset.transitions] == [-0.7, 2.0]
+    # Needless retrieval: -0.5 cost - 0.2 effort; then a grounded answer: +2.
+    # G(gamma=0.5) = -0.7 + 0.5*2 = 0.3, rather than the undiscounted 1.3.
+    rows = ope_report_rows(
+        dataset, [("retrieve_then_answer", target)], gamma=0.5,
+        scenario_ids=(0,), episodes_per_scenario=1,
+    )
+    assert len(rows) == 4
+    for row in rows:
+        assert row["true_value"] == pytest.approx(0.3)
+        assert row["estimate"] == pytest.approx(0.3)
+        assert row["abs_error"] == 0.0
 
 
 def test_ope_report_rows_have_the_expected_schema() -> None:

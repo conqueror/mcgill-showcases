@@ -10,19 +10,19 @@ An LLM-powered agent has several places where learning *could* live:
 - the **LLM weights** — the parameters of the underlying language model;
 - the **multi-agent coordination** — how several agents divide and combine work.
 
-Lane A isolates the first one. Here, reinforcement learning learns the **orchestration policy** `pi(a|s)`: a mapping from the agent's current state `s` to a probability distribution over routing actions `a`. An agent framework — the OpenAI Agents SDK in this showcase — is the **environment, executor, and logger** that runs those decisions. It is emphatically *not* the trainer.
+Lane A isolates the first one. Here, reinforcement learning learns the **orchestration policy** `pi(a|s)`: a mapping from the agent's current state `s` to a probability distribution over routing actions `a`. The local simulator represents the **environment, executor, and logger** and labels actions with SDK constructs. The optional SDK builder is a separate construction example; it does not connect the learned policy to live execution.
 
 The split is worth stating bluntly, because the framework's marketing rarely does:
 
 ```text
 learned policy pi(a|s)   decides which action to take
-agent framework (SDK)    executes that action and records the trace
+local simulator         executes that action and records an SDK-labelled trace
 RL training loop         improves pi(a|s) from the recorded rewards
 ```
 
-The framework decides nothing about *how* to route. Given a state it does not choose the tool; it only runs whatever tool, handoff, or final output the policy selected, and writes down what happened. The deeper point, which this whole lane exists to make concrete: **frameworks execute learned policies; they do not themselves learn.** Swapping the SDK for another runtime would change *how* the action is carried out and logged, not *which* action is right — that is the policy's job, and the policy is what RL trains.
+In the offline loop, the learned policy chooses an action and the simulator applies it and logs its SDK label. The intended architectural split is that a framework executes a policy rather than training it. Connecting that policy to a real SDK runtime still requires caller implementation.
 
-The implementation lives in `src/learning_agents/sdk_bridge.py`. Its module docstring states the same reframing, and the rest of the `learning_agents` package is the RL that produces the policy the bridge runs.
+The implementation lives in `src/learning_agents/sdk_bridge.py`, and the rest of the `learning_agents` package is the RL that produces the policy the offline bridge runs.
 
 ## The action-to-SDK-construct mapping
 
@@ -37,7 +37,7 @@ The bridge between "an RL action" and "a thing an agent framework does" is a sma
 
 Read this table as the *type signature* of the interface. The learned policy emits an integer in `{0, 1, 2, 3}`; the framework interprets that integer as one of three SDK primitives — a **final output** (the agent's answer, which ends the run), a **function-tool call** (retrieve or clarify), or a **handoff** (escalate to a different agent). Two distinct actions, `retrieve` and `clarify`, both surface as tool calls but to *different* tools, which is why the mapping carries a separate `sdk_target` alongside the `sdk_role`.
 
-This is what makes the thesis non-vacuous. "RL learns the policy and the SDK executes it" is just words until you can point at the line where action `3` becomes a real `handoff` to a `human_specialist` agent. The crosswalk is that line.
+The crosswalk labels action `3` as a `handoff` to `human_specialist` in a local trace. It does not execute an SDK handoff. The optional builder's `human_specialist` is another software agent, not a human approval mechanism.
 
 ## How the policy drives the loop
 
@@ -49,7 +49,7 @@ flowchart LR
     P -->|"a = answer_direct"| F["final_output<br/>(assistant_answer)"]
     P -->|"a = retrieve / clarify"| T["tool_call<br/>(retrieve_context /<br/>ask_clarifying_question)"]
     P -->|"a = escalate"| H["handoff<br/>(human_specialist)"]
-    F --> X["Agent framework<br/>executes the action"]
+    F --> X["Local simulator<br/>applies the action"]
     T --> X
     H --> X
     X --> L["Logger writes one<br/>trace row: step, action,<br/>sdk_role, reward, terminal"]
@@ -58,10 +58,10 @@ flowchart LR
 
 Two layers make this real, deliberately separated by *what can run offline*:
 
-1. **The pure-Python demonstration** — `run_bridged_episode` in `src/learning_agents/sdk_bridge.py`. It rolls the learned policy out inside this package's own `AgentDecisionEnvironment` (the stand-in runtime) and, for each decision, annotates the step with the SDK construct that decision *would* drive. The loop is exactly the agent loop you would see from the SDK, except the decisions come from the learned policy rather than from free-running LLM tool-choice. No SDK and no network are required, which is why this is the testable heart of the lane.
-2. **The gated live adapter** — `build_agents_sdk_agent` in the same module. It constructs a real `agents.Agent` with function tools for `retrieve`/`clarify` and a `human_specialist` handoff, so the *same* mapping wires straight into the live framework.
+1. **The pure-Python demonstration** — `run_bridged_episode` in `src/learning_agents/sdk_bridge.py`. It rolls the learned policy out inside this package's own `AgentDecisionEnvironment` and annotates each step with the SDK construct it would represent. This is a simulator rollout, not an SDK run. No SDK and no network are required.
+2. **The optional SDK construction example** — `build_agents_sdk_agent` in the same module. It constructs an `agents.Agent` with stub retrieval/clarification tools and a software-agent handoff. It does not receive the learned policy or route SDK execution through it.
 
-The state `s` the policy reasons over is the MDP state from `src/learning_agents/environment.py`: how much evidence has been gathered, the request's difficulty and ambiguity, and the step index. The framework never inspects these to make a choice — it only receives the action and acts.
+The state `s` the offline policy reasons over is the MDP state from `src/learning_agents/environment.py`: how much evidence has been gathered, the request's difficulty and ambiguity, and the step index. The local simulator applies the selected action; the SDK builder receives neither this state nor a learned action.
 
 ## The gated optional dependency
 
@@ -76,16 +76,16 @@ So the two paths are:
 
 ```text
 default:           offline demonstration; no SDK, no network
-uv sync --extra sdk + credentials:   live agents.Agent bridge enabled
+uv sync --extra sdk:  agents.Agent construction example available
 ```
 
 Even with the extra installed, *constructing* the agent needs no network; only *running* it against a model does, and that is intentionally left to the caller. In the environment that generated the artifacts here, the SDK is **not installed**, so the offline demonstration is what produced the trace below (see `artifacts/sdk_bridge/bridge_report.md`, "Live SDK status").
 
-This gating is itself the thesis in dependency form: if the framework were the learner, you could not run the showcase without it. Because the framework is only the executor, you can learn and evaluate the entire policy with the SDK absent, then drop the *same* policy into the live runtime when you want it.
+You can learn and evaluate the entire policy with the SDK absent. Supplying that policy to a live runtime requires integration beyond the provided builder.
 
 ## The orchestration trace
 
-`run_bridged_episode` returns one row per decision step, and the runner writes them to `artifacts/sdk_bridge/orchestration_trace.csv`. The columns are `step`, `scenario_name`, `action_label`, `sdk_role`, `sdk_target`, `reward`, and `terminal`. This is exactly the shape an Agents-SDK run would log — the difference is only the *source* of the decisions.
+`run_bridged_episode` returns one row per decision step, and the runner writes them to `artifacts/sdk_bridge/orchestration_trace.csv`. The columns are `step`, `scenario_name`, `action_label`, `sdk_role`, `sdk_target`, `reward`, and `terminal`. This is a local simulator trace with SDK labels; equivalence to the native SDK trace format has not been verified.
 
 The recorded trace covers five scenarios:
 
@@ -129,8 +129,8 @@ So the framework is policy-agnostic by design, and that is a feature with a shar
 
 ## What this lane is and is not
 
-- It **is** a faithful, testable bridge: the offline `run_bridged_episode` produces the same trace shape a live run would, and `build_agents_sdk_agent` proves the mapping wires into the real `agents.Agent`.
-- It is **not** a claim that the SDK learns anything. The SDK is runtime and logging. Every number on this page traces to a policy the RL code learned, evaluated under the same environment the framework would execute.
+- It **is** a testable simulator demonstration: `run_bridged_episode` labels local actions with SDK constructs. `build_agents_sdk_agent` constructs an SDK agent with stubs; it does not execute the learned policy or prove native trace equivalence.
+- The SDK example does not train a policy. The numbers on this page come from simulator evaluation, not SDK execution.
 - It is **not** a benchmark of the OpenAI Agents SDK's performance. The artifacts here are generated offline, with the SDK absent, precisely to show that the policy and its evaluation do not depend on the framework being present.
 
 ## See also

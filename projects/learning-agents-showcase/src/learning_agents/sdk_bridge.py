@@ -1,12 +1,11 @@
-"""Bridge a learned orchestration policy to the OpenAI Agents SDK (locus of learning: Lane A).
+"""Simulate SDK-labelled orchestration and provide an optional SDK construction example (Lane A).
 
 What + why: the central reframing of this showcase is that an "agent" has several places learning
 *could* live -- the **orchestration policy** (which tool/handoff to choose), the **LLM weights**, or
 the **multi-agent coordination**. This module makes Lane A concrete: the thing RL learns here is the
-*orchestration policy*, and a framework like the OpenAI Agents SDK is the **environment, executor,
-and logger** that runs it -- NOT the trainer. The SDK decides nothing about *how* to route; it just
-executes the routing decisions and records traces. RL (everything else in this package) learns those
-decisions; the SDK carries them out.
+*orchestration policy*. The local simulator executes those decisions and records SDK labels;
+the optional SDK builder does not connect that policy to SDK execution. The intended architectural
+split is a learned policy choosing actions and a separate runtime executing them.
 
 The bridge has two layers, deliberately separated by what can be run offline:
 
@@ -16,9 +15,9 @@ The bridge has two layers, deliberately separated by what can be run offline:
   package's own environment while annotating each step with the SDK role it would drive. This is the
   testable heart of the lane: it shows the learned policy *driving an agent loop* without depending
   on the SDK being installed or reachable.
-* A gated adapter to the real SDK: :func:`build_agents_sdk_agent` constructs an actual
-  ``agents.Agent`` (with function tools and a human handoff) so the same mapping wires straight into
-  the live framework. It is imported dynamically and raises :class:`OptionalSDKError` when the
+* An optional construction example: :func:`build_agents_sdk_agent` constructs an actual
+  ``agents.Agent`` with stub tools and a software-agent handoff. It does not receive a learned
+  policy. It is imported dynamically and raises :class:`OptionalSDKError` when the
   optional ``sdk`` extra (``openai-agents``) is not installed, so the core showcase never depends on
   it. Running that agent against a model needs network/credentials and is out of the offline path.
 
@@ -90,9 +89,8 @@ def sdk_available() -> bool:
 def action_tool_mapping() -> list[dict[str, str]]:
     """Build the action -> SDK-construct crosswalk rows (the locus-of-learning A table).
 
-    What + why: states, in data, exactly which SDK construct each orchestration action drives. This
-    is what makes "RL learns the policy; the SDK executes it" concrete: the learned policy's output
-    (an action) becomes a function-tool call, a handoff, or a final output in the framework.
+    What + why: labels each simulated orchestration action with the SDK construct it would
+    represent. This crosswalk is descriptive; it does not execute SDK tools or handoffs.
 
     Returns:
         One row per action with ``action`` (index), ``action_label``, ``sdk_role``, ``sdk_target``,
@@ -125,10 +123,8 @@ def run_bridged_episode(
     What + why: this is the offline demonstration of Lane A. It runs the policy inside this
     package's own :class:`~learning_agents.environment.AgentDecisionEnvironment` (the stand-in
     runtime) and, for each decision, records the SDK construct that decision maps to -- a
-    function-tool call, a handoff, or the final output. The resulting trace is exactly what an
-    Agents-SDK run would log, except the *decisions* came from the learned policy rather than from
-    free-running LLM tool-choice. No SDK and no network are needed, so this is the bridge's
-    testable core.
+    function-tool call, a handoff, or the final output. This is a local seven-column simulator
+    trace, not a native SDK trace. No SDK and no network are needed.
 
     Args:
         policy: The orchestration policy to drive the loop (any
@@ -174,12 +170,12 @@ def build_agents_sdk_agent(
     instructions: str | None = None,
     tool_targets: Sequence[str] = ("retrieve_context", "ask_clarifying_question"),
 ) -> object:
-    """Construct a live ``agents.Agent`` wired with this MDP's tools and a human handoff (gated).
+    """Construct an optional ``agents.Agent`` with stub tools and a software-agent handoff.
 
-    What + why: proves the action -> SDK-construct mapping wires into the *real* OpenAI Agents SDK,
-    not just the offline simulation. It dynamically imports ``agents`` (so the core package never
+    What + why: illustrates SDK construction without connecting the learned policy.
+    It dynamically imports ``agents`` (so the core package never
     statically depends on it), defines function tools for the retrieve/clarify actions and a
-    human-specialist agent for the escalate handoff, and returns the assembled orchestrator
+    software agent named human_specialist for the handoff, and returns the assembled orchestrator
     ``Agent``. Construction needs no network; actually *running* the agent against a model does, and
     is intentionally left to the caller. Raises :class:`OptionalSDKError` when the SDK is absent so
     callers degrade to :func:`run_bridged_episode`.
@@ -230,7 +226,7 @@ def build_agents_sdk_agent(
         name="orchestrator",
         instructions=instructions
         or (
-            "Route each request using the learned orchestration policy: answer directly when "
+            "Route each request: answer directly when "
             "grounded and unambiguous, call the retrieval tool to gather evidence, call the "
             "clarification tool to resolve ambiguity, and hand off to the human specialist only "
             "when a human is genuinely warranted."
@@ -257,10 +253,10 @@ def bridge_report_markdown(*, sdk_present: bool) -> str:
     RL concept: locus of learning A -- orchestration-policy learning, framework as executor.
     """
     status = (
-        "installed -- the live `agents.Agent` bridge is available."
+        "installed -- the `agents.Agent` construction example is available."
         if sdk_present
         else "not installed -- the offline demonstration runs; `uv sync --extra sdk` enables the "
-        "live `agents.Agent` bridge."
+        "`agents.Agent` construction example."
     )
     mapping_lines = "\n".join(
         f"- `{row['action_label']}` -> {row['sdk_role']} (`{row['sdk_target']}`): "
@@ -271,9 +267,9 @@ def bridge_report_markdown(*, sdk_present: bool) -> str:
         "# OpenAI Agents SDK Bridge (Locus of Learning A)\n\n"
         "## Thesis\n\n"
         "Reinforcement learning here learns the agent's **orchestration policy** -- which tool to "
-        "call, when to clarify, and when to hand off to a human. The OpenAI Agents SDK is the "
-        "**environment, executor, and logger** that runs those decisions; it is not the trainer. "
-        "The learned policy decides; the framework carries it out and records the trace.\n\n"
+        "call, when to clarify, and when to hand off to a human. The local simulator is the "
+        "**environment, executor, and logger** that runs those decisions and adds SDK labels. "
+        "The optional SDK builder does not receive a learned policy or execute its decisions.\n\n"
         "## Action to SDK construct\n\n"
         f"{mapping_lines}\n\n"
         "## Live SDK status\n\n"
@@ -281,6 +277,7 @@ def bridge_report_markdown(*, sdk_present: bool) -> str:
         "## How to run\n\n"
         "- Offline (no SDK, no network): `run_bridged_episode` rolls the learned policy out in the "
         "local environment and logs the SDK role of every decision.\n"
-        "- Live (optional): `build_agents_sdk_agent` constructs a real `agents.Agent` with the "
-        "same tools and handoff; running it against a model requires network and credentials.\n"
+        "- SDK example (optional): `build_agents_sdk_agent` constructs an `agents.Agent` with "
+        "stub tools and a software-agent handoff. Connecting the learned policy is left to the "
+        "caller; running it against a model requires network and credentials.\n"
     )

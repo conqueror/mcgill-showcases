@@ -20,7 +20,13 @@ RL concept:
 
 from __future__ import annotations
 
-from learning_agents.environment import AgentDecisionEnvironment, scenario_catalog
+import csv
+from collections.abc import Callable
+from pathlib import Path
+
+import pytest
+
+from learning_agents.environment import AgentDecisionEnvironment, AgentState, scenario_catalog
 from learning_agents.evaluation import evaluate_policies, simulate_episode
 from learning_agents.policies import (
     AlwaysEscalatePolicy,
@@ -29,8 +35,77 @@ from learning_agents.policies import (
     RandomPolicy,
 )
 from learning_agents.reward import hackable_reward, judge_reward
+from scripts import run_policy_evaluation, run_showcase
 
 ALL_SCENARIOS = tuple(range(len(scenario_catalog())))
+
+
+class _BlockedEscalationPolicy:
+    name = "blocked_escalation"
+
+    def reset(self) -> None:
+        return None
+
+    def select_action(self, state: AgentState) -> int:
+        # Four retrievals spend 20 of the 30 budget tenths; escalation needs 15.
+        return 1 if state.step < 4 else 3
+
+
+@pytest.mark.parametrize("reward_fn", [judge_reward, hackable_reward])
+def test_blocked_escalation_is_a_failed_unexecuted_action(
+    reward_fn: Callable[[AgentState, int, AgentState, bool], float],
+) -> None:
+    summary, scenarios = evaluate_policies(
+        policies=[_BlockedEscalationPolicy()], scenario_ids=(3,), reward_fn=reward_fn
+    )
+    row = scenarios[0]
+    assert row["solved"] == 0
+    assert row["final_action_label"] == "forced_stop"
+    assert row["escalation_count"] == 0
+    assert row["action_cost"] == 2.0  # Four executed retrievals cost 4 * 0.5.
+    assert summary[0]["avg_escalation_rate"] == 0.0
+
+    trace = simulate_episode(
+        policy=_BlockedEscalationPolicy(), scenario_id=3, reward_fn=reward_fn
+    )
+    assert trace[-1]["action_label"] == "escalate"  # Preserve the attempted action.
+    assert trace[-1]["termination"] == "budget_exhausted"
+    assert trace[-1]["action_cost"] == 0.0  # No handoff ran or spent budget.
+    assert trace[-1]["reward"] == -1.5  # The failed stop earns no escalation payoff.
+    assert trace[-1]["next_evidence"] == trace[-1]["evidence"]
+    assert trace[-1]["next_ambiguity"] == trace[-1]["ambiguity"]
+
+
+def test_horizon_stop_is_not_a_committed_answer() -> None:
+    start = AgentDecisionEnvironment().reset(seed=0, scenario_id=0)
+    policy = QTablePolicy(q_table={start.as_tuple(): [0.0, 0.0, 1.0, 0.0]})
+    _, rows = evaluate_policies(policies=[policy], scenario_ids=(0,), horizon=1)
+    assert rows[0]["steps"] == 1
+    assert rows[0]["actions"] == "clarify"
+    assert rows[0]["final_action_label"] == "forced_stop"
+    assert rows[0]["answered"] == 0
+    assert rows[0]["solved"] == 0
+
+
+@pytest.mark.parametrize("runner", [run_policy_evaluation.main, run_showcase.main])
+def test_evaluation_runners_use_the_undiscounted_planning_ceiling(
+    tmp_path: Path, runner: Callable[[list[str] | None], int]
+) -> None:
+    assert runner(["--quick", "--output-dir", str(tmp_path)]) == 0
+    with (tmp_path / "eval" / "scenario_results.csv").open(newline="") as handle:
+        row = next(
+            row for row in csv.DictReader(handle)
+            if row["policy"] == "dp_optimal"
+            and row["scenario_id"] == "3"
+            and row["episode_index"] == "2"
+        )
+    start = AgentDecisionEnvironment().reset(seed=2, scenario_id=3)
+    assert (start.difficulty, start.ambiguity) == (2, 1)
+    # Clarify, retrieve twice, answer: -0.3 - 0.5 - 0.5 + 2 = 0.7.
+    # At gamma=0.9 it is only -0.3 - 0.45 - 0.405 + 1.458 = 0.303,
+    # so that discounted planner instead escalates immediately for 0.45.
+    assert float(row["total_reward"]) == pytest.approx(0.7)
+    assert row["final_action_label"] == "answer_direct"
 
 
 def _summary_by_name(summary_rows: list[dict[str, int | float | str]]) -> dict[str, float]:

@@ -114,7 +114,7 @@ where
 
 Backward induction works here because every acting state reached at decision step `t` has `step == t`, and terminal states are never acted on. Solving states by *descending* `step` means each successor's `Q*` is already known when needed, so a single ordered sweep yields the exact fixed point -- no iteration to convergence required. The result is written to `artifacts/dp/optimal_action_values.csv`. For example, from the easy start state the optimum is `Q*(answer_direct) = 2.0`, correctly preferring an immediate answer over retrieving (`1.1`) or clarifying (`1.3`).
 
-This `Q*` is the **planning ceiling**. In `artifacts/eval/policy_comparison.csv` the `dp_optimal` policy scores `avg_reward 1.2142` with `escalation_rate 0.2833`, `avg_steps 2.05`, and `solved_rate 1.0`. No learned policy in this showcase can legitimately beat that number; matching it is the goal.
+This `Q*` uses `gamma=0.9` to match the Q-learning gap calculation. The evaluation policy `dp_optimal` uses a separate `gamma=1.0` plan, matching the undiscounted reward metric. The historical score 1.2142 from the discounted policy is not an upper bound on undiscounted reward; regenerate `artifacts/eval/policy_comparison.csv` for the current ceiling.
 
 ## Rung 5: REINFORCE (Monte-Carlo policy gradient)
 
@@ -130,7 +130,7 @@ REINFORCE update:      theta_{s,a'} <- theta_{s,a'} + alpha * (G_t - b) * (1[a' 
 where
   theta_{s,a}     = the logit (preference) for action a in state s
   G_t             = the Monte-Carlo return from step t (whole-episode rollout, not bootstrapped)
-  b               = a baseline; here the episode-mean return, for variance reduction
+  b               = a baseline; here the mean step return from earlier episodes
   (G_t - b)       = the advantage A: how much better this episode did than the baseline
   1[a' = A_t]     = 1 if a' is the action taken, else 0
   alpha           = step size (0.1)

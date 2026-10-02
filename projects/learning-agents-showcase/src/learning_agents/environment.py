@@ -20,7 +20,7 @@ The MDP tuple (S, A, P, R, gamma, H):
         never injects randomness into a step. Treat this as a deterministic finite-horizon MDP.
     R -- :func:`reward.judge_reward` (re-exported as :func:`default_reward`), emitted as R_{t+1}.
     gamma -- the discount; owned by the *agent*, not stored here.
-    H -- the horizon (default 5 steps); the episode terminates once step exceeds H.
+    H -- the horizon (default 5 decisions); the episode terminates once step reaches H.
 
 RL concept: Markov decision process and environment design. The novelty here is that the *agent's
 own decision process* is the MDP: states are request-handling situations, actions are orchestration
@@ -31,7 +31,7 @@ Math:
     Deterministic transition s' = T(s, a) realized by :meth:`_transition`.
     Reward after acting: R_{t+1} = R(s, a, s', done) from :func:`default_reward`.
     Discounted return the agent maximizes: G_t = sum_k gamma^k R_{t+k+1}.
-    Finite horizon: the episode ends once ``step`` exceeds H (or on a terminal/illegal action).
+    Finite horizon: the episode ends once ``step`` reaches H (or on a terminal/illegal action).
 """
 
 from __future__ import annotations
@@ -172,8 +172,7 @@ class AgentState:
         # A fresh episode starts with STARTING_BUDGET tenths; scale budget by that and clamp.
         budget_scale = float(max(1, STARTING_BUDGET))
         return (
-            # ``step`` can reach ``horizon + 1`` on a horizon-terminated episode, so clamp like
-            # ``attempts`` below to honour the documented [0, 1] range for every reachable state.
+            # Clamp time-like fields so every normalized coordinate stays within [0, 1].
             round(min(1.0, self.step / safe_horizon), 6),
             round(self.intent / 4.0, 6),
             round(self.difficulty / float(MAX_DIFFICULTY), 6),
@@ -299,13 +298,14 @@ class AgentDecisionEnvironment:
     *start* state can be jittered (via ``reset(seed=...)``). gamma lives with the agent, not here.
 
     Termination has three causes: committing (``answer_direct`` or ``escalate`` are terminal), the
-    clock running out (``step`` exceeds ``horizon``), and an action whose cost would drive the
+    clock running out (``step`` reaches ``horizon``), and an action whose cost would drive the
     budget negative (the action is *not* applied; the episode ends as a forced-commit failure).
 
     Attributes:
-        horizon: Episode length H in steps (default 5); the episode terminates once step exceeds H.
+        horizon: Maximum number of decisions per episode (default 5).
         reward_fn: The reward function R(s, a, s', done) -> R_{t+1}; defaults to
             :func:`default_reward` (the judge rubric) but can be swapped to study other designs.
+            A budget-blocked action is not executed and receives a fixed failure penalty of -1.5.
 
     RL concept: the agent-environment interface of an MDP -- reset/step semantics with terminal
     *commit* actions, a finite horizon, and a hard budget constraint that bounds exploration.
@@ -424,12 +424,11 @@ class AgentDecisionEnvironment:
 
         Three termination paths:
             * Commit -- ``answer_direct`` (0) and ``escalate`` (3) are terminal by definition.
-            * Clock -- if applying the action pushes ``step`` past ``horizon``, the episode ends.
+            * Clock -- when applying the action reaches ``horizon`` decisions, the episode ends.
             * Budget -- if the action's cost would drive ``budget`` negative, the action is *not*
               applied; the episode ends with ``done=True`` on a state that only advanced the clock,
-              modelling a forced give-up. The reward then judges this non-commit terminal state
-              (typically an under-grounded outcome), teaching the agent to commit before it runs
-              dry.
+              modelling a forced give-up. It receives a fixed failure penalty of -1.5 and incurs
+              no action cost, since the attempted action did not execute.
 
         Args:
             action: The orchestration action a to take; must be a valid key of
@@ -456,8 +455,7 @@ class AgentDecisionEnvironment:
         previous_state = self.observe()
 
         cost_tenths = int(round(ACTION_COSTS[action] * 10))
-        # Budget guard: a forced give-up. The action is NOT applied; only the clock advances, and
-        # the episode ends so the reward judges a non-commit (typically under-grounded) outcome.
+        # Budget guard: a forced give-up. No action executes or incurs a cost.
         if previous_state.budget - cost_tenths < 0:
             next_state = AgentState(
                 step=previous_state.step + 1,
@@ -470,7 +468,7 @@ class AgentDecisionEnvironment:
             )
             done = True
             termination = "budget_exhausted"
-            reward = self.reward_fn(previous_state, action, next_state, done)
+            reward = -1.5  # Same penalty as a failed answer; no attempted-action payoff.
             self._state = next_state
             self._done = done
             return TransitionResult(
@@ -480,7 +478,7 @@ class AgentDecisionEnvironment:
                 info={
                     "action": action,
                     "action_label": ACTION_LABELS[action],
-                    "action_cost": ACTION_COSTS[action],
+                    "action_cost": 0.0,
                     "scenario_name": self._scenario_name,
                     "termination": termination,
                 },
@@ -492,7 +490,7 @@ class AgentDecisionEnvironment:
         if action in (0, 3):
             done = True
             termination = ACTION_LABELS[action]
-        elif next_state.step > self.horizon:
+        elif next_state.step >= self.horizon:
             done = True
             termination = "horizon"
         else:

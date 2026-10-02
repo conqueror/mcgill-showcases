@@ -107,6 +107,7 @@ def test_bridge_report_states_the_policy_framework_split() -> None:
     assert report.startswith("#")
     lowered = report.lower()
     assert "orchestration policy" in lowered
+    assert "does not receive a learned policy" in lowered
     assert "executor" in lowered or "executes" in lowered
     assert "answer_direct" in report and "handoff" in lowered
     expected_status = "installed" if sdk_available() else "not installed"

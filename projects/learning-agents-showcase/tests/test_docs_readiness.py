@@ -4,7 +4,74 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "false_claim", "correction"),
+    [
+        ("README.md", "live SDK gated behind", "SDK construction example"),
+        (
+            "docs/lane-a-agent-frameworks.md",
+            "The framework never inspects these to make a choice",
+            "does not receive the learned policy",
+        ),
+        (
+            "docs/lane-a-agent-frameworks.md",
+            "This is exactly the shape an Agents-SDK run would log",
+            "local simulator trace",
+        ),
+        (
+            "docs/lane-a-agent-frameworks.md",
+            "same trace shape a live run would",
+            "does not execute the learned policy or prove native trace equivalence",
+        ),
+        (
+            "docs/results-dashboard.md", "with a controlled KL\nleash",
+            "GRPO and RLVR report KL but do not penalize it",
+        ),
+        (
+            "docs/results-dashboard.md", "Numbers here are the full-run values",
+            "historical examples, not verified results from the corrected code",
+        ),
+        (
+            "docs/exercises.md", "uses the canonical numbers",
+            "random-target errors are not evidence of poor overlap",
+        ),
+        (
+            "docs/exercises.md", "roughly two of every three steps",
+            "roughly two of every three episodes",
+        ),
+        (
+            "docs/exercises.md", "The gate logic lives in\n`src/learning_agents/evaluation.py`",
+            "The gate logic lives in\n`src/learning_agents/reporting.py`",
+        ),
+        (
+            "docs/rl-ladder.md", "here the episode-mean return",
+            "mean step return from earlier episodes",
+        ),
+        (
+            "docs/math-notes.md", "here the episode-mean",
+            "mean step return from earlier episodes",
+        ),
+        (
+            "src/learning_agents/policy_gradient.py", "safe fallback",
+            "does not guarantee safety",
+        ),
+        (
+            "src/learning_agents/sdk_bridge.py", "trace is exactly what an",
+            "not a native SDK trace",
+        ),
+    ],
+)
+def test_guides_state_the_implemented_behavior(
+    relative_path: str, false_claim: str, correction: str
+) -> None:
+    text = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+    assert false_claim not in text
+    assert correction in text
 
 
 def test_readme_points_to_runnable_quickstart_and_local_guide() -> None:

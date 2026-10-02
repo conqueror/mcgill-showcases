@@ -350,12 +350,13 @@ def true_policy_value(
     base_seed: int = 0,
     horizon: int = 5,
     reward_fn: RewardFunction = default_reward,
+    gamma: float = 1.0,
 ) -> float:
     """Compute the target policy's true value by re-simulating it (the OPE ground truth).
 
     What + why: because this is a teaching simulator we can *measure* the
     value OPE only estimates by actually rolling the target policy out in
-    the environment and averaging its undiscounted return. This is the
+    the environment and averaging its return at the requested discount. This is the
     yardstick the IS/WIS/FQE/DR estimates are scored against, so a learner
     can see each estimator's accuracy. In a real deployment this number is
     exactly what you cannot get without running the policy, which is why OPE
@@ -368,9 +369,10 @@ def true_policy_value(
         base_seed: Base RNG seed for the env-reset jitter.
         horizon: Episode length H.
         reward_fn: Reward function (defaults to the judge rubric).
+        gamma: Return discount (default 1.0), matching the estimators being compared.
 
     Returns:
-        The mean undiscounted episodic return of ``target_policy`` across the scenarios -- the OPE
+        The mean discounted episodic return of ``target_policy`` across the scenarios -- the OPE
         ground truth.
 
     RL concept: the on-policy Monte-Carlo value, used here only as the ground truth to grade OPE.
@@ -382,6 +384,7 @@ def true_policy_value(
         base_seed=base_seed,
         horizon=horizon,
         reward_fn=reward_fn,
+        gamma=gamma,
     )
     return round(float(summary[0]["avg_reward"]), 4)
 
@@ -456,6 +459,7 @@ def ope_report_rows(
             policy,
             scenario_ids=scenario_ids,
             episodes_per_scenario=episodes_per_scenario,
+            gamma=gamma,
         )
         estimates = ope_estimates(dataset, policy, gamma=gamma)
         for estimator, estimate in estimates.items():

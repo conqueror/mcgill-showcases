@@ -3,8 +3,10 @@
 These exercises span the whole showcase: the tabular RL ladder, offline RL and
 off-policy evaluation (OPE), the cost-aware cascade, reward design, governance,
 and the three lanes (agent frameworks, preference optimization, multi-agent RL).
-Each states a prompt, then a marked solution that uses the canonical numbers and
-names the artifact or module to check against. Try to answer before reading on.
+Each states a prompt, then a marked solution with historical example numbers and
+an artifact or module to check against. Regenerate the artifacts for current results.
+Exercises 7, 8, and 12 use a removed stochastic OPE target and need new examples;
+their random-target errors are not evidence of poor overlap. Try to answer before reading on.
 
 Notation: `gamma` is the discount, `Q(s,a)` an action value, `V(s)` a state
 value, `pi(a|s)` a policy, `alpha` a step size, `epsilon` an exploration rate,
@@ -25,7 +27,7 @@ and `avg_reward`. Then say which non-ceiling policy you would ship instead.
 
 Solution. Governance rejects `q_learning`. In
 `artifacts/eval/policy_comparison.csv` it posts `avg_escalation_rate` 0.65 —
-roughly two of every three steps — while its `avg_reward` is only 0.8525, far
+roughly two of every three episodes — while its `avg_reward` is only 0.8525, far
 below the other solved policies. It does reach `solved_rate` 1.0, so it is not
 failing the task; it fails the cost-and-trust constraint by reflexively kicking
 work to humans. Contrast `heuristic_router`: `avg_reward` 1.16, `solved_rate`
@@ -33,7 +35,7 @@ work to humans. Contrast `heuristic_router`: `avg_reward` 1.16, `solved_rate`
 policy you ship among non-ceiling options. (`random` fails harder — see Exercise
 2 — but the catch here is that a high `solved_rate` does not rescue a policy that
 games the cheapest-looking action.) The gate logic lives in
-`src/learning_agents/evaluation.py`; see [evaluation and
+`src/learning_agents/reporting.py`; see [evaluation and
 governance](evaluation-and-governance.md).
 
 ## Exercise 2 — Read the floor
