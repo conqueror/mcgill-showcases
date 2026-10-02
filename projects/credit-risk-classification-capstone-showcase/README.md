@@ -5,9 +5,9 @@ Reproducible script-first credit-risk capstone project with lightweight demo not
 ## Learning outcomes
 - Build a binary default-risk target from loan status categories.
 - Perform robust missingness diagnostics and categorical/numeric profiling.
-- Compare imbalance strategies (class weight, up/down sampling, SMOTE family).
-- Benchmark baseline and ensemble models under train/val/test discipline.
-- Make threshold-aware deployment decisions using precision/recall/F1 tradeoffs.
+- Compare up/down sampling and SMOTE methods while every logistic model uses balanced class weights (`none` means no resampling).
+- Select baseline or ensemble models and an F1 threshold on validation rows, then evaluate the locked choice on test rows.
+- Inspect validation precision/recall/F1 tradeoffs; these scores do not establish calibration or deployment decision costs.
 
 ## Quickstart
 ```bash

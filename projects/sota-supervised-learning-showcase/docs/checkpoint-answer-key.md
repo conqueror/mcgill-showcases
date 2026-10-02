@@ -36,10 +36,10 @@ A:
 ## Step 3: OvR vs OvO
 
 Q: Which one has higher macro F1 in this run?  
-A: Typically OvO (SVC pipeline) is higher in this project’s current run.
+A: Compare `f1_macro` in your `multiclass_metrics.csv`; both strategies use the same scaled logistic regression estimator.
 
 Q: Why might that happen?  
-A: Pairwise boundaries can be easier for SVC to separate than one-vs-rest boundaries in this feature space.
+A: OvO fits a classifier for each pair of classes; OvR fits each class against all others. Check your results before attributing a difference to these training tasks.
 
 ## Step 4: Multi-label + multi-output
 
@@ -54,7 +54,7 @@ A: Average absolute error between predicted and true pixel intensities across al
 ## Step 5: Ensemble benchmark
 
 Q: Which model wins on macro F1?  
-A: In the current run, `voting_hard` is strongest, followed closely by `stacking`.
+A: Find the largest `f1_macro` in your `classification_benchmark.csv`. The winner can change with the split, installed versions, and optional boosters.
 
 Q: Is the winner worth added complexity?  
 A: Only if gain is meaningful for your use case and latency/maintenance costs are acceptable.
@@ -62,18 +62,18 @@ A: Only if gain is meaningful for your use case and latency/maintenance costs ar
 ## Step 6: Model selection curves
 
 Q: At what depth does validation performance peak?  
-A: Around `max_depth = 12` in the current run.
+A: Find the largest `validation_mean` in your `validation_curve.csv`; `model_selection_summary.json` records that depth.
 
 Q: Does more data still help?  
-A: Validation score still improves toward larger train sizes, but gains are smaller at the upper range.
+A: Compare `validation_mean` across train sizes in your `learning_curve.csv` to see whether the score improves and whether the gains shrink.
 
 ## Step 7: Regression comparison
 
 Q: Which model has lowest RMSE in this run?  
-A: `linear_regression` currently edges out gradient boosting.
+A: Find the smallest `rmse` in your `regression_benchmark.csv`.
 
 Q: Did every model beat baseline?  
-A: Yes. Both linear and gradient boosting significantly beat `DummyRegressor`.
+A: Compare each model's `rmse` with `baseline_dummy_mean` in your run; a smaller value beats the baseline on that split.
 
 ## Step 8: Conclusion rubric
 

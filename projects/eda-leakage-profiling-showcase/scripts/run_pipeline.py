@@ -6,9 +6,12 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 from eda_leakage_showcase.data import make_dataset
 
@@ -26,6 +29,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     from ml_core.contracts import merge_required_files, write_supervised_contract_artifacts
     from ml_core.eda import maybe_write_missingness_plot, maybe_write_profile_report
+    from ml_core.leakage import run_leakage_checks
     from ml_core.splits import build_supervised_split, cv_manifest_dict, split_manifest_dict
 
     args = parse_args()
@@ -34,18 +38,42 @@ def main() -> None:
     n_samples = 500 if args.quick else 1200
     bundle = make_dataset(n_samples=n_samples, random_state=args.seed)
 
-    frame_for_model = bundle.frame.drop(columns=["event_time", "group_id", "leak_target_copy"])
-    encoded = pd.get_dummies(frame_for_model, columns=["segment", "region"], dummy_na=True)
-    encoded = encoded.fillna(encoded.median(numeric_only=True)).fillna(0.0)
-
+    # Retain observation metadata for row checks; the preprocessor selects model inputs.
+    frame_for_model = bundle.frame.drop(columns=["leak_target_copy"])
     split = build_supervised_split(
-        encoded,
+        frame_for_model,
         bundle.target,
         strategy="stratified",
         random_state=args.seed,
     )
 
-    model = LogisticRegression(max_iter=800)
+    leakage_path = root / "artifacts/leakage/leakage_report.csv"
+    leakage_path.parent.mkdir(parents=True, exist_ok=True)
+    run_leakage_checks(bundle.frame, bundle.target, split).to_csv(leakage_path, index=False)
+    model_checks = run_leakage_checks(
+        split.x_train.drop(columns=["event_time", "group_id"]), split.y_train, split
+    )
+    if model_checks["severity"].isin(["high", "medium"]).any():
+        raise ValueError("Leakage detected in model features or split rows; training blocked.")
+
+    model = Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                ColumnTransformer(
+                    transformers=[
+                        ("numeric", SimpleImputer(strategy="median"), ["amount", "tenure_months"]),
+                        (
+                            "categorical",
+                            OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                            ["segment", "region"],
+                        ),
+                    ]
+                ),
+            ),
+            ("classifier", LogisticRegression(max_iter=800)),
+        ]
+    )
     model.fit(split.x_train, split.y_train)
     probs = model.predict_proba(split.x_test)[:, 1]
     preds = (probs >= 0.5).astype(int)
@@ -70,7 +98,7 @@ def main() -> None:
     )
 
     group_split = build_supervised_split(
-        encoded,
+        frame_for_model,
         bundle.target,
         strategy="group",
         random_state=args.seed,
@@ -88,7 +116,7 @@ def main() -> None:
     group_manifest_path.write_text(json.dumps(group_manifest, indent=2), encoding="utf-8")
 
     time_split = build_supervised_split(
-        encoded,
+        frame_for_model,
         bundle.target,
         strategy="timeseries",
         random_state=args.seed,

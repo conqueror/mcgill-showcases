@@ -13,7 +13,8 @@ from credit_risk_capstone.modeling import evaluate_imbalance_strategies
 def test_imbalance_strategy_eval_runs() -> None:
     bundle = make_credit_risk_dataset(n_samples=500, random_state=11)
     target = build_target_from_status(bundle.frame)
-    _, model_frame = clean_and_encode_features(bundle.frame)
+    raw_split = build_supervised_split(bundle.frame, target, strategy="stratified", random_state=11)
+    _, model_frame = clean_and_encode_features(bundle.frame, train_index=raw_split.x_train.index)
     split = build_supervised_split(model_frame, target, strategy="stratified", random_state=11)
     result, _scores, strategy = evaluate_imbalance_strategies(split, random_state=11)
 

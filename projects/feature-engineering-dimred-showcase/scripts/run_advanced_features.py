@@ -52,7 +52,6 @@ def _maybe_featuretools(frame: pd.DataFrame, target: pd.Series, output_path: Pat
         return "skipped_missing_dependency"
 
     entity_frame = frame.copy()
-    entity_frame["target"] = target.to_numpy()
     es = ft.EntitySet(id="iris")
     es = es.add_dataframe(
         dataframe_name="samples",
@@ -75,6 +74,7 @@ def _maybe_tsfresh(frame: pd.DataFrame, output_path: Path) -> str:
     except Exception:
         return "skipped_missing_dependency"
 
+    # Artificial positions of four measurements, not chronological observations.
     long_df = pd.DataFrame(
         {
             "id": np.repeat(frame["sample_id"].to_numpy(), 4),

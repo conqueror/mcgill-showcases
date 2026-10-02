@@ -39,6 +39,8 @@ def train_and_evaluate(
     params: dict[str, object] = {
         "objective": "lambdarank",
         "metric": "ndcg",
+        "label_gain": [0, 1, 3, 7],
+        "eval_at": [5, 10],
         "learning_rate": 0.05,
         "num_leaves": 31,
         "min_data_in_leaf": 20,

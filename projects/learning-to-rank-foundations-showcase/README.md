@@ -4,9 +4,9 @@ Portable ranking showcase focused on grouped training fundamentals and NDCG eval
 
 ## Learning outcomes
 - Build grouped ranking data (`query/group`) with relevance labels.
-- Enforce train/validation/test separation by group (season-style split).
+- Separate raw train/validation/test seasons, fit medians and category columns on training seasons, and keep each query's rows contiguous.
 - Train a LightGBM LambdaRank model.
-- Evaluate ranking quality with NDCG@5 and NDCG@10.
+- Evaluate mean query NDCG@5 and NDCG@10 with gains `2^relevance - 1`, matching the explicit LightGBM gains. Positive singleton queries score 1; queries with no positive relevance also score 1, following LightGBM's zero-IDCG convention.
 
 ## Quickstart
 ```bash

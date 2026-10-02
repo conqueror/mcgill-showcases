@@ -12,7 +12,7 @@ from sklearn.metrics import f1_score, roc_auc_score
 
 from feature_dimred_showcase.evaluation import evaluate_classifier
 from feature_dimred_showcase.feature_selection import compute_selection_scores
-from feature_dimred_showcase.preprocessing import build_preprocessor, make_split, transform_split
+from feature_dimred_showcase.preprocessing import SplitBundle, build_preprocessor, transform_split
 
 REQUIRED_ARTIFACTS = [
     "artifacts/features/feature_matrix_summary.csv",
@@ -63,7 +63,13 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
 
     x_df, target, numeric, categorical = _build_dataset()
-    split = make_split(x_df, target, random_state=42)
+    contract_split = build_supervised_split(x_df, target, strategy="stratified", random_state=42)
+    split = SplitBundle(
+        x_train=contract_split.x_train,
+        x_test=contract_split.x_test,
+        y_train=contract_split.y_train,
+        y_test=contract_split.y_test,
+    )
 
     summary_rows: list[dict[str, float | str | int]] = []
     selection_frame: pd.DataFrame | None = None
@@ -101,12 +107,6 @@ def main() -> None:
     summary.to_csv(summary_path, index=False)
     selection_frame.to_csv(selection_path, index=False)
 
-    contract_split = build_supervised_split(
-        x_df,
-        target,
-        strategy="stratified",
-        random_state=42,
-    )
     preprocessor = build_preprocessor(
         numeric_features=numeric,
         categorical_features=categorical,

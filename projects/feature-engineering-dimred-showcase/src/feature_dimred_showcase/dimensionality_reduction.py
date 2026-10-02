@@ -33,11 +33,12 @@ def run_embeddings(
 
     try:
         import umap
-
+    except ModuleNotFoundError as exc:
+        if exc.name != "umap":
+            raise
+    else:
         reducer = umap.UMAP(n_components=2, random_state=random_state)
         outputs.append(EmbeddingResult(method="umap", embedding=reducer.fit_transform(x_values)))
-    except Exception:
-        pass
 
     return outputs
 

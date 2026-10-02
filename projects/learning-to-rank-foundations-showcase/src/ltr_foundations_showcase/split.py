@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 from ltr_foundations_showcase.data import RankingDataset
@@ -65,28 +66,40 @@ def build_group_split(dataset: RankingDataset, *, group_col: str = "season") -> 
     val_mask = group_values.isin(val_groups)
     test_mask = group_values.isin(test_groups)
 
-    matrix = dataset.feature_frame.to_numpy(dtype=np.float64)
+    order = np.argsort(group_values.to_numpy(), kind="stable")
+    train_indices = order[train_mask.to_numpy()[order]]
+    val_indices = order[val_mask.to_numpy()[order]]
+    test_indices = order[test_mask.to_numpy()[order]]
+
+    medians = dataset.feature_frame.iloc[train_indices].select_dtypes(include="number").median()
+    features = dataset.feature_frame.fillna(medians.fillna(0.0)).fillna("UNKNOWN")
+    categorical = list(features.select_dtypes(exclude="number").columns)
+    training_columns = pd.get_dummies(features.iloc[train_indices], columns=categorical).columns
+    encoded = pd.get_dummies(features, columns=categorical).reindex(
+        columns=training_columns, fill_value=0
+    )
+    matrix = encoded.to_numpy(dtype=np.float64)
     relevance = dataset.relevance.to_numpy(dtype=np.float64)
 
-    train_group_values = group_values[train_mask].tolist()
-    val_group_values = group_values[val_mask].tolist()
-    test_group_values = group_values[test_mask].tolist()
+    train_group_values = group_values.iloc[train_indices].tolist()
+    val_group_values = group_values.iloc[val_indices].tolist()
+    test_group_values = group_values.iloc[test_indices].tolist()
 
     return RankingSplit(
-        x_train=matrix[train_mask.to_numpy()],
-        y_train=relevance[train_mask.to_numpy()],
+        x_train=matrix[train_indices],
+        y_train=relevance[train_indices],
         q_train=compute_group_sizes(train_group_values),
-        x_val=matrix[val_mask.to_numpy()],
-        y_val=relevance[val_mask.to_numpy()],
+        x_val=matrix[val_indices],
+        y_val=relevance[val_indices],
         q_val=compute_group_sizes(val_group_values),
-        x_test=matrix[test_mask.to_numpy()],
-        y_test=relevance[test_mask.to_numpy()],
+        x_test=matrix[test_indices],
+        y_test=relevance[test_indices],
         q_test=compute_group_sizes(test_group_values),
         val_group_ids=val_group_values,
         test_group_ids=test_group_values,
         train_groups=train_groups,
         val_groups=val_groups,
         test_groups=test_groups,
-        feature_names=dataset.feature_names,
-        test_indices=np.flatnonzero(test_mask.to_numpy()),
+        feature_names=list(encoded.columns),
+        test_indices=test_indices,
     )

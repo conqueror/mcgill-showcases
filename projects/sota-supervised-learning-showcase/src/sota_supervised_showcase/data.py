@@ -114,7 +114,10 @@ def rebalance_binary_training_data(
     if strategy == "none":
         return x_train, y_train
 
-    positive_mask = y_train == 1
+    labels, counts = np.unique(y_train, return_counts=True)
+    if len(labels) != 2:
+        raise ValueError("Binary resampling expects exactly two target classes.")
+    positive_mask = y_train == labels[counts.argmin()]
     x_positive = x_train[positive_mask]
     y_positive = y_train[positive_mask]
     x_negative = x_train[~positive_mask]

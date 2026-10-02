@@ -88,7 +88,7 @@ After `run_showcase.py`, you get:
 
 | Concept | Where to run/read | What to look for |
 |---|---|---|
-| Imbalanced classes | `src/sota_supervised_showcase/data.py`, `artifacts/binary_metrics.csv` | How precision/recall/F1 changes by sampling strategy |
+| Imbalanced classes | `src/sota_supervised_showcase/data.py`, `artifacts/binary_metrics.csv` | How precision/recall/F1 changes by resampling strategy; all models use balanced class weights, including `none` |
 | Binary metrics + thresholds | `artifacts/pr_curves.csv`, `artifacts/roc_curves.csv` | Why threshold changes precision vs recall tradeoff |
 | OvR vs OvO | `artifacts/multiclass_metrics.csv` | Which strategy performs better and why |
 | Multi-label | `artifacts/multilabel_metrics.csv` | One sample can have multiple labels |

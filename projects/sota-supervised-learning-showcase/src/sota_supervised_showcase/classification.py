@@ -167,15 +167,14 @@ def evaluate_binary_classification(
 
 def evaluate_multiclass_strategies(split: ClassificationSplit) -> pd.DataFrame:
     """Compare One-vs-Rest and One-vs-One strategies on the digits task."""
-    ovr_model = OneVsRestClassifier(
-        LogisticRegression(max_iter=2_000, random_state=RANDOM_STATE)
+    estimator = make_pipeline(
+        StandardScaler(), LogisticRegression(max_iter=2_000, random_state=RANDOM_STATE)
     )
-    ovo_model = OneVsOneClassifier(
-        make_pipeline(StandardScaler(), SVC(kernel="rbf", gamma="scale"))
-    )
+    ovr_model = OneVsRestClassifier(estimator)
+    ovo_model = OneVsOneClassifier(estimator)
 
     rows: list[dict[str, float | str]] = []
-    for model_name, model in (("ovr_logistic", ovr_model), ("ovo_svc", ovo_model)):
+    for model_name, model in (("ovr_logistic", ovr_model), ("ovo_logistic", ovo_model)):
         model.fit(split.x_train, split.y_train)
         y_pred = model.predict(split.x_test)
         rows.append(

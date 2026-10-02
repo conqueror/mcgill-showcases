@@ -35,7 +35,7 @@ def test_multiclass_multilabel_multioutput_reports_are_nonempty() -> None:
     multioutput = evaluate_multioutput_denoising(split)
 
     assert not multiclass.empty
-    assert set(multiclass["model"]) == {"ovr_logistic", "ovo_svc"}
+    assert set(multiclass["model"]) == {"ovr_logistic", "ovo_logistic"}
     assert not multilabel.empty
     assert "macro_average" in set(multilabel["label"])
     assert not multioutput.empty

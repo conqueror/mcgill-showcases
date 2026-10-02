@@ -100,16 +100,13 @@ def prepare_ranking_dataset(frame: pd.DataFrame, *, group_col: str = "season") -
     features = work[numeric_cols + categorical_cols].copy()
     for col in numeric_cols:
         features[col] = pd.to_numeric(features[col], errors="coerce")
-        features[col] = features[col].fillna(float(features[col].median(skipna=True)))
 
     for col in categorical_cols:
-        features[col] = features[col].astype(str).fillna("UNKNOWN")
-
-    encoded = pd.get_dummies(features, columns=categorical_cols, dummy_na=False).astype(float)
+        features[col] = features[col].fillna("UNKNOWN").astype(str)
 
     return RankingDataset(
         frame=work,
-        feature_frame=encoded,
-        feature_names=list(encoded.columns),
+        feature_frame=features,
+        feature_names=list(features.columns),
         relevance=work["relevance"].astype(float),
     )

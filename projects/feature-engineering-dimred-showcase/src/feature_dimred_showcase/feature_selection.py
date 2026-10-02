@@ -22,7 +22,7 @@ def compute_selection_scores(
         max_iter=2000,
     )
     l1_model.fit(x_train, y_train)
-    coefs = np.abs(l1_model.coef_[0])
+    coefs = np.abs(l1_model.coef_).max(axis=0)
 
     frame = pd.DataFrame(
         {
