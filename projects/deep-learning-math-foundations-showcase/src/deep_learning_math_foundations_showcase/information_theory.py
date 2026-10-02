@@ -6,23 +6,30 @@ from collections.abc import Sequence
 
 import numpy as np
 
-EPSILON = 1e-12
-
 
 def _normalize(probabilities: Sequence[float]) -> np.ndarray:
     """Normalize a sequence into a proper probability vector."""
 
     values = np.asarray(probabilities, dtype=float)
-    total = values.sum()
-    if total <= 0:
+    if (
+        values.ndim != 1
+        or values.size == 0
+        or not np.isfinite(values).all()
+        or (values < 0).any()
+    ):
+        raise ValueError("Probabilities must be a finite, nonnegative 1-D vector.")
+    if values.max() == 0:
         raise ValueError("Probability values must sum to a positive number.")
+    values = values / values.max()
+    total = values.sum()
     return values / total
 
 
 def entropy(probabilities: Sequence[float]) -> float:
     """Return Shannon entropy in bits."""
 
-    probs = np.clip(_normalize(probabilities), EPSILON, 1.0)
+    probs = _normalize(probabilities)
+    probs = probs[probs > 0]
     return float(-(probs * np.log2(probs)).sum())
 
 
@@ -32,9 +39,14 @@ def cross_entropy(
 ) -> float:
     """Return cross-entropy in bits."""
 
-    target = np.clip(_normalize(target_probabilities), EPSILON, 1.0)
-    predicted = np.clip(_normalize(predicted_probabilities), EPSILON, 1.0)
-    return float(-(target * np.log2(predicted)).sum())
+    target = _normalize(target_probabilities)
+    predicted = _normalize(predicted_probabilities)
+    if target.shape != predicted.shape:
+        raise ValueError("Probability vectors must have matching lengths.")
+    support = target > 0
+    if (predicted[support] == 0).any():
+        return float("inf")
+    return float(-(target[support] * np.log2(predicted[support])).sum())
 
 
 def kl_divergence(p: Sequence[float], q: Sequence[float]) -> float:

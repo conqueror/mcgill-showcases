@@ -23,4 +23,19 @@ def test_gradient_trace_has_expected_columns() -> None:
     """The optimization artifact schema should remain stable."""
 
     trace = optimization.run_gradient_descent_trace()
-    assert list(trace.columns) == ["iteration", "x", "gradient", "loss"]
+    assert list(trace.columns) == ["iteration", "x_before", "x", "gradient", "loss"]
+
+
+def test_gradient_trace_records_the_point_where_the_gradient_was_taken() -> None:
+    """At x=2, f'=4; a step of 1/4 gives x=1 and f(x)=1."""
+
+    trace = optimization.run_gradient_descent_trace(2.0, 0.25, 2)
+    assert trace.iloc[0].to_dict() == {
+        "iteration": 1.0,
+        "x_before": 2.0,
+        "x": 1.0,
+        "gradient": 4.0,
+        "loss": 1.0,
+    }
+    assert trace.iloc[1]["x_before"] == 1.0
+    assert trace.iloc[1]["gradient"] == 2.0

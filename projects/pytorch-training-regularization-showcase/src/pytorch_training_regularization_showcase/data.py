@@ -27,6 +27,13 @@ class DatasetBundle:
     test_loader: DataLoader
 
 
+def _to_dataset(features: np.ndarray, targets: np.ndarray) -> TensorDataset:
+    return TensorDataset(
+        torch.tensor(features, dtype=torch.float32),
+        torch.tensor(targets, dtype=torch.long),
+    )
+
+
 def _split_arrays(
     features: np.ndarray,
     targets: np.ndarray,
@@ -51,19 +58,10 @@ def _split_arrays(
         )
     )
 
-    def to_dataset(
-        input_features: np.ndarray,
-        input_targets: np.ndarray,
-    ) -> TensorDataset:
-        return TensorDataset(
-            torch.tensor(input_features, dtype=torch.float32),
-            torch.tensor(input_targets, dtype=torch.long),
-        )
-
     return (
-        to_dataset(train_features, train_targets),
-        to_dataset(validation_features, validation_targets),
-        to_dataset(test_features, test_targets),
+        _to_dataset(train_features, train_targets),
+        _to_dataset(validation_features, validation_targets),
+        _to_dataset(test_features, test_targets),
     )
 
 
@@ -112,8 +110,8 @@ def _digits_arrays(
 
 def _fashion_mnist_arrays(
     quick: bool,
-) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    """Load FashionMNIST and flatten it for a feed-forward classifier."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]]:
+    """Flatten FashionMNIST while keeping the official test tensors separate."""
 
     train_dataset = datasets.FashionMNIST(
         root=config.DATA_DIR,
@@ -125,20 +123,16 @@ def _fashion_mnist_arrays(
         train=False,
         download=True,
     )
-    features = torch.cat(
-        [train_dataset.data.float(), test_dataset.data.float()],
-        dim=0,
-    ).reshape(-1, 28 * 28)
-    targets = torch.cat([train_dataset.targets, test_dataset.targets], dim=0)
-
-    features = (features / 255.0).numpy().astype(np.float32)
-    targets = targets.numpy().astype(np.int64)
+    features = (train_dataset.data.float().reshape(-1, 28 * 28) / 255.0).numpy()
+    targets = train_dataset.targets.numpy().astype(np.int64)
+    test_features = (test_dataset.data.float().reshape(-1, 28 * 28) / 255.0).numpy()
+    test_targets = test_dataset.targets.numpy().astype(np.int64)
     if quick:
         features = features[:3000]
         targets = targets[:3000]
 
     class_names = list(train_dataset.classes)
-    return features, targets, class_names
+    return features, targets, test_features, test_targets, class_names
 
 
 def build_dataset_bundle(
@@ -154,15 +148,31 @@ def build_dataset_bundle(
     elif dataset_name == "digits":
         features, targets, class_names = _digits_arrays(quick)
     elif dataset_name == "fashion_mnist":
-        features, targets, class_names = _fashion_mnist_arrays(quick)
+        features, targets, test_features, test_targets, class_names = (
+            _fashion_mnist_arrays(quick)
+        )
     else:
         raise ValueError(f"Unsupported dataset_name: {dataset_name}")
 
-    train_dataset, validation_dataset, test_dataset = _split_arrays(
-        features,
-        targets,
-        random_state,
-    )
+    if dataset_name == "fashion_mnist":
+        train_features, validation_features, train_targets, validation_targets = (
+            train_test_split(
+                features,
+                targets,
+                test_size=0.2,
+                stratify=targets,
+                random_state=random_state,
+            )
+        )
+        train_dataset = _to_dataset(train_features, train_targets)
+        validation_dataset = _to_dataset(validation_features, validation_targets)
+        test_dataset = _to_dataset(test_features, test_targets)
+    else:
+        train_dataset, validation_dataset, test_dataset = _split_arrays(
+            features,
+            targets,
+            random_state,
+        )
     generator = torch.Generator().manual_seed(random_state)
 
     return DatasetBundle(

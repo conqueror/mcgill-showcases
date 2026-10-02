@@ -18,12 +18,17 @@ def _result_row(
     label: str,
     run: training.TrainingResult,
     key_name: str,
+    config: training.TrainingConfig,
 ) -> dict[str, float | int | str]:
     """Convert one training run into a summary row."""
 
     final_history = run.history.iloc[-1]
     return {
         key_name: label,
+        "max_epochs": config.epochs,
+        "epochs_run": len(run.history),
+        "random_state": config.random_state,
+        "initial_learning_rate": config.learning_rate,
         "best_epoch": int(run.best_epoch),
         "best_validation_accuracy": float(run.best_validation_accuracy),
         "final_train_loss": float(final_history["train_loss"]),
@@ -42,7 +47,7 @@ def run_optimizer_comparison(
     for optimizer_name in ("sgd", "adam", "rmsprop"):
         config = replace(base_config, optimizer_name=optimizer_name)
         result = training.train_classifier(bundle, config)
-        rows.append(_result_row(optimizer_name, result, "optimizer"))
+        rows.append(_result_row(optimizer_name, result, "optimizer", config))
     return pd.DataFrame(rows)
 
 
@@ -56,7 +61,7 @@ def run_scheduler_comparison(
     for scheduler_name in ("none", "step", "cosine"):
         config = replace(base_config, scheduler_name=scheduler_name)
         result = training.train_classifier(bundle, config)
-        rows.append(_result_row(scheduler_name, result, "scheduler"))
+        rows.append(_result_row(scheduler_name, result, "scheduler", config))
     return pd.DataFrame(rows)
 
 
@@ -71,7 +76,7 @@ def run_regularization_ablation(
         base_config,
     ).items():
         result = training.train_classifier(bundle, config)
-        rows.append(_result_row(label, result, "experiment"))
+        rows.append(_result_row(label, result, "experiment", config))
     return pd.DataFrame(rows)
 
 

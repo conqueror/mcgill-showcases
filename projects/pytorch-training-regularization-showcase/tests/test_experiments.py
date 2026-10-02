@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pandas as pd
+
 from pytorch_training_regularization_showcase import data, experiments, training
 
 
@@ -39,3 +41,19 @@ def test_optimizer_and_regularization_experiments_return_stable_tables() -> None
         "weight_decay",
         "all_regularization",
     }
+    for table in (optimizer_table, scheduler_table, regularization_table):
+        assert (table["max_epochs"] == 3).all()
+        assert table["epochs_run"].between(1, 3).all()
+        assert (table["random_state"] == 8).all()
+        assert (table["initial_learning_rate"] == 0.02).all()
+
+
+def test_optimizer_comparison_is_independent_of_other_comparisons() -> None:
+    """A focused optimizer table must match the same table after scheduler runs."""
+
+    bundle = data.build_dataset_bundle("synthetic", batch_size=24, quick=True)
+    config = training.TrainingConfig(hidden_dims=(8,), epochs=2)
+    focused = experiments.run_optimizer_comparison(bundle, config)
+    experiments.run_scheduler_comparison(bundle, config)
+    full = experiments.run_optimizer_comparison(bundle, config)
+    pd.testing.assert_frame_equal(focused, full, check_exact=True)

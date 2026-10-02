@@ -19,6 +19,16 @@ class FeedForwardNetwork:
     hidden_activation: str = "tanh"
     output_activation: str = "sigmoid"
 
+    def __post_init__(self) -> None:
+        """Keep the network contract aligned with binary sigmoid backpropagation."""
+
+        if (
+            not self.weights
+            or self.output_activation != "sigmoid"
+            or self.weights[-1].shape[1] != 1
+        ):
+            raise ValueError("Binary networks require one sigmoid output.")
+
 
 @dataclass(frozen=True)
 class ForwardPass:
@@ -44,7 +54,7 @@ def initialize_weights(
     elif strategy == "xavier":
         weights = rng.normal(
             0.0,
-            np.sqrt(1.0 / max(1, in_features)),
+            np.sqrt(2.0 / (in_features + out_features)),
             size=(in_features, out_features),
         )
     elif strategy == "he":
