@@ -190,9 +190,9 @@ def optimal_action_values(
 
     What + why: this is the ground-truth optimum a learner compares model-free Q-learning against.
     Because acting states reached at step ``t`` always have ``step == t`` and terminal states are
-    never acted on, we process states by *descending* ``step``: step-H acting states first (every
-    action there yields ``done``, so the future term is 0), then H-1, ..., 0. By the time we reach
-    a state, ``Q*(s', .)`` for its (later-step) successors is already computed, so one ordered sweep
+    never acted on, we process states by *descending* ``step``: step-(H-1) acting states first
+    (every action there yields ``done``, so the future term is 0), then H-2, ..., 0. Each state's
+    later-step successors already have their ``Q*(s', .)`` computed, so one ordered sweep
     gives the exact fixed point with no iteration.
 
     RL concept: value iteration on a finite-horizon MDP -- the planning rung below model-free

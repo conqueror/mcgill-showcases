@@ -18,7 +18,12 @@ for candidate in (PROJECT_ROOT, PROJECT_ROOT / "src"):
 from learning_agents.dynamic_programming import optimal_action_values
 from learning_agents.offline_rl import collect_logged_dataset
 from learning_agents.ope import ope_report_rows
-from learning_agents.policies import HeuristicRouterPolicy, Policy, QTablePolicy, RandomPolicy
+from learning_agents.policies import (
+    AlwaysEscalatePolicy,
+    HeuristicRouterPolicy,
+    Policy,
+    QTablePolicy,
+)
 from learning_agents.reporting import write_csv_artifact
 
 
@@ -52,8 +57,9 @@ def main(argv: list[str] | None = None) -> int:
     What + why: builds a single epsilon-soft heuristic-router log, then estimates the value of three
     targets from it with all four estimators (IS, WIS, FQE direct method, doubly-robust): the
     heuristic router itself (well covered), the DP optimum (a different, better policy the log still
-    covers -- the real "vet before deploy" case), and a uniform-random policy (far off-policy and
-    poorly covered). Each estimate is graded against the simulator's true value. Writes
+    covers -- the real "vet before deploy" case), and an always-escalate foil. All three targets
+    are deterministic, as required by these estimators. Each estimate is graded against the
+    simulator's true value. Writes
     ``artifacts/ope/estimator_comparison.csv``, whose ``abs_error`` column makes the central lesson
     visible: OPE is trustworthy in-support and unreliable when behaviour/target overlap is poor.
 
@@ -75,8 +81,8 @@ def main(argv: list[str] | None = None) -> int:
 
     targets: list[tuple[str, Policy]] = [
         ("heuristic_router", HeuristicRouterPolicy()),
-        ("dp_optimal", QTablePolicy(q_table=optimal_action_values(), name="dp_optimal")),
-        ("random", RandomPolicy(seed=1)),
+        ("dp_optimal", QTablePolicy(q_table=optimal_action_values(gamma=1.0), name="dp_optimal")),
+        ("always_escalate", AlwaysEscalatePolicy()),
     ]
     rows = ope_report_rows(dataset, targets, episodes_per_scenario=truth_episodes)
     write_csv_artifact(args.output_dir / "ope" / "estimator_comparison.csv", rows)

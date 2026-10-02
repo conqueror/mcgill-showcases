@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     # Planning ceiling: the greedy policy from exact backward-induction Q* (model-based optimum).
     # Including it shows the full ladder -- random < online Q-learning < heuristic < offline FQI ~
     # DP optimum -- so the learned policies' standing against the planned best is clear at a glance.
-    dp_optimal = QTablePolicy(q_table=optimal_action_values(), name="dp_optimal")
+    dp_optimal = QTablePolicy(q_table=optimal_action_values(gamma=1.0), name="dp_optimal")
     summary_rows, scenario_rows = evaluate_policies(
         policies=[
             RandomPolicy(seed=7),

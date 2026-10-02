@@ -53,7 +53,7 @@ NUM_ACTIONS = len(ACTION_LABELS)
 # Exact reachable acting-state count for the 5 scenarios at H=5, BFS-seeded from the full +/-1
 # difficulty/ambiguity jitter box that reset() can draw (26 distinct start states); a literal guard
 # against silent state-space drift (a changed transition/horizon/jitter would move this number).
-EXPECTED_NUM_STATES = 371
+EXPECTED_NUM_STATES = 278
 
 
 def _q_star() -> dict[StateKey, list[float]]:
@@ -147,9 +147,9 @@ def _train_q_learning(
 def test_reachable_states_respect_step_invariant() -> None:
     """Every acting state reached at BFS depth t has step == t, so backward induction is sound.
 
-    The enumerated acting states span steps ``0..H`` exactly (a fresh episode starts at step 0), and
-    step-H states are the base case (every action from them terminates the episode -- a commit, a
-    horizon cutoff, or a budget give-up). This step-equals-depth invariant is what lets the solver
+    The acting states span steps ``0..H-1`` exactly (a fresh episode starts at step 0).
+    Step-(H-1) states are the base case: every action terminates the episode -- a commit, a
+    horizon cutoff, or a budget give-up. This step-equals-depth invariant is what lets the solver
     sweep states by descending step in a single pass with no fixed-point iteration.
 
     RL concept:
@@ -157,11 +157,11 @@ def test_reachable_states_respect_step_invariant() -> None:
     """
     states = reachable_acting_states(horizon=HORIZON)
     assert states
-    # acting states span steps 0..H (reset is step 0, the last decision is at step H)
-    assert {key[0] for key in states} == set(range(0, HORIZON + 1))
-    # step-H acting states are the base case: every action from them terminates the episode
+    # Five decisions are made from steps 0..4; step 5 is already terminal.
+    assert {key[0] for key in states} == set(range(HORIZON))
+    # Last acting states are the base case: every action terminates the episode.
     for key in states:
-        if key[0] == HORIZON:
+        if key[0] == HORIZON - 1:
             assert all(model_step(_state(key), a, horizon=HORIZON).done for a in ACTION_LABELS)
 
 
@@ -336,10 +336,9 @@ def test_q_learning_converges_toward_optimum() -> None:
     # absolute convergence: a well-trained table sits close to the exact optimum. Q* spans roughly
     # [-1.5, 2.0]; measured mean_abs_gap is ~0.33, so the 0.5 bar keeps headroom yet still fails if
     # the backup regresses to a no-learning baseline.
-    # The in-test learner trains on the noise-free scenario starts, so it visits the ~105 states
-    # reachable from those centres -- a subset of Q*'s 371 jitter-inclusive states. Heavy
-    # exploration reaches almost all of that noise-free-reachable subset, so >90 shared states hold.
-    assert int(trained_gap["num_states"]) > 90
+    # Five noise-free starts each have t+1 retrieve/clarify count combinations at step t.
+    # With acting steps 0..4, all 5 * (1+2+3+4+5) = 75 states must be visited.
+    assert int(trained_gap["num_states"]) == 75
     assert float(trained_gap["mean_abs_gap"]) < 0.5
 
     # apples-to-apples improvement on the states BOTH tables cover (Q* ∩ trained ∩ barely):

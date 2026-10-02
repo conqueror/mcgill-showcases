@@ -2,7 +2,7 @@
 
 > Status: the core runnable path is ready, and all four locus-of-learning lanes run locally today.
 > The orchestration-policy ladder, offline RL and off-policy evaluation, the cost-aware cascade,
-> the OpenAI Agents SDK bridge (live SDK gated behind an optional extra), the toy RLHF/DPO/GRPO/RLVR
+> the SDK-labelled simulator and optional SDK construction example, the toy RLHF/DPO/GRPO/RLVR
 > loop, and the simulated multi-agent lane all ship with deterministic artifacts, tests, and an
 > artifact verifier.
 
@@ -60,7 +60,8 @@ make run
   sampling, weighted IS, direct method, doubly robust).
 - A cost-aware effort cascade with a cost/quality Pareto frontier.
 - Reward-hacking audit, offline policy comparison, and the deploy/shadow/reject governance memo.
-- Lane A: an OpenAI Agents SDK bridge (offline by default; live SDK gated behind `make sync-sdk`).
+- Lane A: SDK-labelled simulator traces and an optional SDK construction example via
+  `make sync-sdk`; the builder does not connect the learned policy to live execution.
 - Lane B: a toy preference-optimization loop covering RLHF, DPO, GRPO, and RLVR.
 - Lane C: a simulated multi-agent coordination lane (independent vs joint-action learning).
 - Optional deep-RL lane: from-scratch NumPy DQN and PPO (no torch), via `make run-drl`.

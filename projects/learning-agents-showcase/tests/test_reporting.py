@@ -27,6 +27,8 @@ import json
 from dataclasses import fields
 from pathlib import Path
 
+import pytest
+
 from learning_agents.environment import ACTION_LABELS, AgentState
 from learning_agents.reporting import (
     OPTIONAL_DRL_ARTIFACTS,
@@ -195,6 +197,29 @@ def test_validation_succeeds_for_complete_outputs(tmp_path: Path) -> None:
 
     assert missing_required_artifacts(output_dir=tmp_path) == []
     assert artifact_validation_errors(output_dir=tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "accepted"),
+    [
+        ("artifacts/eval/scenario_results.csv", True),
+        ("artifacts/mdp/sample_episodes.csv", False),
+        ("artifacts/sdk_bridge/orchestration_trace.csv", False),
+    ],
+)
+def test_forced_stop_is_only_valid_as_a_final_outcome(
+    tmp_path: Path, relative_path: str, accepted: bool
+) -> None:
+    _write_minimal_required_artifacts(tmp_path)
+    body = _CSV_BODIES[relative_path]
+    action_label = "answer_direct" if accepted else "retrieve"
+    assert action_label in body
+    write_text_artifact(tmp_path / relative_path, body.replace(action_label, "forced_stop", 1))
+    errors = artifact_validation_errors(output_dir=tmp_path)
+    if accepted:
+        assert errors == []
+    else:
+        assert any("unknown action label 'forced_stop'" in error for error in errors)
 
 
 def test_checked_in_manifest_matches_artifact_contract() -> None:

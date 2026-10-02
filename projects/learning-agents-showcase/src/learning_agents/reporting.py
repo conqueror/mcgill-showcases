@@ -965,8 +965,7 @@ def _validate_csv_artifact(relative_path: str, artifact_path: Path) -> list[str]
     return errors
 
 
-# Artifacts that carry a single action label in a known column: the value must be one the
-# environment actually defines, so a report can never reference a non-existent action.
+# Actual action labels must name an environment action; final outcomes may also be forced stops.
 _ACTION_LABEL_COLUMN: dict[str, str] = {
     "artifacts/mdp/sample_episodes.csv": "action_label",
     "artifacts/eval/scenario_results.csv": "final_action_label",
@@ -978,13 +977,13 @@ def _validate_action_labels(
     relative_path: str,
     rows: Sequence[Mapping[str, str]],
 ) -> list[str]:
-    """Check that action-label columns only ever name actions the environment defines.
+    """Check action labels, allowing a forced stop only in the final-outcome column.
 
     What + why: the episode and scenario-result artifacts record which orchestration action was
     taken. Because the legal set is owned by :data:`~learning_agents.environment.ACTION_LABELS`,
     validating against it here ties the *evidence* back to the *live action space* -- a report that
-    mentions an action the MDP cannot take is malformed by definition. Paths without an action-label
-    column are skipped.
+    mentions an action the MDP cannot take is malformed by definition. The final-outcome column may
+    also contain ``forced_stop`` for termination without a commit. Other action columns stay strict.
 
     Args:
         relative_path: The artifact's contract-relative path; selects the action-label column (if
@@ -993,8 +992,8 @@ def _validate_action_labels(
 
     Returns:
         One error per row whose action-label value is not in
-        :data:`~learning_agents.environment.ACTION_LABELS` (empty if all are legal or the path has
-        no action-label column).
+        :data:`~learning_agents.environment.ACTION_LABELS`, except ``forced_stop`` in the
+        final-outcome column (empty if all are legal or the path has no action-label column).
 
     RL concept:
         Evaluation and governance -- evidence must reference only the MDP's real action space.
@@ -1005,7 +1004,11 @@ def _validate_action_labels(
     errors: list[str] = []
     for row in rows:
         label = row.get(column)
-        if label is not None and label not in _ACTION_LABEL_SET:
+        if (
+            label is not None
+            and label not in _ACTION_LABEL_SET
+            and not (column == "final_action_label" and label == "forced_stop")
+        ):
             errors.append(
                 f"{relative_path} has an unknown action label {label!r} in column {column!r}."
             )

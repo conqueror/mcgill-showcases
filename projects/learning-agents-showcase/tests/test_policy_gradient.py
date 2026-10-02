@@ -170,13 +170,25 @@ def test_train_reinforce_rejects_non_positive_episodes() -> None:
         train_reinforce(episodes=0)
 
 
+def test_terminal_positive_reward_updates_logits_with_an_independent_baseline() -> None:
+    """A one-step successful answer must learn even when the baseline is enabled."""
+    result = train_reinforce(episodes=2, seed=1, scenario_ids=(0,), alpha=0.1)
+    start = AgentDecisionEnvironment().reset(seed=2, scenario_id=0)
+    assert result.training_curve[0]["steps"] == 1
+    assert result.training_curve[0]["total_reward"] == 2.0
+    assert [row["baseline"] for row in result.training_curve] == [0.0, 2.0]
+    # Initial pi=1/4, G=2, alpha=0.1: chosen delta=0.1*2*(1-1/4)=0.15;
+    # each unchosen delta=0.1*2*(0-1/4)=-0.05. The first state is not revisited.
+    assert result.theta[start.as_tuple()] == pytest.approx([0.15, -0.05, -0.05, -0.05])
+
+
 def test_training_returns_curve_with_expected_schema() -> None:
     """Training returns a per-episode curve and learned logits matching the documented schema.
 
     Shape contract: the curve has one row per episode with keys
     ``episode, scenario_id, total_reward, baseline, steps``; episodes are numbered 1..N; scenario
     ids cycle through the catalog (0,1,2,3,4,0,...); each rollout's length is within the finite
-    horizon (1..H+1 steps, since commit actions can terminate early); every learned logit row has
+    horizon (1..H steps, since commit actions can terminate early); every learned logit row has
     one entry per action; and ``greedy_policy()`` yields a ``ReinforcePolicy``.
 
     RL concept:
@@ -195,8 +207,8 @@ def test_training_returns_curve_with_expected_schema() -> None:
     # Scenario ids cycle through the five-scenario catalog, one per episode.
     assert [int(row["scenario_id"]) for row in result.training_curve[:7]] == [0, 1, 2, 3, 4, 0, 1]
     # Each rollout terminates within the finite horizon (commit actions can end it early, so the
-    # length ranges over 1..H+1 rather than always running the full horizon).
-    assert all(1 <= int(row["steps"]) <= horizon + 1 for row in result.training_curve)
+    # length ranges over 1..H rather than always running the full horizon).
+    assert all(1 <= int(row["steps"]) <= horizon for row in result.training_curve)
     # Every learned logit row has one entry per action.
     assert all(len(logits) == ACTION_COUNT for logits in result.theta.values())
     assert isinstance(result.greedy_policy(), ReinforcePolicy)
@@ -218,7 +230,7 @@ def test_training_is_deterministic_for_a_fixed_seed() -> None:
 
 
 def test_greedy_policy_falls_back_to_action_zero_for_unseen_state() -> None:
-    """An unseen state returns action 0 (``answer_direct``), the conservative do-nothing fallback.
+    """An unseen state returns action 0 (``answer_direct``), without a safety guarantee.
 
     With empty ``theta`` every state is unseen, so the greedy readout returns action 0. This keeps
     the deployed policy total over the whole state space even though training only visited a subset.

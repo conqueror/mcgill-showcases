@@ -34,7 +34,7 @@ RL concept:
     ladder), kept honest by reporting a vector of behavioural metrics rather than one scalar.
 
 Math:
-    Each rollout estimates the (undiscounted, finite-horizon) return G_t = sum_k R_{t+k+1} of a
+    Each rollout estimates the finite-horizon return G_t = sum_k gamma^k R_{t+k+1} of a
     fixed policy in a known MDP; averaging over scenarios and seeds approximates that policy's
     value under the scenario distribution.
 """
@@ -103,6 +103,7 @@ def evaluate_policies(
     base_seed: int = 0,
     horizon: int = 5,
     reward_fn: RewardFunction = default_reward,
+    gamma: float = 1.0,
 ) -> tuple[list[dict[str, int | float | str]], list[dict[str, int | float | str]]]:
     """Re-simulate every policy across every scenario and return per-episode + summary tables.
 
@@ -130,6 +131,7 @@ def evaluate_policies(
         reward_fn: Reward function injected into the environment; defaults to
             :func:`~learning_agents.environment.default_reward` (the aligned judge rubric).
             Swapping it lets reward-design studies reuse this harness unchanged.
+        gamma: Return discount; defaults to 1.0 (undiscounted). Side-metrics are not discounted.
 
     Returns:
         A pair ``(summary_rows, scenario_rows)``. ``scenario_rows`` holds one dict per episode
@@ -141,7 +143,7 @@ def evaluate_policies(
         policy's finite-horizon return alongside cost/safety side-effects before trusting it.
 
     Math:
-        Per rollout we sum the finite-horizon return G_t = sum_k R_{t+k+1}; the summary averages
+        Per rollout we sum G_t = sum_k gamma^k R_{t+k+1}; the summary averages
         it (and each side-metric) over episodes to approximate the policy's value.
     """
     scenario_rows: list[dict[str, int | float | str]] = []
@@ -168,28 +170,31 @@ def evaluate_policies(
                 while not environment.is_done():
                     action = policy.select_action(state)  # on-policy rollout: pi acts in known MDP
                     transition = environment.step(action)
-                    # Monte Carlo return: accumulate R_{t+1} into G_t = sum_k R_{t+k+1}.
-                    total_reward += transition.reward
+                    # Monte Carlo return; gamma=1 preserves the default undiscounted metric.
+                    total_reward += (gamma**state.step) * transition.reward
+                    executed_action = (
+                        action if transition.info["termination"] != "budget_exhausted" else -1
+                    )
                     # Cost-of-effort metric: sum the action's resource cost (from ACTION_COSTS).
                     action_cost += float(transition.info["action_cost"])
                     # Governance metric: count escalations to a human (action == 3).
-                    escalation_count += int(action == 3)
+                    escalation_count += int(executed_action == 3)
                     # Reward-hacking probe: needless effort -- retrieve when already adequately
                     # grounded, or clarify when nothing is ambiguous.
                     over_effort_count += int(
                         (
-                            action == 1
+                            executed_action == 1
                             and evidence_is_adequate(
                                 evidence=state.evidence, difficulty=state.difficulty
                             )
                         )
-                        or (action == 2 and state.ambiguity == 0)
+                        or (executed_action == 2 and state.ambiguity == 0)
                     )
                     # Safety probe: answer while under-grounded (hallucination risk), or escalate
                     # an easy & unambiguous request (a needless human hand-off).
                     unsafe_or_questionable_decisions += int(
                         (
-                            action == 0
+                            executed_action == 0
                             and not (
                                 evidence_is_adequate(
                                     evidence=state.evidence, difficulty=state.difficulty
@@ -197,13 +202,13 @@ def evaluate_policies(
                                 and state.ambiguity == 0
                             )
                         )
-                        or (action == 3 and state.difficulty < 2 and state.ambiguity == 0)
+                        or (executed_action == 3 and state.difficulty < 2 and state.ambiguity == 0)
                     )
                     # Under-grounding probe (answer-specific): a committed direct answer whose
                     # evidence is inadequate for the difficulty is the hallucination-risk failure
                     # the judge rubric penalizes. answer_direct is terminal, so this fires at most
                     # once; it feeds avg_undergrounded_rate, the recommendation safety gate.
-                    if action == 0:
+                    if executed_action == 0:
                         answered = 1
                         undergrounded_answer = int(
                             not evidence_is_adequate(
@@ -211,8 +216,8 @@ def evaluate_policies(
                             )
                         )
                     action_trace.append(ACTION_LABELS[action])
-                    if transition.done:
-                        committed_action = action  # the action that terminated the episode
+                    if transition.info["termination"] in ("answer_direct", "escalate"):
+                        committed_action = action  # an executed terminal commit
                     state = transition.state  # advance to s'; loop until terminal
 
                 scenario_rows.append(
