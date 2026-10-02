@@ -19,11 +19,91 @@ RL concept:
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
+import numpy as np
+import pytest
 from pytest import MonkeyPatch
 
 from scripts.run_drl_optional import main as run_drl_optional_main
+
+
+@pytest.mark.parametrize("check", ["steps", "gamma", "seed", "bounds"])
+def test_drl_bridge_seed_contract_bounds_and_actual_step_counts(
+    tmp_path: Path, monkeypatch: MonkeyPatch, check: str,
+) -> None:
+    """Exercise the real Gym adapter, replacing only slow training with rollout-sized chunks."""
+    gym = pytest.importorskip("gymnasium", reason="Gym adapter needs the optional DRL extra")
+    from gymnasium.utils.env_checker import check_env
+
+    from student_support_rl import drl
+    from student_support_rl.q_learning import QLearningResult, train_q_learning
+
+    models: list[RoundedModel] = []
+    tabular_gammas: list[float] = []
+
+    class RoundedModel:
+        def __init__(self, _policy: str, env: Any, **kwargs: Any) -> None:
+            self.env = env
+            self.rollout = int(kwargs.get("n_steps", 4))
+            self.gamma = float(kwargs["gamma"])
+            self.num_timesteps = 0
+            models.append(self)
+
+        def learn(self, *, total_timesteps: int, **_kwargs: object) -> None:
+            self.num_timesteps += (
+                (total_timesteps + self.rollout - 1) // self.rollout
+            ) * self.rollout
+
+        def predict(
+            self, _observation: Sequence[float], deterministic: bool = True,
+        ) -> tuple[int, None]:
+            return 0, None
+
+    def recorded_q_learning(
+        *, episodes: int, seed: int, scenario_ids: tuple[int, ...], horizon: int,
+        gamma: float = 0.9,
+    ) -> QLearningResult:
+        tabular_gammas.append(gamma)
+        return train_q_learning(
+            episodes=episodes, seed=seed, scenario_ids=scenario_ids, horizon=horizon, gamma=gamma,
+        )
+
+    monkeypatch.setattr(
+        drl, "_load_drl_dependencies",
+        lambda: (gym, np, gym.spaces, {"dqn": RoundedModel, "ppo": RoundedModel}),
+    )
+    monkeypatch.setattr(drl, "train_q_learning", recorded_q_learning)
+    result = drl.run_drl_comparison(timesteps=65, output_dir=tmp_path, quick=True)
+
+    env = models[0].env
+    if check == "steps":
+        # DQN's 4-step chunks round 65 up to 68; PPO's 32-step rollouts round it up to 96.
+        assert [(row["policy"], row["step"]) for row in result.training_rows] == [
+            ("dqn", 68), ("ppo", 96),
+        ]
+    elif check == "gamma":
+        assert tabular_gammas == [0.95]
+        assert all(model.gamma == 0.95 for model in models)
+    elif check == "seed":
+        first, first_info = env.reset(seed=11)
+        env.step(3)
+        env.reset()
+        repeated, repeated_info = env.reset(seed=11)
+        np.testing.assert_array_equal(first, repeated)
+        assert first_info == repeated_info
+        first, _ = env.reset(seed=11, options={"scenario_id": 4})
+        env.reset()
+        repeated, _ = env.reset(seed=11, options={"scenario_id": 4})
+        np.testing.assert_array_equal(first, repeated)
+        check_env(env, skip_render_check=True)
+    else:
+        env.reset(seed=11, options={"scenario_id": 4})
+        for _ in range(6):
+            observation, *_ = env.step(1)
+            assert env.observation_space.contains(observation)
 
 
 def test_drl_optional_report_mentions_dqn_and_ppo_when_deps_are_missing(

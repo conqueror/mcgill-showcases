@@ -38,7 +38,7 @@ accumulates the finite-horizon return. In the notation of [math-notes.md](math-n
 after acting is `R_{t+1}`; horizon `H = 6`):
 
 ```
-G_t = Σ_{k=0}^{H-t-1} γ^k · R_{t+k+1}
+G_t = Σ_{k=0}^{H-t} γ^k · R_{t+k+1}
 ```
 
 The evaluation harness sums the **undiscounted** finite-horizon reward (`γ = 1` in the rollout
@@ -71,8 +71,8 @@ each one designed to expose a specific failure mode that a scalar return would h
 | `unsafe_or_questionable_decisions` | steps that did nothing at max risk **or** escalated at minimal risk | clearly wrong calls in either direction |
 | `solved` / `solved_rate` | fraction of episodes ending at `risk ≤ 1` | the actual outcome we care about |
 
-The two safety/hacking probes are worth stating precisely, because the governance rule keys on
-them. From the rollout loop:
+The two safety/hacking probes are worth stating precisely. The automatic gate reads questionable
+decisions; over-intervention counts are reported for human review. From the rollout loop:
 
 ```
 over_intervention_count          += 1[ a ≠ 0  and  s.prior_interventions ≥ 2 ]
@@ -92,15 +92,18 @@ policy that wins reward by piling on interventions shows up here as a large
 
 Governance turns the metric vector into one decision. `reporting.recommendation_from_summary`
 compares the **`q_learning`** row against the **`heuristic`** row (the incumbent baseline) and
-applies a two-gate rule. With `unsafe_rate = avg_unsafe_or_questionable_decisions`:
+applies a two-gate rule. With
+`avg_questionable_decisions = avg_unsafe_or_questionable_decisions`, the unit is **flagged decisions
+per episode**, not a probability or fraction of actions. For example, three flagged actions in each
+six-step episode give a mean count of `3`, not a rate of `0.5`:
 
 ```
 # Gate 1 — safety first, before any reward comparison:
-if  unsafe_rate > 0.5  OR  avg_final_risk > 1.6:
+if  avg_questionable_decisions > 0.5  OR  avg_final_risk > 1.6:
         decision = reject        # too much unsafe / residual-risk exposure
 
 # Gate 2 — beat the incumbent within the safety bound:
-elif  avg_reward > baseline_reward  AND  unsafe_rate <= 0.5:
+elif  avg_reward > baseline_reward  AND  avg_questionable_decisions <= 0.5:
         decision = shadow        # better than the heuristic, but guarded rollout only
 
 # Otherwise — safe but not clearly better:
@@ -108,16 +111,15 @@ else:
         decision = reject        # insufficient margin over the heuristic
 ```
 
-The structure is deliberate. **Safety is checked first**, so a policy can never buy its way past
-the safety gate with a high return — this is precisely what stops the harness from accepting a
-reward-hacking policy that inflated `avg_reward` by over-intervening. Only a policy that is *both*
+The structure is deliberate. **Questionable decisions and final risk are checked first**, so a
+high return cannot override those checks. The gate does **not** impose an over-intervention or cost
+limit; those metrics need human review. Only a policy that is *both*
 safe enough *and* strictly better than the incumbent heuristic earns a `shadow` (guarded,
 non-actioning) rollout; everything else is rejected. `deploy` is intentionally **not** an
 automatic output of this rule — in a teaching repo with simulator-only evidence, the most a
 policy earns is `shadow`. If either the `q_learning` or `heuristic` row is missing, the function
 fails closed to `reject` ("missing comparable evidence"). See
-[reward-design-and-hacking.md](reward-design-and-hacking.md) for why the unsafe-rate gate is the
-load-bearing guard.
+[reward-design-and-hacking.md](reward-design-and-hacking.md) for why reward alone is insufficient.
 
 ### 2.4 Where governance sits in the pipeline
 
@@ -126,7 +128,7 @@ flowchart LR
     train["Train a policy (any ladder rung)"] --> eval["evaluate_policies: re-simulate on fixed scenarios"]
     eval --> vec["Metric vector: reward, final_risk, cost, over_intervention, escalation, unsafe, solved_rate"]
     vec --> gate["recommendation_from_summary: two-gate rule"]
-    gate -->|"unsafe_rate > 0.5 or final_risk > 1.6"| reject["reject"]
+    gate -->|"mean questionable count > 0.5 or final_risk > 1.6"| reject["reject"]
     gate -->|"beats heuristic and safe"| shadow["shadow (guarded rollout)"]
     gate -->|"safe but no margin"| reject
     shadow --> controls["Safety controls: synthetic data, human-reviewed escalation"]
@@ -150,16 +152,16 @@ Open these in order; each line says what to look for.
   - `recommendation_from_summary(...)` is the deploy/shadow/reject rule in §2.3.
   - `governance_artifacts()` renders the three narrative memos (safety controls, offline-eval plan,
     business memo). **Honest note:** the `business_memo` *string returned by this function* is a
-    static placeholder that says "shadow first"; the runner (`scripts/run_showcase.py` /
+    static placeholder that rejects pending evaluation; the runner (`scripts/run_showcase.py` /
     `scripts/write_business_memo.py`) **overwrites** it with the *live* verdict from
     `recommendation_from_summary`, so trust the file on disk, not the stub.
   - `REQUIRED_ARTIFACTS`, `missing_required_artifacts`, `artifact_validation_errors`, and the
-    per-path `required_columns` table are the *artifact contract* — the machine-checkable promise
-    that every run emits well-formed evidence. This is governance applied to the *evidence itself*,
+    per-path `required_columns` table are the *artifact contract* — required cells must be present
+    and nonempty, and numeric values must be finite. This is governance applied to the *evidence itself*,
     enforced by `scripts/verify_artifacts.py` and `tests/test_artifact_contract.py`.
 - **`artifacts/eval/policy_comparison.csv`** — the per-policy summary leaderboard. Look at the
   `q_learning` row's `avg_unsafe_or_questionable_decisions` and `avg_final_risk`: those two numbers
-  are exactly what the governance gate reads.
+  are the two non-reward metrics the governance gate reads.
 - **`artifacts/eval/scenario_results.csv`** — one row per `(policy, scenario, episode)` with the
   full `actions` trace. This is where you *audit* a decision sequence — e.g. spot the `random`
   policy escalating to `advisor_meeting` and then idling.
@@ -169,15 +171,16 @@ Open these in order; each line says what to look for.
 - **`artifacts/governance/offline_eval_plan.md`** — the procedure: hold scenarios fixed across
   policies; compare reward *and* final risk *and* intervention volume; reject any policy that
   improves reward only by over-intervening.
-- **`artifacts/business/deploy_shadow_reject_memo.md`** — the live verdict for the checked-in run.
-  In the current artifacts it reads **`reject`**, because `q_learning`'s
+- **`artifacts/business/deploy_shadow_reject_memo.md`** — the live verdict for your generated run.
+  In the illustrative example below it reads **`reject`**, because `q_learning`'s
   `avg_unsafe_or_questionable_decisions ≈ 0.67 > 0.5` trips Gate 1 ("too much safety or
   residual-risk exposure"). That a model topping the reward leaderboard is still *rejected* by the
   safety gate is the whole point of this guide.
 
-### Worked example (current checked-in numbers)
+### Worked example (illustrative numbers)
 
-From `artifacts/eval/policy_comparison.csv`:
+These values illustrate the rule; generated results and run receipts are not checked in.
+Read your own `artifacts/eval/policy_comparison.csv` for measured values:
 
 | policy | avg_reward | avg_final_risk | avg_unsafe_or_questionable | solved_rate |
 |---|---|---|---|---|
@@ -207,16 +210,16 @@ shadow. (Note also `heuristic`'s `avg_unsafe_or_questionable = 0.0` — the hand
 - **The probes are hand-defined.** `unsafe_or_questionable_decisions` encodes *our* notion of a
   questionable call (idle-at-max-risk, escalate-at-min-risk). A different stakeholder might draw
   the line elsewhere; the harness is honest about *which* line it draws, but the line is a choice.
-- **Determinism is by seed, and the transition is deterministic.** The only stochasticity is the
-  start-state jitter from `reset(seed=...)`; the dynamics never sample. So `episodes_per_scenario`
-  averages over *start-state* noise only, not transition noise — there is none.
+- **The transition is deterministic.** `reset(seed=...)` jitters the start state; the dynamics never
+  sample. `RandomPolicy.reset()` also restarts its action RNG, so that baseline repeats its action
+  sequence each episode. Extra episodes vary starting states, not that baseline's action stream.
 - **`deploy` never appears automatically.** The rule emits only `shadow` or `reject`. This is a
   deliberate safety posture for a simulator-evidenced teaching repo, not a limitation to "fix."
 
 ## 5. See also
 
 - [reward-design-and-hacking.md](reward-design-and-hacking.md) — *why* a single reward number is
-  insufficient, and the over-intervention loophole the unsafe-rate gate is built to catch.
+  insufficient, and why cost and over-intervention also need review.
 - [mdp-and-environment.md](mdp-and-environment.md) — the MDP, the deterministic transition, and the
   `risk` heuristic every metric depends on.
 - [value-based-learning.md](value-based-learning.md) — the `q_learning` policy this guide

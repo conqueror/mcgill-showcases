@@ -15,7 +15,7 @@ and flags where a number is **seed/scenario dependent** rather than a theorem.
 > (fast) or `make run` (full), then open files under `artifacts/`. For the "flip a flag" tasks,
 > import the training function and call it directly (e.g. in a REPL with `PYTHONPATH=src`), or edit
 > the call site in `scripts/` that produces the artifact. Concrete numbers quoted in the solutions
-> come from the checked-in artifacts at the default seed (`seed=7`) and **will move** if you change
+> are illustrative; generated result artifacts are not checked in. Results **will move** if you change
 > the seed, episode count, or scenario mix — the *direction* of each effect is the point, not the
 > third decimal.
 
@@ -90,7 +90,7 @@ step would **not** add to regret.
 ### Exercise 4 — A two-step return, by hand *(MDP)*
 
 A length-2 episode produces rewards `R_2 = 6.0` then `R_3 = 0.0` (this is the opening of the
-checked-in high-risk trace in `artifacts/mdp/sample_episodes.csv`: an advisor meeting that resolves
+illustrative high-risk trace in `artifacts/mdp/sample_episodes.csv`: an advisor meeting that resolves
 the student, followed by a no-op). With `γ = 0.9`, compute the discounted return `G_1` and `G_2` from
 the return definition in §1 of [math-notes.md](math-notes.md). Then state how the **undiscounted**
 episode return reported by `evaluation.py` (`G_t = Σ_k R_{t+k+1}` with no `γ`) would differ, and why
@@ -115,11 +115,13 @@ top ~10 rows. Answer:
 ### Exercise 6 — Turn off the REINFORCE baseline and predict the effect *(policy gradient)*
 
 `policy_gradient.train_reinforce` takes `use_baseline: bool = True`; with it on, the baseline `b` is
-the **episode-mean return** subtracted from each `G_t` (see §8 of [math-notes.md](math-notes.md) and
+the mean of per-step returns from **earlier episodes**, frozen before the current rollout and
+subtracted from each `G_t` (see §8 of [math-notes.md](math-notes.md) and
 [policy-gradient-and-actor-critic.md](policy-gradient-and-actor-critic.md)). Before running anything:
 
-1. Predict what happens to the **variance** of the gradient updates when you set
-   `use_baseline=False`, and why the optimum it converges to is (in expectation) **unchanged**.
+1. Explain why this historical baseline leaves the expected gradient unchanged, while the mean
+   from the current trajectory may not. Does removing the baseline necessarily increase variance
+   or change the optimum of the objective? Distinguish the objective from a finite training run.
 2. Now run both settings, e.g.
    ```
    from student_support_rl.policy_gradient import train_reinforce
@@ -310,35 +312,35 @@ deliberately separate choices. Transition source: `artifacts/mdp/sample_episodes
 2. `optimal_q_value` is strongly negative because reaching `prior ≥ 5` means the student has been
    intervened on far past the threshold of 2, so `default_reward`'s `over_intervention_penalty`
    (`0.6 · max(0, prior − 2)`) plus accumulated action costs dominate — DP computes the true (bad) value
-   of those states. `learned_q_value` is exactly `0.0` because Q-learning **never visited** them: a
-   sensible ε-greedy run starting from the five scenarios essentially never stacks 5+ interventions, so
-   those table entries keep their `0.0` initialization.
+   of those states. A zero `learned_q_value` can be an **untried action in a registered state**:
+   Q-learning initializes all four actions when a state or successor is observed. `gap_rows` omits
+   absent state keys, so these rows do not establish that the state was never observed. A zero alone
+   also cannot distinguish initialization from an update whose target was zero.
 3. This is **expected, not a bug**: tabular Q-learning only converges on the state-actions it actually
    samples (§11, [math-notes.md](math-notes.md)). `Q*` from `dynamic_programming.py` is defined on the
    whole *reachable* set (via BFS), but the learner's coverage is a strict subset, so the gap is large
-   precisely on the rarely/never-reached tail. The fair comparison is restricted to **shared** states —
+   on poorly sampled actions in registered tail states. The comparison is restricted to **shared** states —
    see `_shared_abs_gaps` in `dynamic_programming.py` — and even there the gap is non-zero because
    training is finite. See [value-based-learning.md](value-based-learning.md).
 
 ### Solution 6
 
-1. Setting `use_baseline=False` makes `b = 0`, so the gradient weight becomes the raw return `G_t`
-   instead of the centered `G_t − b`. The per-episode returns here span a wide, signed range (at
-   `seed=7` the on-baseline `total_reward` column runs from roughly `−27` to `+9`), so the
-   score-function estimator `(G_t − b)·∇log π` has **higher variance** — updates swing harder
-   episode-to-episode. The optimum is **unchanged in expectation** because subtracting a
-   state-independent (here, episode-level) baseline leaves the gradient *unbiased*:
-   `E[∇log π · b] = 0`, so `b` only rescales noise, not the expected ascent direction (§8,
+1. Setting `use_baseline=False` makes `b = 0`, so the update uses
+   `γ^{t-1}·G_t·∇log π` instead of `γ^{t-1}·(G_t − b)·∇log π`. The historical baseline is frozen
+   before sampling, so `E[∇log π · b | state, past data] = 0` and the expected gradient is unchanged.
+   A mean computed from the **current trajectory** depends on its actions and can bias the update;
+   with one step it equals `G_1` and cancels the entire update. Removing a valid historical baseline
+   does not change the objective or its optima, but it can change a finite run's outcome. Neither
+   unbiased gradients nor a baseline guarantee convergence to a global optimum (§8,
    [math-notes.md](math-notes.md)).
-2. You should expect the **no-baseline** curve to be visibly *rougher* (larger episode-to-episode swings
-   in `total_reward`) than the baseline curve. The *roughness contrast* is the prediction to look for —
-   not a clean upward trend: the curve here is dominated by the fixed five-scenario cycle (every fifth
-   episode is a hard high-risk start), so at a single seed the mean barely climbs over the 400 episodes.
+2. Removing a useful baseline may make updates noisier, but this scalar historical mean is not
+   guaranteed to reduce variance. Either training curve may look rougher, and neither must climb
+   monotonically. The fixed five-scenario cycle also affects the per-episode returns.
    **Honest caveat:** variance is a property of the *update distribution*, and you are eyeballing **one
    seed** — a single run can look misleadingly smooth or jagged. To make a real claim, average several
    seeds and compare the spread of returns, not one trace. The on-baseline curve is in
    `artifacts/policy_gradient/training_curve.csv`; the `baseline` column there shows the per-episode `b`
-   that the off-setting zeroes out. See [policy-gradient-and-actor-critic.md](policy-gradient-and-actor-critic.md).
+   from earlier episodes that the off-setting zeroes out. See [policy-gradient-and-actor-critic.md](policy-gradient-and-actor-critic.md).
 
 ### Solution 7
 

@@ -158,12 +158,13 @@ class StudentState:
         *,
         horizon: int,
     ) -> tuple[float, float, float, float, float, float]:
-        """Return the state as a roughly [0, 1]-scaled float feature vector for function approx.
+        """Return reachable episode states as a [0, 1]-scaled float feature vector.
 
         What + why: deep agents (the DQN rung) consume features, not table keys. Dividing each
         field by its natural maximum puts every input on a comparable scale, which conditions a
-        neural network far better than raw integers. Week and prior_interventions are scaled by
-        the horizon since both grow with episode length; metrics use their fixed caps (4 and 3).
+        neural network far better than raw integers. Week is scaled by the horizon; prior
+        interventions include the largest scenario starting count plus the horizon, including
+        the terminal observation. Metrics use their fixed caps (4 and 3).
 
         Args:
             horizon: Episode length H, used to scale the time-like fields; floored at 1 to
@@ -182,7 +183,11 @@ class StudentState:
             round(self.completion / 4.0, 6),
             round(self.pressure / 4.0, 6),
             round(self.risk / 3.0, 6),
-            round(self.prior_interventions / float(max(1, horizon)), 6),
+            round(
+                self.prior_interventions
+                / float(max(1, horizon) + max(s.prior_interventions for s in SCENARIOS)),
+                6,
+            ),
         )
 
 

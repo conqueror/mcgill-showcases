@@ -27,7 +27,7 @@ G_t = Σ_{k≥0} γ^k · R_{t+k+1}
 The **policy gradient theorem** rewrites `∇_θ J` as an expectation we can sample from rollouts — crucially, **without** differentiating through the environment's unknown dynamics:
 
 ```
-∇_θ J(θ) = E_{π_θ}[ Σ_t ∇_θ log π_θ(A_t|S_t) · (G_t − b(S_t)) ]
+∇_θ J(θ) = E_{π_θ}[ Σ_{t=1}^H γ^{t-1} · ∇_θ log π_θ(A_t|S_t) · (G_t − b(S_t)) ]
 ```
 
 The term `∇_θ log π_θ(A_t|S_t)` is the **score function**. Intuitively: weight each action's score by how good the return that followed it was (`G_t`), and the policy drifts toward actions that preceded high return. The baseline `b(S_t)` is subtracted from the return — more on that below. Full derivation lives in [math-notes.md §8](math-notes.md#8-policy-gradients-optimize-the-policy-directly); we do not repeat it here.
@@ -47,7 +47,7 @@ Read it as "raise the chosen action's logit, lower every action's logit in propo
 Combine the score with the (baseline-subtracted) Monte-Carlo return and you get the update `train_reinforce` applies to every visited state-action pair, looping over **all** candidate actions `a'`:
 
 ```
-θ_{s,a'} ← θ_{s,a'} + α·(G_t − b)·( 1[a'=A_t] − π_θ(a'|s) )
+θ_{s,a'} ← θ_{s,a'} + α·γ^{t-1}·(G_t − b)·( 1[a'=A_t] − π_θ(a'|s) )
 ```
 
 This is Monte-Carlo policy gradient: roll out a whole episode on-policy, compute the true returns `G_t` by backward accumulation, *then* update. There is no bootstrapping and no TD error here — unlike Q-learning/SARSA, the signal is the full sampled return, not a one-step estimate.
@@ -55,15 +55,15 @@ This is Monte-Carlo policy gradient: roll out a whole episode on-policy, compute
 ```mermaid
 flowchart LR
   A["Roll out episode on-policy: sample A ~ pi_theta"] --> B["Compute returns G_t (backward)"]
-  B --> C["Baseline b = mean(G_t)"]
+  B --> C["Baseline b = mean returns from earlier episodes (frozen before rollout)"]
   C --> D["Advantage G_t - b"]
-  D --> E["Update every logit: +alpha (G_t - b)(1[a'=A]-pi)"]
+  D --> E["Update every logit: +alpha gamma^(t-1) (G_t - b)(1[a'=A]-pi)"]
   E --> A
 ```
 
 ### Baseline → critic → advantage → A2C
 
-The baseline `b(S_t)` reduces the **variance** of the gradient estimate **without introducing bias** (it works for any function of state, because `E[∇ log π_θ · b(S_t)] = 0`). Our implementation uses the simplest possible baseline: the **episode-mean return** (`use_baseline=True` by default; set it `False` and `b = 0`). It answers "was this return better or worse than typical?" rather than "was it positive?".
+The baseline `b(S_t)` can reduce the **variance** of the gradient estimate **without introducing bias** when it is independent of the sampled action, conditional on the state and past data: `E[∇ log π_θ · b(S_t)] = 0`. Our implementation averages per-step returns from **earlier episodes** and freezes that value before the current rollout (`use_baseline=True` by default; initially, or when set to `False`, `b = 0`). A current-trajectory mean depends on the sampled actions and can bias the gradient; in a one-step episode it cancels the update entirely. A baseline can help, but variance reduction is not guaranteed for every choice of baseline.
 
 That single idea is the **seed of a critic**. Replace the crude mean baseline with a *learned* state-value estimate `V_w(s)` and the weighting term becomes the **advantage**:
 
@@ -71,7 +71,7 @@ That single idea is the **seed of a critic**. Replace the crude mean baseline wi
 A^π(s,a) = Q^π(s,a) − V^π(s)
 ```
 
-— "how much better is action `a` than the state's average?" A method that learns `V_w` (the **critic**) alongside `π_θ` (the **actor**) and uses the advantage in the gradient is an **actor-critic** method; **A2C** (Advantage Actor-Critic) is the canonical synchronous form. Our REINFORCE is the degenerate actor-critic where the "critic" is a constant per episode. See [math-notes.md §9](math-notes.md#9-actor-critic-and-ppo).
+— "how much better is action `a` than the state's average?" A method that learns `V_w` (the **critic**) alongside `π_θ` (the **actor**) and uses the advantage in the gradient is an **actor-critic** method; **A2C** (Advantage Actor-Critic) is the canonical synchronous form. Our REINFORCE uses a scalar historical baseline, not a learned critic, so it is not an actor-critic method. See [math-notes.md §9](math-notes.md#9-actor-critic-and-ppo).
 
 ### PPO's clipped surrogate
 
@@ -85,7 +85,7 @@ The `clip` flattens the objective once `ρ_t` leaves `[1−ε, 1+ε]`, removing 
 
 ```mermaid
 graph TD
-  PG["Policy gradient theorem: grad J = E[grad log pi (G_t - b)]"] --> R["REINFORCE: b = episode-mean return (our tabular code)"]
+  PG["Policy gradient: grad J = E[sum_t gamma^(t-1) grad log pi (G_t - b)]"] --> R["REINFORCE: b = mean returns from earlier episodes (our tabular code)"]
   PG --> AC["Actor-critic: learned critic V_w, advantage A = Q - V"]
   AC --> A2C["A2C: synchronous advantage actor-critic"]
   A2C --> PPO["PPO: clipped surrogate, reuse minibatches (SB3 black box)"]
@@ -94,18 +94,18 @@ graph TD
 ## 3. In this showcase
 
 - **`src/student_support_rl/policy_gradient.py`** — the inspectable heart of this guide. Read `train_reinforce`: the on-policy rollout loop (`_sample_action` draws `A ~ π_θ(·|s)`, so *exploration comes from the policy itself*, not ε-greedy), the backward return accumulation, the `baseline` line, and the double loop that applies the closed-form softmax update to every `(s, a')`. The line `grad_log = indicator - probabilities[candidate]` is the score `1[a'=A_t] − π(a'|s)` verbatim. `ReinforcePolicy.select_action` then deploys the **mode** (argmax logit) for evaluation, falling back to action `0` (`no_intervention`) on unseen states.
-- **`artifacts/policy_gradient/training_curve.csv`** — one row per episode (`episode, scenario_id, total_reward, baseline, steps`); 400 rows under `--quick`/`make smoke`, 2000 under a full `make run`. The `baseline` column is the mean of *that episode's* per-step returns `G_t` (recomputed each episode — it is **not** a running cross-episode average). During training each visited step `t` is nudged by its own advantage `(G_t − baseline)`, so the per-step quantity drives the update, not `(total_reward − baseline)`; `total_reward` is the undiscounted episode return shown only for context. **Look honestly at the noise** (see caveats): early episodes are mostly negative, and later episodes mix clear wins with large negative outliers rather than climbing monotonically.
+- **`artifacts/policy_gradient/training_curve.csv`** — one row per episode (`episode, scenario_id, total_reward, baseline, steps`); 400 rows under `--quick`/`make smoke`, 2000 under a full `make run`. The `baseline` column is the running mean of per-step returns from **earlier episodes**, frozen before the current rollout; the first episode uses zero. During training each visited step `t` is nudged by `γ^{t-1}·(G_t − baseline)`, so the discounted per-step quantity drives the update, not `(total_reward − baseline)`; `total_reward` is the undiscounted episode return shown only for context. **Look honestly at the noise** (see caveats): a sampled training curve need not climb monotonically.
 - **`src/student_support_rl/drl.py`** — the bridge to the *scaled-up* version. `run_drl_comparison` trains a **PPO** agent (Stable-Baselines3, `MlpPolicy`, on-policy with `n_steps` rollouts and the clipped surrogate) and a DQN agent on the *same* environment, horizon, and seed family as tabular Q-learning. The helper `_policy_family` tags PPO as `actor_critic_policy_gradient` — the exact rung this guide describes. PPO here is a **black box**: the clipping and advantage estimation you just read about live inside SB3, not in our code.
-- **`artifacts/drl_optional/policy_gradient_notes.md`** — the generated same-environment comparison. On the recorded run PPO reached `avg_reward 0.61` and DQN `0.34`, versus tabular Q-learning's `−3.62`, illustrating that the deep policy-gradient method does competitively on this MDP. Treat these as a single seeded demo run, not a benchmark.
+- **`artifacts/drl_optional/policy_gradient_notes.md`** — the generated same-environment comparison. No result artifacts or run receipts are checked in; read the values produced by your own run. The ranking depends on the seed and training budgets, so this is a demo, not a benchmark.
 
 Together: `policy_gradient.py` is the *inspectable* version of what `drl.py`'s PPO scales up. Same theorem, same score function, same advantage idea — one you can step through line by line, the other delegated to a tuned library.
 
 ## 4. Honest caveats
 
-- **Monte-Carlo REINFORCE is high variance.** The gradient is weighted by the *full* sampled return, so an unlucky trajectory swings the update hard. The episode-mean baseline helps but does not tame it: the training curve does **not** show a clean monotone climb, and you should not expect one. A learned critic (true actor-critic) and/or step-size tuning would reduce variance; we deliberately keep the simplest version for inspectability.
-- **The baseline here is the episode mean, not a learned `V_w(s)`.** It is state-*independent* within an episode, so it is a weaker variance reducer than a real critic and does **not** make this an actor-critic method. It is the *seed* of one.
+- **Monte-Carlo REINFORCE is high variance.** The gradient is weighted by the *full* sampled return, so an unlucky trajectory can swing the update hard. A historical baseline may help, but neither it nor a learned critic guarantees a monotone training curve.
+- **The baseline here uses past returns, not a learned `V_w(s)`.** It is frozen before each rollout and independent of that rollout's sampled actions. It does **not** make this an actor-critic method.
 - **No bias-free guarantee of finding the global optimum.** Policy gradient ascends `J(θ)` to a *local* optimum of a non-concave objective; the softmax can also drive logits large and the policy near-deterministic, slowing further learning. Outcomes depend on `α`, `γ`, episode count, and seed.
-- **We deploy the greedy mode, but trained on samples.** Evaluation uses `argmax_a θ_{s,a}`, discarding the stochasticity that exploration relied on. Unseen states fall back to `no_intervention` — safe, but it means tail states the policy never visited get no learned behaviour.
+- **We deploy the greedy mode, but trained on samples.** Evaluation uses `argmax_a θ_{s,a}`, discarding the stochasticity that exploration relied on. Unseen states fall back to `no_intervention`, a baseline with no learned behaviour; the evaluator flags that action at risk 3 as questionable.
 - **PPO in `drl.py` is not re-derived or tuned.** Hyperparameters (`n_steps=32`, tiny rollouts) are sized for a fast teaching demo, and the comparison numbers in `policy_gradient_notes.md` come from one seeded run on a deterministic-transition MDP — not a statement about PPO vs DQN in general.
 
 ## 5. See also

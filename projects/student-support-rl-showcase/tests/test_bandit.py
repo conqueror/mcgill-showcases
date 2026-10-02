@@ -18,6 +18,9 @@ Math:
 
 from __future__ import annotations
 
+import pytest
+from pytest import MonkeyPatch
+
 from student_support_rl.bandit import run_bandit_experiment
 
 
@@ -51,7 +54,7 @@ def test_bandit_experiment_uses_contextual_rewards() -> None:
 
     Pins what makes this a *contextual* (not plain) bandit: each row carries the context
     signature and the context-conditioned best action mu*(x_t), and across scenarios at least
-    three distinct (scenario, optimal-action) pairs appear, so the right intervention truly
+    two distinct optimal-action labels appear, so the right intervention truly
     depends on x_t. Re-running with the same seed reproduces the reward trace byte-for-byte,
     fixing determinism of the epsilon-greedy draws and reward sampling.
 
@@ -70,10 +73,16 @@ def test_bandit_experiment_uses_contextual_rewards() -> None:
         "expected_reward",
     } <= set(result.reward_trace[0])
     # Distinct optimal arms across scenarios => the best action depends on context x_t.
-    scenario_optima = {
-        (str(row["scenario_name"]), str(row["optimal_action_label"]))
-        for row in result.reward_trace
-    }
-    assert len(scenario_optima) >= 3
+    scenario_optima = {str(row["optimal_action_label"]) for row in result.reward_trace}
+    assert len(scenario_optima) >= 2
     # Same seed reproduces the trace exactly: exploration draws are deterministic.
     assert result.reward_trace == run_bandit_experiment(steps=30, epsilon=0.1, seed=5).reward_trace
+
+
+def test_contextuality_check_rejects_a_context_independent_oracle(monkeypatch: MonkeyPatch) -> None:
+    """The contextuality assertion must fail when all arms have the same reward function."""
+    monkeypatch.setattr(
+        "student_support_rl.bandit.CONTEXTUAL_REWARD_WEIGHTS", ((0.0,) * 7,) * 4,
+    )
+    with pytest.raises(AssertionError):
+        test_bandit_experiment_uses_contextual_rewards()

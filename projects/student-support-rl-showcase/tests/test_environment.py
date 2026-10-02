@@ -16,7 +16,29 @@ from __future__ import annotations
 
 import pytest
 
-from student_support_rl.environment import StudentSupportEnvironment
+from student_support_rl.dynamic_programming import model_step, reachable_acting_states
+from student_support_rl.environment import ACTION_LABELS, StudentState, StudentSupportEnvironment
+
+
+@pytest.mark.parametrize("horizon", [1, 6])
+def test_normalized_observations_include_prior_support_and_terminal_states(horizon: int) -> None:
+    """All canonical reachable observations fit [0,1], including the terminal count 3+H."""
+    for key in reachable_acting_states(horizon=horizon):
+        state = StudentState(*key)
+        assert all(0.0 <= value <= 1.0 for value in state.as_normalized_vector(horizon=horizon))
+        for action in ACTION_LABELS:
+            successor = model_step(state, action, horizon=horizon).state
+            assert all(
+                0.0 <= value <= 1.0
+                for value in successor.as_normalized_vector(horizon=horizon)
+            )
+
+    env = StudentSupportEnvironment(horizon=horizon)
+    env.reset(scenario_id=4)
+    for _ in range(horizon):
+        env.step(1)
+    # Three interventions predate the episode, plus one at every decision: (3+H)/(3+H)=1.
+    assert env.observe().as_normalized_vector(horizon=horizon)[-1] == 1.0
 
 
 def test_environment_reset_and_step_are_deterministic() -> None:

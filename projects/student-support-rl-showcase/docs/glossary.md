@@ -30,8 +30,10 @@ Solving a finite-horizon MDP exactly by computing optimal values from the last s
 *Code:* `dynamic_programming.optimal_action_values`. See §3 of [math-notes.md](math-notes.md).
 
 ### Baseline (policy gradient)
-A state-dependent quantity subtracted from the return to reduce gradient variance without adding
-bias. This repo uses the episode-mean return in `policy_gradient.train_reinforce`.
+A quantity subtracted from the return that can reduce gradient variance without adding bias when
+it is independent of the sampled action, conditional on the state and past data. This repo uses
+mean per-step returns from earlier episodes in `policy_gradient.train_reinforce`, frozen before
+the current rollout.
 
 ### Bellman equation
 The recursive consistency condition every value function satisfies. The **optimality** form,

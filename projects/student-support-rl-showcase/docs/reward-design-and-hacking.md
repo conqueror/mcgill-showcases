@@ -23,7 +23,7 @@ The agent maximizes the discounted return `G_t` (notation from
 [math-notes.md §1](math-notes.md)):
 
 ```
-G_t = R_{t+1} + γ·R_{t+2} + … = Σ_{k=0}^{H-t-1} γ^k · R_{t+k+1}
+G_t = R_{t+1} + γ·R_{t+2} + … = Σ_{k=0}^{H-t} γ^k · R_{t+k+1}
 ```
 
 Two different reward functions `R` define two different return surfaces, hence two different
@@ -111,26 +111,28 @@ and watch it whenever the optimized score moves. This is the bridge to governanc
 ### 2.6 Reward shaping: the benign cousin
 
 Reward hacking *changes which policy is optimal* (a bug). **Reward shaping** is the opposite by
-construction: an *additive* term that speeds learning while provably leaving `π*` unchanged. The
-classic safe form is **potential-based** shaping (Ng, Harada & Russell, 1999): given any state
-potential `Φ(s)`, add
+construction: an *additive* term that can guide learning while leaving `π*` unchanged under suitable
+boundary conditions. The classic form is **potential-based** shaping (Ng, Harada & Russell, 1999):
+given a state potential `Φ(s)`, add
 
 ```
 F(s, a, s') = γ·Φ(s') − Φ(s)
 ```
 
-Telescoping `F` over an episode contributes a constant that depends only on the start and terminal
-potentials, so it shifts every policy's return by the *same* offset and cannot reorder them — the
-optimal policy is invariant. Contrast the two failure modes sharply:
+Over this finite episode, the discounted shaping terms telescope to
+`−Φ(S_1) + γ^H·Φ(S_{H+1})`. The terminal term can depend on the policy. Set terminal potentials
+to zero (or the same constant for every terminal state at this fixed horizon) to obtain an offset
+independent of the policy and preserve the optimal policy. Contrast the two cases:
 
 | | Mechanism | Effect on `π*` | Status |
 |---|---|---|---|
 | `bad_reward`'s `0.45·action` | bonus for *intensity* (not potential-based) | **changes** `π*` | reward hacking (bug) |
-| potential-based `γ·Φ(s') − Φ(s)` | telescoping additive term | **invariant** | reward shaping (feature) |
+| potential-based `γ·Φ(s') − Φ(s)` with zero or fixed terminal potential | telescoping additive term | **invariant** | reward shaping (feature) |
 
 The takeaway: *adding* to a reward is safe only when the addition is structured so it cannot change
 the argmax over policies. The `0.45·action` term is the unsafe kind; `γ·Φ(s') − Φ(s)` is the safe
-kind. (The showcase does not ship a shaped reward — this contrast is conceptual, to delineate the
+kind under those terminal conditions. (The showcase does not ship a shaped reward — this contrast
+is conceptual, to delineate the
 line `bad_reward` crosses.)
 
 ## 3. In this showcase

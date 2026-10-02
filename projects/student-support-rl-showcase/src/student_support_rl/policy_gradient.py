@@ -15,7 +15,7 @@ RL concept:
 Math:
     pi(a|s) = exp(theta_{s,a}) / sum_{a'} exp(theta_{s,a'})
     return G_t = sum_k gamma^k R_{t+k+1}        (reward after acting = R_{t+1})
-    theta_{s,a'} <- theta_{s,a'} + alpha * (G_t - b) * (1[a'=A_t] - pi(a'|s))
+    theta_{s,a'} <- theta_{s,a'} + alpha * gamma^(t-1) * (G_t - b) * (1[a'=A_t] - pi(a'|s))
 """
 
 from __future__ import annotations
@@ -78,8 +78,8 @@ class ReinforcePolicy:
     What + WHY: after training we deploy the *mode* of pi_theta -- the highest-logit
     action per state -- because evaluation wants a single committed decision rather
     than a stochastic sample. Unseen states fall back to action ``0``
-    (``no_intervention``), the conservative do-nothing baseline, so the policy stays
-    total over the whole state space.
+    (``no_intervention``), a do-nothing baseline so the policy stays total over the
+    whole state space. This is not a safety rule: inaction at risk 3 is questionable.
 
     RL concept: greedy readout of a policy-gradient policy; the policy-gradient rung
     of the ladder (contextual bandit -> MDP -> Q-learning -> DQN -> *policy gradient*
@@ -108,7 +108,7 @@ class ReinforcePolicy:
         """
         logits = self.theta.get(state.as_tuple())
         if logits is None:
-            return 0  # safe fallback: do-nothing baseline for never-visited states
+            return 0  # do-nothing baseline for never-visited states; not a safety guarantee
         return greedy_action(logits)
 
 
@@ -162,16 +162,17 @@ def train_reinforce(
 
     RL concept: Monte-Carlo policy gradient, the *policy gradient* rung of the ladder
     (contextual bandit -> MDP -> Q-learning -> DQN -> *policy gradient* -> actor-critic
-    -> PPO). The mean-return baseline is the simplest variance reduction and the seed of
-    the "critic" that actor-critic methods learn. See docs/policy-gradient-and-actor-critic.md,
-    docs/mdp-and-environment.md and docs/glossary.md.
+    -> PPO). A mean-return baseline from earlier episodes can reduce gradient variance; a learned
+    state-value baseline is the "critic" in actor-critic.
+    See docs/policy-gradient-and-actor-critic.md, docs/mdp-and-environment.md and docs/glossary.md.
 
     Math:
         return G_t = sum_k gamma^k R_{t+k+1}
-        grad_theta J = E[ grad_theta log pi(A_t|s_t) * (G_t - b) ]
+        grad_theta J = E[ sum_t gamma^(t-1) * grad_theta log pi(A_t|s_t) * (G_t - b) ]
         d/dtheta_{s,a'} log pi(A_t|s_t) = 1[a'=A_t] - pi(a'|s_t)
-        theta_{s,a'} <- theta_{s,a'} + alpha * (G_t - b) * (1[a'=A_t] - pi(a'|s_t))
-    where reward after acting = R_{t+1} and the baseline b is the episode mean of G_t.
+        theta_{s,a'} <- theta_{s,a'} + alpha * gamma^(t-1) * (G_t - b) * (1[a'=A_t] - pi(a'|s_t))
+    where reward after acting = R_{t+1}. The baseline b averages returns from earlier episodes
+    and is frozen before the current episode's actions are sampled.
 
     Args:
         episodes: Number of on-policy training episodes (must be positive).
@@ -180,8 +181,8 @@ def train_reinforce(
         alpha: Policy-gradient step size (learning rate).
         gamma: Discount factor used to form the returns ``G_t``.
         horizon: Episode length passed to the environment.
-        use_baseline: If true, subtract the episode-mean return as a baseline ``b``;
-            otherwise ``b = 0``.
+        use_baseline: If true, subtract the mean return from earlier episodes as ``b``
+            (zero for the first episode); otherwise ``b = 0``.
 
     Returns:
         A ``ReinforceResult`` with the learned logits and the per-episode curve.
@@ -196,8 +197,10 @@ def train_reinforce(
     action_count = len(ACTION_LABELS)
     theta: dict[StateKey, list[float]] = {}
     training_curve: list[dict[str, int | float]] = []
+    past_mean_return = 0.0
 
     for episode in range(1, episodes + 1):
+        baseline = past_mean_return if use_baseline else 0.0
         scenario_id = scenario_ids[(episode - 1) % len(scenario_ids)]
         environment = StudentSupportEnvironment(horizon=horizon, reward_fn=default_reward)
         state = environment.reset(seed=seed + episode, scenario_id=scenario_id)
@@ -221,9 +224,6 @@ def train_reinforce(
             running_return = trajectory[step_index][2] + gamma * running_return
             returns[step_index] = running_return
 
-        # Baseline b: episode-mean return for variance reduction (else 0).
-        baseline = (sum(returns) / len(returns)) if use_baseline else 0.0
-
         # Policy-gradient ascent on every visited (s_t, A_t) and every action a'.
         for step_index, (state_key, action, _reward) in enumerate(trajectory):
             probabilities = softmax(theta[state_key])  # pi(.|s_t) at current theta
@@ -231,7 +231,10 @@ def train_reinforce(
             for candidate in range(action_count):
                 indicator = 1.0 if candidate == action else 0.0
                 grad_log = indicator - probabilities[candidate]  # d log pi(A_t|s_t)/dtheta_{s,a'}
-                theta[state_key][candidate] += alpha * advantage * grad_log  # REINFORCE update
+                theta[state_key][candidate] += alpha * gamma**step_index * advantage * grad_log
+
+        # Only future episodes may use these sampled returns in their baseline.
+        past_mean_return += (sum(returns) / len(returns) - past_mean_return) / episode
 
         training_curve.append(
             {
