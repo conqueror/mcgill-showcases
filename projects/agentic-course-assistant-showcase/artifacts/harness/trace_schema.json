@@ -3,6 +3,7 @@
   "version": 1,
   "required_top_level_keys": [
     "question",
+    "run",
     "intent",
     "agent_name",
     "guardrails",
@@ -25,5 +26,10 @@
     "parallel_resource_review",
     "router_triage",
     "custom_policy_agent"
-  ]
+  ],
+  "run": {
+    "source_sha256": "946c93aae912db2709b51df6df52ba3c3fdce0a42c8ca7888aafb5f2badc7ff3",
+    "scenario_version": 1,
+    "run_id": "6a17318eb67930dfb6a041f977bde5c675c97ed451872301507aa0b5cdda72f2"
+  }
 }

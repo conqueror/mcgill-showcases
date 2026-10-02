@@ -6,13 +6,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from agentic_course_assistant import answer_question
-from agentic_course_assistant.artifacts import write_artifacts
+from agentic_course_assistant.harness_lab import DEFAULT_HARNESS_QUESTION, write_showcase_artifacts
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--question", required=True, help="Student question to route and answer.")
+    parser.add_argument(
+        "--question",
+        default=DEFAULT_HARNESS_QUESTION,
+        help="Student question to route and answer.",
+    )
     parser.add_argument(
         "--output-dir",
         default="artifacts",
@@ -24,9 +27,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    result = answer_question(args.question)
-    written = write_artifacts(result, args.output_dir)
-    for path in written:
+    summary = write_showcase_artifacts(args.question, args.output_dir)
+    for path in summary["written_files"]:
         print(path)
 
 

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
+import subprocess
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,6 +16,7 @@ from agentic_course_assistant.artifacts import write_artifacts
 from agentic_course_assistant.assistant import answer_question
 from agentic_course_assistant.course_catalog import search_resources
 from agentic_course_assistant.harness_lab import (
+    DEFAULT_HARNESS_QUESTION,
     EVAL_CASES,
     _evaluate_case_expectations,
     _judge_workflows,
@@ -135,6 +139,69 @@ def test_fresh_base_cannot_use_stale_harness(tmp_path: Path) -> None:
     run_harness_lab(tmp_path, question="Explain leakage")
     write_artifacts(answer_question("Help me debug validation"), tmp_path / "artifacts")
     assert any("run identity" in error for error in verify(tmp_path))
+
+
+@pytest.mark.parametrize(
+    ("question_args", "expected_question"),
+    [
+        ([], DEFAULT_HARNESS_QUESTION),
+        (
+            ["--question", "Help me debug why validation is too good."],
+            "Help me debug why validation is too good.",
+        ),
+    ],
+)
+def test_run_showcase_refreshes_complete_bundle(
+    tmp_path: Path, question_args: list[str], expected_question: str
+) -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    shutil.copytree(project_root / "artifacts/harness", tmp_path / "artifacts/harness")
+    shutil.copyfile(project_root / "artifacts/manifest.json", tmp_path / "artifacts/manifest.json")
+
+    for args in (question_args, ["--question", "Explain leakage"], question_args):
+        run = subprocess.run(
+            [sys.executable, str(project_root / "scripts/run_showcase.py"), *args],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert run.returncode == 0, run.stdout + run.stderr
+        verification = subprocess.run(
+            [
+                sys.executable,
+                str(project_root / "scripts/verify_artifacts.py"),
+                "--root",
+                str(tmp_path),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert verification.returncode == 0, verification.stdout + verification.stderr
+
+    trace = json.loads((tmp_path / "artifacts/agent_trace.json").read_text(encoding="utf-8"))
+    assert trace["question"] == expected_question
+
+
+@pytest.mark.parametrize(
+    "artifact",
+    [
+        "trace_schema.json",
+        "eval_cases.jsonl",
+        "judge_verdicts.json",
+        "run_ledger.jsonl",
+        "failure_injection_report.md",
+    ],
+)
+def test_verify_rejects_artifact_from_another_run(tmp_path: Path, artifact: str) -> None:
+    run_harness_lab(tmp_path, question="Explain leakage")
+    artifact_path = tmp_path / "artifacts/harness" / artifact
+    previous_run = artifact_path.read_bytes()
+    run_harness_lab(tmp_path, question="Help me debug why validation is too good.")
+    assert verify(tmp_path) == []
+
+    artifact_path.write_bytes(previous_run)
+
+    assert any(artifact in error and "run identity" in error for error in verify(tmp_path))
 
 
 @pytest.mark.parametrize("artifact", ["judge_verdicts.json", "run_ledger.jsonl"])

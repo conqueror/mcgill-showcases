@@ -39,7 +39,7 @@ make eval
 make verify
 ```
 
-The smoke path writes the assistant artifacts. `make eval` regenerates the assistant and harness artifacts for one question; `make verify` checks that evidence without using an API key.
+Both `make smoke` and `make eval` regenerate the assistant and harness artifacts for one question; either can be followed directly by `make verify`, which checks that evidence without using an API key.
 
 ## Part 2: Ask Your Own Question
 
