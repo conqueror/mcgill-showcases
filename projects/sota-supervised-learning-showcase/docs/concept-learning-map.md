@@ -30,8 +30,8 @@ Use this map when you want to connect an idea to the exact code and artifact tha
 - Code: `src/sota_supervised_showcase/classification.py`
 - Function: `evaluate_multiclass_strategies`
 - Models compared:
-  - OvR + Logistic Regression
-  - OvO + SVC
+  - OvR + scaled Logistic Regression
+  - OvO + the same scaled Logistic Regression
 - Check artifact: `artifacts/multiclass_metrics.csv`
 - Intuition:
   - OvR asks, "Is this class vs all others?"

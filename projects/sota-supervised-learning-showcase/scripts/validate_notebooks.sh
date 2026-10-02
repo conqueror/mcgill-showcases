@@ -16,8 +16,10 @@ if [ "${#notebooks[@]}" -eq 0 ]; then
 fi
 
 for notebook in "${notebooks[@]}"; do
-  uv run python - <<'PY' "${notebook}"
+  uv run python - <<'PY' "${notebook}" "${1:-}"
+import ast
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -35,6 +37,20 @@ if not isinstance(payload["cells"], list):
 
 if payload["nbformat"] != 4:
     raise SystemExit(f"{path}: expected nbformat=4, found {payload['nbformat']}")
+
+code_cells = []
+for index, cell in enumerate(payload["cells"]):
+    if cell["cell_type"] == "code":
+        source = "".join(cell["source"])
+        if any(line.endswith("\\n") for line in cell["source"]):
+            raise SystemExit(f"{path}: cell {index} has literal newline escapes")
+        code_cells.append(compile(ast.parse(source), f"{path}:cell_{index}", "exec"))
+
+if sys.argv[2] == "--execute":
+    os.chdir(path.parent.parent)
+    namespace = {"__name__": "__main__"}
+    for code in code_cells:
+        exec(code, namespace)
 
 print(f"Notebook OK: {path.name} ({len(payload['cells'])} cells)")
 PY

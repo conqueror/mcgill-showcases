@@ -5,9 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import replace
 from pathlib import Path
 
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import average_precision_score, f1_score, roc_auc_score
 
 from credit_risk_capstone.data import (
@@ -18,6 +18,7 @@ from credit_risk_capstone.data import (
 from credit_risk_capstone.modeling import (
     best_model_summary,
     evaluate_imbalance_strategies,
+    fit_candidate_model,
     model_benchmark,
 )
 
@@ -35,6 +36,7 @@ def main() -> None:
     """Execute capstone data prep, modeling, evaluation, and artifact writing."""
 
     from ml_core.contracts import (
+        _threshold_table,
         merge_required_files,
         write_supervised_contract_artifacts,
     )
@@ -53,22 +55,41 @@ def main() -> None:
     bundle = make_credit_risk_dataset(n_samples=n_samples, random_state=args.seed)
 
     target = build_target_from_status(bundle.frame)
-    diagnostics_frame, model_frame = clean_and_encode_features(bundle.frame)
-
     split = build_supervised_split(
-        model_frame,
+        bundle.frame.drop(columns=["loan_status"]),
         target,
         strategy="stratified",
         random_state=args.seed,
+    )
+    diagnostics_frame, model_frame = clean_and_encode_features(
+        bundle.frame, train_index=split.x_train.index
+    )
+    split = replace(
+        split,
+        x_train=model_frame.loc[split.x_train.index],
+        x_val=model_frame.loc[split.x_val.index],
+        x_test=model_frame.loc[split.x_test.index],
     )
 
     strategy_df, _, best_strategy = evaluate_imbalance_strategies(
         split,
         random_state=args.seed,
     )
-    benchmark_df = model_benchmark(split, random_state=args.seed)
+    benchmark_df = model_benchmark(split, random_state=args.seed, imbalance_strategy=best_strategy)
     summary_payload = best_model_summary(benchmark_df)
     summary_payload["best_imbalance_strategy"] = best_strategy
+    final_model = fit_candidate_model(
+        str(summary_payload["best_model"]),
+        split.x_train,
+        split.y_train,
+        imbalance_strategy=best_strategy,
+        random_state=args.seed,
+    )
+    val_scores = final_model.predict_proba(split.x_val)[:, 1]
+    thresholds = _threshold_table(split.y_val, val_scores)
+    threshold = float(thresholds.loc[thresholds["f1"].idxmax(), "threshold"])
+    summary_payload["chosen_threshold"] = threshold
+    summary_payload["threshold_selection_split"] = "validation"
 
     diag_dir = root / "artifacts/diagnostics"
     model_dir = root / "artifacts/models"
@@ -103,22 +124,13 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    final_model = RandomForestClassifier(
-        n_estimators=320,
-        max_depth=8,
-        min_samples_leaf=4,
-        class_weight="balanced_subsample",
-        random_state=args.seed,
-        n_jobs=1,
-    )
-    final_model.fit(split.x_train, split.y_train)
     test_scores = final_model.predict_proba(split.x_test)[:, 1]
-    test_preds = (test_scores >= 0.5).astype(int)
+    test_preds = (test_scores >= threshold).astype(int)
 
     metrics = {
         "test_f1": float(f1_score(split.y_test, test_preds, zero_division=0)),
         "test_roc_auc": float(roc_auc_score(split.y_test, test_scores)),
-        "test_pr_auc": float(average_precision_score(split.y_test, test_scores)),
+        "test_average_precision": float(average_precision_score(split.y_test, test_scores)),
         "best_val_strategy_f1": float(strategy_df.iloc[0]["val_f1"]),
     }
 
@@ -132,8 +144,9 @@ def main() -> None:
         random_state=args.seed,
         metrics=metrics,
         run_name="credit_risk_capstone",
-        threshold_scores=test_scores,
     )
+    thresholds.to_csv(root / "artifacts/eval/threshold_analysis.csv", index=False)
+    contract_required.append("artifacts/eval/threshold_analysis.csv")
 
     merge_required_files(
         root / "artifacts/manifest.json",

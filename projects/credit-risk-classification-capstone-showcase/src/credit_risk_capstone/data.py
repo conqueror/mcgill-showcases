@@ -107,6 +107,7 @@ def make_credit_risk_dataset(*, n_samples: int = 3600, random_state: int = 42) -
     )
     return CreditRiskBundle(frame=frame)
 
+
 def build_target_from_status(frame: pd.DataFrame) -> pd.Series:
     status = frame["loan_status"].astype(str)
     return status.isin(DEFAULT_STATUSES).astype(int).rename("target")
@@ -124,7 +125,10 @@ def _employment_years_numeric(series: pd.Series) -> pd.Series:
     return pd.to_numeric(extracted, errors="coerce").fillna(0.0)
 
 
-def clean_and_encode_features(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def clean_and_encode_features(
+    frame: pd.DataFrame, *, train_index: pd.Index
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Keep raw diagnostics and learn medians/category columns on training rows only."""
     diagnostics = frame.drop(columns=["loan_status"]).copy()
 
     diagnostics["employment_years_numeric"] = _employment_years_numeric(
@@ -133,13 +137,18 @@ def clean_and_encode_features(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     diagnostics["income_missing_indicator"] = diagnostics["annual_income"].isna().astype(int)
     diagnostics["dti_missing_indicator"] = diagnostics["dti"].isna().astype(int)
 
-    for col in diagnostics.select_dtypes(include=[np.number]).columns:
-        diagnostics[col] = diagnostics[col].fillna(diagnostics[col].median(skipna=True))
+    features = diagnostics.copy()
+    for col in features.select_dtypes(include=[np.number]).columns:
+        median = features.loc[train_index, col].median(skipna=True)
+        features[col] = features[col].fillna(0.0 if pd.isna(median) else median)
 
-    cat_cols = diagnostics.select_dtypes(exclude=[np.number]).columns
-    diagnostics.loc[:, cat_cols] = diagnostics.loc[:, cat_cols].fillna("UNKNOWN")
+    cat_cols = features.select_dtypes(exclude=[np.number]).columns
+    features.loc[:, cat_cols] = features.loc[:, cat_cols].fillna("UNKNOWN")
 
-    model_frame = pd.get_dummies(diagnostics, columns=list(cat_cols), dummy_na=False)
+    training_columns = pd.get_dummies(features.loc[train_index], columns=list(cat_cols)).columns
+    model_frame = pd.get_dummies(features, columns=list(cat_cols)).reindex(
+        columns=training_columns, fill_value=0
+    )
     model_frame = model_frame.astype(float)
 
     return diagnostics, model_frame

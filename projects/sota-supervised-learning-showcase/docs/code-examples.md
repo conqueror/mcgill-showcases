@@ -54,8 +54,9 @@ from sklearn.svm import SVC
 
 split = load_digits_split()
 
-ovr = OneVsRestClassifier(LogisticRegression(max_iter=2000, random_state=42))
-ovo = OneVsOneClassifier(make_pipeline(StandardScaler(), SVC(kernel="rbf", gamma="scale")))
+estimator = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000, random_state=42))
+ovr = OneVsRestClassifier(estimator)
+ovo = OneVsOneClassifier(estimator)
 
 for name, model in (("OvR", ovr), ("OvO", ovo)):
     model.fit(split.x_train, split.y_train)
@@ -137,7 +138,12 @@ Transfer idea:
 ## 5. Manual Gradient Boosting Intuition (Regression)
 
 ```python
+from sota_supervised_showcase.data import load_regression_split
 from sklearn.tree import DecisionTreeRegressor
+
+split = load_regression_split()
+X_train, y_train = split.x_train, split.y_train
+X_test, y_test = split.x_test, split.y_test
 
 # Step 1: first weak learner
 tree_1 = DecisionTreeRegressor(max_depth=2, random_state=42)

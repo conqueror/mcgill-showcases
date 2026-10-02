@@ -8,7 +8,9 @@ def test_training_returns_ndcg_metrics() -> None:
     dataset = prepare_ranking_dataset(frame)
     split = build_group_split(dataset)
 
-    _booster, result = train_and_evaluate(split, random_state=13, quick=True)
+    booster, result = train_and_evaluate(split, random_state=13, quick=True)
+    assert booster.params["label_gain"] == [0, 1, 3, 7]
+    assert booster.params["eval_at"] == [5, 10]
 
     assert result.metrics["val_ndcg_at_5"] >= 0.0
     assert result.metrics["val_ndcg_at_5"] <= 1.0
