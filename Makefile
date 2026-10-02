@@ -143,6 +143,8 @@ type ty:
 	$(MAKE) -C $(DEMAND_API_OBS_DIR) ty
 
 test:
+	python3 -m unittest discover -s scripts/tests
+	cd $(SUPERVISED_DIR) && uv run python -m unittest discover -s ../../shared/tests
 	$(MAKE) -C $(DL_MATH_DIR) test
 	$(MAKE) -C $(NN_FOUNDATIONS_DIR) test
 	$(MAKE) -C $(PYTORCH_TRAIN_DIR) test
@@ -175,54 +177,41 @@ check-supervised check-contracts:
 	python3 shared/scripts/verify_supervised_contract.py --bootstrap-missing
 
 verify:
-	@if [ -f "$(DL_MATH_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(DL_MATH_DIR) verify; else echo "Skipping $(DL_MATH_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(NN_FOUNDATIONS_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(NN_FOUNDATIONS_DIR) verify; else echo "Skipping $(NN_FOUNDATIONS_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(PYTORCH_TRAIN_DIR)/artifacts/summary.md" ]; then $(MAKE) -C $(PYTORCH_TRAIN_DIR) verify; else echo "Skipping $(PYTORCH_TRAIN_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(CAUSAL_DIR)/artifacts/metrics_summary.csv" ]; then \
-		$(MAKE) -C $(CAUSAL_DIR) verify; \
-	else \
-		echo "Skipping causal artifact verification: run pipeline first in $(CAUSAL_DIR)"; \
-	fi
-	@if [ -f "$(SUPERVISED_DIR)/artifacts/summary.md" ]; then \
-		echo "Supervised artifacts detected in $(SUPERVISED_DIR)"; \
-	else \
-		echo "No shared artifact verifier is defined for $(SUPERVISED_DIR)"; \
-	fi
-	@if [ -f "$(UNSUP_DIR)/artifacts/reports/digits_run_summary.json" ]; then \
-		echo "Unsupervised artifacts detected in $(UNSUP_DIR)"; \
-	else \
-		echo "No shared artifact verifier is defined for $(UNSUP_DIR)"; \
-	fi
-	@if [ -f "$(MLOPS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(MLOPS_DIR) verify; else echo "Skipping $(MLOPS_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(XAI_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(XAI_DIR) verify; else echo "Skipping $(XAI_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(AUTOML_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTOML_DIR) verify; else echo "Skipping $(AUTOML_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(AUTORESEARCH_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(AUTORESEARCH_DIR) verify; else echo "Skipping $(AUTORESEARCH_DIR) verify: run showcase first"; fi
-	@if [ -f "$(AGENTIC_COURSE_DIR)/artifacts/agent_trace.json" ]; then $(MAKE) -C $(AGENTIC_COURSE_DIR) verify; else echo "Skipping $(AGENTIC_COURSE_DIR) verify: run showcase first"; fi
+	python3 shared/scripts/verify_supervised_contract.py
+	python3 scripts/verify_unsupervised_artifacts.py $(UNSUP_DIR)
+	$(MAKE) -C $(DL_MATH_DIR) verify
+	$(MAKE) -C $(NN_FOUNDATIONS_DIR) verify
+	$(MAKE) -C $(PYTORCH_TRAIN_DIR) verify
+	$(MAKE) -C $(CAUSAL_DIR) verify
+	$(MAKE) -C $(MLOPS_DIR) verify
+	$(MAKE) -C $(XAI_DIR) verify
+	$(MAKE) -C $(AUTOML_DIR) verify
+	$(MAKE) -C $(AUTORESEARCH_DIR) verify
+	$(MAKE) -C $(AGENTIC_COURSE_DIR) verify
 	@if [ -f "$(ADAPTIVE_AGENTIC_RL_DIR)/artifacts/drl_optional/rl_family_comparison.csv" ]; then \
 		$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) verify-full; \
-	elif [ -f "$(ADAPTIVE_AGENTIC_RL_DIR)/artifacts/eval/offline_policy_eval.csv" ]; then \
-		$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) verify; \
 	else \
-		echo "Skipping $(ADAPTIVE_AGENTIC_RL_DIR) verify: run showcase first"; \
+		$(MAKE) -C $(ADAPTIVE_AGENTIC_RL_DIR) verify; \
 	fi
-	@if [ -f "$(LEARNING_AGENTS_DIR)/artifacts/concepts/mdp_spec.md" ]; then $(MAKE) -C $(LEARNING_AGENTS_DIR) verify; else echo "Skipping $(LEARNING_AGENTS_DIR) verify: run showcase first"; fi
-	@if [ -f "$(FE_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(FE_DIR) verify; else echo "Skipping $(FE_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(RL_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(RL_DIR) verify; else echo "Skipping $(RL_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(STUDENT_SUPPORT_RL_DIR)/artifacts/concepts/mdp_spec.md" ]; then $(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) verify; else echo "Skipping $(STUDENT_SUPPORT_RL_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(SYSTEMS_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(SYSTEMS_DIR) verify; else echo "Skipping $(SYSTEMS_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(ROLLOUT_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(ROLLOUT_DIR) verify; else echo "Skipping $(ROLLOUT_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(EDA_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(EDA_DIR) verify; else echo "Skipping $(EDA_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(CREDIT_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(CREDIT_DIR) verify; else echo "Skipping $(CREDIT_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(LTR_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(LTR_DIR) verify; else echo "Skipping $(LTR_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(NLP_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(NLP_DIR) verify; else echo "Skipping $(NLP_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(RANK_API_DIR)/artifacts/model.txt" ]; then $(MAKE) -C $(RANK_API_DIR) verify; else echo "Skipping $(RANK_API_DIR) verify: run train-demo first"; fi
-	@if [ -f "$(NYC_DEMAND_DIR)/artifacts/manifest.json" ]; then $(MAKE) -C $(NYC_DEMAND_DIR) verify; else echo "Skipping $(NYC_DEMAND_DIR) verify: run pipeline first"; fi
-	@if [ -f "$(DEMAND_API_OBS_DIR)/artifacts/model.joblib" ]; then $(MAKE) -C $(DEMAND_API_OBS_DIR) verify; else echo "Skipping $(DEMAND_API_OBS_DIR) verify: run train-demo first"; fi
+	$(MAKE) -C $(LEARNING_AGENTS_DIR) verify
+	$(MAKE) -C $(FE_DIR) verify
+	$(MAKE) -C $(RL_DIR) verify
+	$(MAKE) -C $(STUDENT_SUPPORT_RL_DIR) verify
+	$(MAKE) -C $(SYSTEMS_DIR) verify
+	$(MAKE) -C $(ROLLOUT_DIR) verify
+	$(MAKE) -C $(EDA_DIR) verify
+	$(MAKE) -C $(CREDIT_DIR) verify
+	$(MAKE) -C $(LTR_DIR) verify
+	$(MAKE) -C $(NLP_DIR) verify
+	$(MAKE) -C $(RANK_API_DIR) verify
+	$(MAKE) -C $(NYC_DEMAND_DIR) verify
+	$(MAKE) -C $(DEMAND_API_OBS_DIR) verify
 
 smoke:
 	$(MAKE) -C $(DL_MATH_DIR) smoke
 	$(MAKE) -C $(NN_FOUNDATIONS_DIR) smoke
 	$(MAKE) -C $(PYTORCH_TRAIN_DIR) smoke
+	$(MAKE) -C $(CAUSAL_DIR) contract
 	$(MAKE) -C $(SUPERVISED_DIR) run
 	$(MAKE) -C $(UNSUP_DIR) smoke-digits
 	$(MAKE) -C $(MLOPS_DIR) smoke

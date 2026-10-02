@@ -2,7 +2,7 @@
 
 Public, student-friendly machine learning showcase projects for learning by doing.
 
-This repository contains tutorial-style projects with reproducible tooling (`uv` + `make`), clear learning flows, and practical artifacts.
+This repository contains tutorial-style projects with reproducible tooling (`uv` + `make`), clear learning flows, and practical artifacts. Experiment logs record run timestamps and append history; their bytes change between runs.
 
 [![CI](https://github.com/conqueror/mcgill-showcases/actions/workflows/ci.yml/badge.svg)](https://github.com/conqueror/mcgill-showcases/actions/workflows/ci.yml)
 [![Markdown Links](https://github.com/conqueror/mcgill-showcases/actions/workflows/markdown-links.yml/badge.svg)](https://github.com/conqueror/mcgill-showcases/actions/workflows/markdown-links.yml)
@@ -33,11 +33,11 @@ This repository contains tutorial-style projects with reproducible tooling (`uv`
 
 ## Start Here
 1. Install Python 3.11+ and `uv`.
-2. Run:
+2. Pick a track and project from the [catalog](#project-catalog) below.
+3. Install that project's dependencies; for example:
 ```bash
-make sync
+make -C projects/sota-supervised-learning-showcase sync
 ```
-3. Pick a track and project from the [catalog](#project-catalog) below.
 4. Enter that project and follow its `README.md`.
 
 If this is your first time, start with [`sota-supervised-learning-showcase`](projects/sota-supervised-learning-showcase/README.md).
@@ -193,7 +193,7 @@ make harness-lint
 Project-specific runs should be started from each project folder.
 
 Contract note:
-- `make check-contracts` bootstraps missing supervised artifacts in quick mode, then validates split/EDA/leakage/eval/experiment contracts.
+- `make check-contracts` regenerates missing or stale supervised artifacts, then checks split metadata, table structure and values, experiment logs, and source/configuration and output hashes.
 - `make harness-preflight` and `make harness-lint` validate the repo-local public harness-lite bootstrap.
 
 ## Documentation Site

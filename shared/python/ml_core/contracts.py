@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import platform
+from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +14,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from .eda import bivariate_vs_target, correlation_matrix, missingness_summary, univariate_summary
 from .experiments import log_experiment_csv
 from .leakage import run_leakage_checks
+from .provenance import artifact_hashes, source_digest
 from .splits import SplitBundle3, split_manifest_dict
 
 
@@ -140,5 +143,12 @@ def merge_required_files(manifest_path: Path, required_files: list[str]) -> None
     merged = set(payload.get("required_files", []))
     merged.update(required_files)
     payload["required_files"] = sorted(merged)
+    project_root = manifest_path.parent.parent
+    payload["source_sha256"] = source_digest(project_root)
+    payload["artifact_sha256"] = artifact_hashes(project_root, payload["required_files"])
+    payload["environment"] = {
+        "python": platform.python_version(),
+        **{name: version(name) for name in ("numpy", "pandas", "scikit-learn")},
+    }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

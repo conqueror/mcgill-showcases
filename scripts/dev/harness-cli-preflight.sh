@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PLAN_PATH="${HARNESS_PLAN_PATH:-$ROOT_DIR/plans/deep-learning-math-foundations-showcase.md}"
+PLAN_PATH="${HARNESS_PLAN_PATH:-}"
 DESIGN_SPEC_PATH="${HARNESS_DESIGN_SPEC_PATH:-$ROOT_DIR/docs/superpowers/specs/2026-03-13-deep-learning-showcase-series-design.md}"
 
 FAILURES=0
@@ -48,7 +48,9 @@ main() {
   require_file "$ROOT_DIR/docs/agents/harness-evals/README.md"
   require_file "$ROOT_DIR/scripts/harness_config_lint.py"
   require_file "$ROOT_DIR/scripts/dev/harness-cli-preflight.sh"
-  require_file "$PLAN_PATH"
+  if [[ -n "$PLAN_PATH" ]]; then
+    require_file "$PLAN_PATH"
+  fi
   require_file "$DESIGN_SPEC_PATH"
 
   if [[ "$FAILURES" -gt 0 ]]; then
