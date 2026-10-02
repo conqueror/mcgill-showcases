@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from rl_bandits_showcase.evaluation import run_policy_suite
-from rl_bandits_showcase.policy_report import build_recommendation_markdown
+from rl_bandits_showcase.policy_report import build_recommendation_markdown, write_manifest
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,21 +33,7 @@ def main() -> None:
     summary.to_csv(summary_path, index=False)
     report_path.write_text(build_recommendation_markdown(summary), encoding="utf-8")
 
-    manifest_path = root / "artifacts/manifest.json"
-    if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    else:
-        manifest = {"version": 1, "required_files": []}
-
-    required = set(manifest.get("required_files", []))
-    required.update(
-        [
-            "artifacts/sim/policy_comparison.csv",
-            "artifacts/sim/policy_recommendation.md",
-        ]
-    )
-    manifest["required_files"] = sorted(required)
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    write_manifest(root / "artifacts/manifest.json")
 
 
 if __name__ == "__main__":

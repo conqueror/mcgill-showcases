@@ -22,7 +22,7 @@ def run_policy_simulation(
         policy.update(arm, reward)
 
         cumulative_reward += reward
-        instant_regret = environment.optimal_mean_reward - reward
+        instant_regret = environment.optimal_mean_reward - environment.arm_probs[arm]
         cumulative_regret += instant_regret
 
         rows.append(

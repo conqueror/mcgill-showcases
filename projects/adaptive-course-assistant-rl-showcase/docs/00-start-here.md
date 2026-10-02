@@ -2,7 +2,7 @@
 
 This project is easiest to understand if you think of it as a **bridge showcase**.
 
-The deterministic assistant already does the front half of the work:
+The simulator assumes a deterministic assistant handles the front half of the work; hand-authored scenarios and fixed resource rows stand in for that runtime:
 
 - figure out what kind of question this is,
 - grab a reasonable starting resource,

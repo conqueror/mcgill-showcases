@@ -74,6 +74,11 @@ def reward_hacking_report(comparison_rows: Sequence[dict[str, int | float | str]
     bad_rule = by_key[("bad", "rule_based")]
     good_heavy = by_key[("good", "intervention_heavy")]
     good_rule = by_key[("good", "rule_based")]
+    if not (
+        float(bad_heavy["avg_reward"]) > float(bad_rule["avg_reward"])
+        and float(good_heavy["avg_reward"]) < float(good_rule["avg_reward"])
+    ):
+        raise ValueError("comparison does not show the claimed rank reversal")
     return (
         "# Reward Hacking Report\n\n"
         "The bad reward makes the heavy-handed policy look better than it really is.\n\n"

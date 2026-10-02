@@ -18,7 +18,7 @@ By the end of this project, you should be able to:
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.11 or 3.12
 - `uv`
 - Basic Python and CSV reading
 - Helpful, but not required: `projects/agentic-course-assistant-showcase`
@@ -59,7 +59,7 @@ make check
 
 `student-support-rl-showcase` already teaches the broad RL ladder in a general student-support domain.
 
-This project sits between them. It asks a more specific question: once a deterministic assistant already understands the request, **what should it do next?**
+This project sits between them. It assumes the request and initial retrieval are already described by hand-authored scenarios, then asks: **what should the assistant do next?**
 
 ## What This Project Does And Does Not Claim
 

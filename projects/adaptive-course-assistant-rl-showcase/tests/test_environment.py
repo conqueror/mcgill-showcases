@@ -1,3 +1,5 @@
+import pytest
+
 from adaptive_course_assistant_rl.environment import (
     ACTION_LABELS,
     NONE_ACTION,
@@ -69,3 +71,17 @@ def test_targeted_practice_does_not_resolve_while_intent_is_still_uncertain() ->
     assert transition.state.resolved_flag == 0
     assert transition.info["resolved"] == 0
     assert transition.done is False
+
+
+@pytest.mark.parametrize("horizon", [1, 2, 5])
+def test_normalized_observations_include_the_terminal_turn(horizon: int) -> None:
+    env = AssistantInterventionEnvironment(horizon=horizon)
+    state = env.reset(scenario_id=0)
+    assert all(0.0 <= value <= 1.0 for value in state.as_normalized_vector(horizon=horizon))
+
+    while not env.is_done():
+        state = env.step(0).state
+        assert all(0.0 <= value <= 1.0 for value in state.as_normalized_vector(horizon=horizon))
+
+    # A horizon-ending observation has turn_index == horizon: horizon/horizon = 1.
+    assert state.as_normalized_vector(horizon=horizon)[7] == 1.0

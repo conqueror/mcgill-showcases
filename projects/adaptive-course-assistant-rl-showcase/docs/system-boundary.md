@@ -2,7 +2,7 @@
 
 This showcase draws a hard line between two responsibilities.
 
-## Deterministic Assistant Responsibilities
+## Assumed Deterministic Assistant Responsibilities
 
 - classify the request,
 - retrieve an initial course resource,

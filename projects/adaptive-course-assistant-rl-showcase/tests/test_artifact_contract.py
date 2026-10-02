@@ -1,6 +1,10 @@
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
+
+import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from adaptive_course_assistant_rl.reporting import (
     OPTIONAL_DRL_ARTIFACTS,
@@ -161,16 +165,49 @@ def test_policy_router_contract_is_semantically_validated(tmp_path: Path) -> Non
     assert "artifacts/bridge/policy_router.json bandit_subset must match the canonical first-turn bandit actions." in errors
 
 
-def test_verify_script_accepts_artifact_directory_as_output_dir(tmp_path: Path) -> None:
+def test_verify_script_accepts_artifact_directory_as_output_dir(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.syspath_prepend(str(PROJECT_ROOT / "scripts"))
+    run_showcase = _load_script("run_showcase_contract_test", "scripts/run_showcase.py")
     verify_artifacts = _load_script("verify_artifacts_test", "scripts/verify_artifacts.py")
     artifacts_dir = tmp_path / "custom-artifacts"
-    artifacts_dir.mkdir(parents=True, exist_ok=True)
-    (artifacts_dir / "manifest.json").write_text(
-        '{"version": 1, "required_files": [], "optional_files": []}\n',
-        encoding="utf-8",
-    )
 
+    assert run_showcase.main(["--quick", "--output-dir", str(artifacts_dir)]) == 0
     assert verify_artifacts.main(["--output-dir", str(artifacts_dir)]) == 0
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"version": 1, "required_files": [], "optional_files": []},
+        {"version": 1, "required_files": ["artifacts/manifest.json"], "optional_files": []},
+        {"version": 1, "required_files": list(REQUIRED_ARTIFACTS), "optional_files": []},
+        {"version": 1},
+        [],
+    ],
+)
+def test_verify_script_rejects_a_manifest_that_weakens_the_contract(
+    tmp_path: Path, payload: object
+) -> None:
+    verify_artifacts = _load_script("verify_artifacts_weakened_test", "scripts/verify_artifacts.py")
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir()
+    (artifacts_dir / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    assert verify_artifacts.main(["--output-dir", str(tmp_path)]) == 1
+
+
+@pytest.mark.parametrize("required_files", [[], list(REQUIRED_ARTIFACTS)])
+def test_optional_drl_cannot_be_hidden_by_an_empty_manifest(
+    tmp_path: Path, required_files: list[str]
+) -> None:
+    manifest_path = tmp_path / "artifacts" / "manifest.json"
+    write_manifest(manifest_path, required_files=required_files, optional_files=[])
+
+    assert artifact_validation_errors(
+        output_dir=tmp_path, manifest_path=manifest_path, require_optional_drl=True
+    )
 
 
 def test_verify_script_fails_closed_when_manifest_is_missing(tmp_path: Path) -> None:
