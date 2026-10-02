@@ -2,15 +2,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from rl_bandits_showcase.evaluation import run_policy_suite
-
-REQUIRED_ARTIFACTS = [
-    "artifacts/sim/reward_trace.csv",
-    "artifacts/sim/regret_trace.csv",
-]
+from rl_bandits_showcase.policy_report import write_manifest
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,11 +32,7 @@ def main() -> None:
     reward_trace.to_csv(reward_path, index=False)
     regret_trace.to_csv(regret_path, index=False)
 
-    manifest_path = root / "artifacts/manifest.json"
-    manifest_path.write_text(
-        json.dumps({"version": 1, "required_files": REQUIRED_ARTIFACTS}, indent=2),
-        encoding="utf-8",
-    )
+    write_manifest(root / "artifacts/manifest.json")
 
 
 if __name__ == "__main__":

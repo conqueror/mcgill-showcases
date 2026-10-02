@@ -140,7 +140,7 @@ class AssistantState:
             round(self.retrieval_quality / 2.0, 6),
             round(self.intent_uncertainty / 2.0, 6),
             round(self.cognitive_load / 2.0, 6),
-            round(self.turn_index / max(1, horizon - 1), 6),
+            round(self.turn_index / max(1, horizon), 6),
             round(self.attempt_count / 3.0, 6),
             round(self.last_action / max(1, NONE_ACTION), 6),
             round(self.safety_risk / 2.0, 6),

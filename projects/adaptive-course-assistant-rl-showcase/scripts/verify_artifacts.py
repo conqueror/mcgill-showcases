@@ -41,7 +41,7 @@ def _resolve_project_root(
         return output_dir, resolved_manifest, None
 
     if (output_dir / "manifest.json").exists():
-        return output_dir.parent, output_dir / "manifest.json", None
+        return output_dir, output_dir / "manifest.json", None
 
     if (output_dir / "artifacts" / "manifest.json").exists():
         return output_dir, output_dir / "artifacts" / "manifest.json", None
@@ -56,7 +56,11 @@ def main(argv: list[str] | None = None) -> int:
     if manifest_error is not None:
         print(manifest_error)
         return 1
-    missing = missing_required_artifacts(output_dir=project_root, manifest_path=manifest_path)
+    try:
+        missing = missing_required_artifacts(output_dir=project_root, manifest_path=manifest_path)
+    except (OSError, ValueError) as exc:
+        print(f"Invalid artifact manifest: {exc}")
+        return 1
     if missing:
         print("Missing required artifacts:")
         for relative_path in missing:

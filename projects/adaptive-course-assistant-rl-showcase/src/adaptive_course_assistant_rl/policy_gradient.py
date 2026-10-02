@@ -64,7 +64,10 @@ def train_reinforce(
     gamma: float = 0.9,
     horizon: int = 5,
 ) -> ReinforceResult:
-    """Train a tabular softmax policy with REINFORCE."""
+    """Maximize E[sum_t gamma**t * reward_t] from each scenario's start state.
+
+    Use reward-to-go with a zero baseline and the outer gamma**t gradient weight.
+    """
     if episodes <= 0:
         raise ValueError("episodes must be positive")
 
@@ -95,13 +98,14 @@ def train_reinforce(
             running_return = trajectory[index][2] + gamma * running_return
             returns[index] = running_return
 
-        baseline = sum(returns) / len(returns)
+        # A zero baseline is independent of this trajectory's sampled actions.
+        baseline = 0.0
         for index, (state_key, action, _reward) in enumerate(trajectory):
             probabilities = softmax(theta[state_key])
             advantage = returns[index] - baseline
             for candidate in range(action_count):
                 indicator = 1.0 if candidate == action else 0.0
-                theta[state_key][candidate] += alpha * advantage * (indicator - probabilities[candidate])
+                theta[state_key][candidate] += alpha * (gamma**index) * advantage * (indicator - probabilities[candidate])
 
         training_curve.append(
             {

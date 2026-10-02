@@ -94,19 +94,40 @@ def write_text_artifact(path: Path, content: str) -> None:
 
 
 def required_artifacts(manifest_path: Path | None = None) -> list[str]:
-    """Resolve the required artifact list from a manifest or the in-code contract."""
+    """Return the canonical required bundle after checking any supplied manifest."""
     if manifest_path is not None and manifest_path.exists():
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        return [str(item) for item in payload["required_files"]]
+        _validate_manifest(manifest_path)
     return list(REQUIRED_ARTIFACTS)
 
 
 def optional_artifacts(manifest_path: Path | None = None) -> list[str]:
-    """Resolve the optional artifact list from a manifest or the in-code contract."""
+    """Return the canonical optional bundle after checking any supplied manifest."""
     if manifest_path is not None and manifest_path.exists():
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        return [str(item) for item in payload.get("optional_files", [])]
+        _validate_manifest(manifest_path)
     return list(OPTIONAL_DRL_ARTIFACTS)
+
+
+def _validate_manifest(manifest_path: Path) -> None:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("version") != 1:
+        raise ValueError("manifest must be a version 1 object")
+    for key, expected in (
+        ("required_files", REQUIRED_ARTIFACTS),
+        ("optional_files", OPTIONAL_DRL_ARTIFACTS),
+    ):
+        paths = payload.get(key)
+        if (
+            not isinstance(paths, list)
+            or not all(isinstance(path, str) for path in paths)
+            or sorted(paths) != sorted(expected)
+        ):
+            raise ValueError(f"manifest {key} must match the canonical artifact bundle")
+
+
+def _artifact_path(output_dir: Path, relative_path: str) -> Path:
+    if (output_dir / "manifest.json").is_file():
+        return output_dir / Path(relative_path).relative_to("artifacts")
+    return output_dir / relative_path
 
 
 def missing_required_artifacts(*, output_dir: Path, manifest_path: Path | None = None) -> list[str]:
@@ -114,7 +135,7 @@ def missing_required_artifacts(*, output_dir: Path, manifest_path: Path | None =
     return [
         relative_path
         for relative_path in required_artifacts(manifest_path)
-        if not (output_dir / relative_path).exists()
+        if not _artifact_path(output_dir, relative_path).is_file()
     ]
 
 
@@ -123,7 +144,7 @@ def missing_optional_artifacts(*, output_dir: Path, manifest_path: Path | None =
     return [
         relative_path
         for relative_path in optional_artifacts(manifest_path)
-        if not (output_dir / relative_path).exists()
+        if not _artifact_path(output_dir, relative_path).is_file()
     ]
 
 
@@ -147,13 +168,19 @@ def artifact_validation_errors(
 ) -> list[str]:
     """Run light structural validation over present artifacts."""
     errors: list[str] = []
-    for relative_path in required_artifacts(manifest_path):
-        artifact_path = output_dir / relative_path
+    try:
+        required_paths = required_artifacts(manifest_path)
+        optional_paths = {
+            path: _artifact_path(output_dir, path) for path in optional_artifacts(manifest_path)
+        }
+    except (OSError, ValueError) as exc:
+        return [f"Invalid artifact manifest: {exc}"]
+    for relative_path in required_paths:
+        artifact_path = _artifact_path(output_dir, relative_path)
         if not artifact_path.exists():
             continue
         errors.extend(_validate_required_artifact(relative_path, artifact_path))
 
-    optional_paths = {path: output_dir / path for path in optional_artifacts(manifest_path)}
     present_optional = {path: artifact for path, artifact in optional_paths.items() if artifact.exists()}
     if require_optional_drl:
         for path, artifact in optional_paths.items():
@@ -239,7 +266,7 @@ def mdp_spec_markdown() -> str:
     """Describe the tutoring MDP in plain language."""
     return (
         "# Adaptive Tutoring MDP\n\n"
-        "The deterministic assistant already knows what kind of question it is looking at. The RL layer decides the next intervention.\n\n"
+        "Hand-authored scenarios supply the question type and initial retrieval context. The RL layer decides the next intervention.\n\n"
         "## State\n\n"
         "- Intent, difficulty, confidence, misconception type, retrieval quality, uncertainty, cognitive load, turn index, attempt count, last action, safety risk, and whether the issue is already resolved.\n\n"
         "## Actions\n\n"
