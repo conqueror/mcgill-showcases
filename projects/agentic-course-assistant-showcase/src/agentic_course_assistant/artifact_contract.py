@@ -6,7 +6,11 @@ import csv
 import json
 from pathlib import Path
 
-from agentic_course_assistant.artifact_manifest import BASE_REQUIRED_FILES, REQUIRED_HARNESS_FILES
+from agentic_course_assistant.artifact_manifest import (
+    BASE_REQUIRED_FILES,
+    REQUIRED_HARNESS_FILES,
+    _run_identity,
+)
 from agentic_course_assistant.concept_atlas import (
     EXPECTED_CONCEPT_COLUMNS,
     REQUESTED_CONCEPT_IDS,
@@ -19,6 +23,7 @@ EXPECTED_TRACE_KEYS = {
     "intent",
     "question",
     "resource_ids",
+    "run",
     "trace",
 }
 LIVE_OPENAI_TRACE_SOURCE = "hosted_response_with_local_teaching_adapter"
@@ -51,7 +56,8 @@ EXPECTED_EVAL_CASES: dict[str, dict[str, object]] = {
     },
     "bounded_loop": {
         "expected_workflow": "loop_refinement",
-        "expected_min_rounds": 2,
+        "expected_max_rounds": 2,
+        "expected_stop_reason": "quality_threshold",
     },
 }
 EXPECTED_RESOURCE_COLUMNS = ["resource_id", "title", "topic", "level", "kind", "skills"]
@@ -72,6 +78,8 @@ def verify(root: Path, *, require_harness: bool = True) -> list[str]:
     except json.JSONDecodeError as exc:
         return [f"Invalid artifacts/manifest.json: {exc}"]
 
+    if not isinstance(manifest, dict):
+        return ["artifacts/manifest.json must be an object"]
     required_files = manifest.get("required_files")
     if not isinstance(required_files, list) or not all(
         isinstance(path, str) for path in required_files
@@ -91,7 +99,12 @@ def verify(root: Path, *, require_harness: bool = True) -> list[str]:
         return errors
 
     errors.extend(_validate_response_markdown(root / "artifacts/course_assistant_response.md"))
-    errors.extend(_validate_trace(root / "artifacts/agent_trace.json"))
+    loaded_trace = _load_json_object(root / "artifacts/agent_trace.json")
+    trace = None if isinstance(loaded_trace, list) else loaded_trace
+    if isinstance(loaded_trace, list):
+        errors.extend(loaded_trace)
+    else:
+        errors.extend(_validate_trace(loaded_trace))
     errors.extend(_validate_resource_matches(root / "artifacts/resource_matches.csv"))
     errors.extend(_validate_concept_csv(root / "artifacts/concepts/agentic_concepts.csv"))
     errors.extend(
@@ -102,7 +115,7 @@ def verify(root: Path, *, require_harness: bool = True) -> list[str]:
     errors.extend(_validate_judge_rubric(root / "artifacts/evals/agent_judge_rubric.json"))
     errors.extend(_validate_coverage(root / "artifacts/evals/concept_coverage.json"))
     if require_harness:
-        errors.extend(_validate_harness_artifacts(root))
+        errors.extend(_validate_harness_artifacts(root, trace))
     return errors
 
 
@@ -122,18 +135,19 @@ def _validate_response_markdown(response_path: Path) -> list[str]:
     return []
 
 
-def _validate_trace(trace_path: Path) -> list[str]:
-    try:
-        trace = json.loads(trace_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        return [f"Invalid artifacts/agent_trace.json: {exc}"]
-
+def _validate_trace(trace: dict[str, object]) -> list[str]:
     errors: list[str] = []
     missing_keys = sorted(EXPECTED_TRACE_KEYS - set(trace))
     if missing_keys:
         errors.append(f"agent_trace.json missing keys: {missing_keys}")
-    if trace.get("intent") not in EXPECTED_INTENTS:
+    intent = trace.get("intent")
+    if not isinstance(intent, str) or intent not in EXPECTED_INTENTS:
         errors.append("agent_trace.json has an unknown intent")
+    question = trace.get("question")
+    if not isinstance(question, str) or not question.strip():
+        errors.append("agent_trace.json question must be a non-empty string")
+    elif trace.get("run") != _run_identity(question):
+        errors.append("agent_trace.json run identity does not match current source and question")
     if not isinstance(trace.get("trace"), list) or not trace.get("trace"):
         errors.append("agent_trace.json trace must be a non-empty list")
     if not isinstance(trace.get("resource_ids"), list) or not trace.get("resource_ids"):
@@ -169,7 +183,7 @@ def _validate_harness_events_match_trace(
     event_names = {
         event.get("event_type"): event.get("name")
         for event in harness_events
-        if isinstance(event, dict)
+        if isinstance(event, dict) and isinstance(event.get("event_type"), str)
     }
     required_trace_pairs = {
         "tool_call": "course_catalog_tool.search_resources",
@@ -332,7 +346,7 @@ def _validate_coverage(coverage_path: Path) -> list[str]:
     return []
 
 
-def _validate_harness_artifacts(root: Path) -> list[str]:
+def _validate_harness_artifacts(root: Path, trace: dict[str, object] | None) -> list[str]:
     harness_dir = root / "artifacts/harness"
     errors: list[str] = []
     trace_schema_path = harness_dir / "trace_schema.json"
@@ -341,28 +355,32 @@ def _validate_harness_artifacts(root: Path) -> list[str]:
         errors.extend(trace_schema)
     else:
         errors.extend(_validate_harness_trace_schema(trace_schema))
-        errors.extend(
-            _validate_trace_matches_harness_schema(
-                root / "artifacts/agent_trace.json",
-                trace_schema,
+        if trace is not None:
+            errors.extend(
+                _validate_trace_matches_harness_schema(trace, trace_schema)
             )
-        )
-    errors.extend(_validate_harness_eval_cases(harness_dir / "eval_cases.jsonl"))
-    errors.extend(_validate_harness_judge_verdicts(harness_dir / "judge_verdicts.json"))
-    errors.extend(_validate_harness_run_ledger(harness_dir / "run_ledger.jsonl"))
-    errors.extend(_validate_harness_failure_report(harness_dir / "failure_injection_report.md"))
+    errors.extend(_validate_harness_eval_cases(harness_dir / "eval_cases.jsonl", trace))
+    errors.extend(_validate_harness_judge_verdicts(harness_dir / "judge_verdicts.json", trace))
+    errors.extend(_validate_harness_run_ledger(harness_dir / "run_ledger.jsonl", trace))
+    errors.extend(
+        _validate_harness_failure_report(harness_dir / "failure_injection_report.md", trace)
+    )
     return errors
 
 
 def _load_harness_trace_schema(trace_schema_path: Path) -> dict[str, object] | list[str]:
     if not trace_schema_path.exists():
         return ["Missing artifacts/harness/trace_schema.json"]
+    return _load_json_object(trace_schema_path)
+
+
+def _load_json_object(path: Path) -> dict[str, object] | list[str]:
     try:
-        loaded = json.loads(trace_schema_path.read_text(encoding="utf-8"))
+        loaded = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        return [f"Invalid trace_schema.json: {exc}"]
+        return [f"Invalid {path.name}: {exc}"]
     if not isinstance(loaded, dict):
-        return ["trace_schema.json must be an object"]
+        return [f"{path.name} must be an object"]
     return loaded
 
 
@@ -387,21 +405,23 @@ def _validate_harness_trace_schema(schema: dict[str, object]) -> list[str]:
 
 
 def _validate_trace_matches_harness_schema(
-    trace_path: Path,
+    trace: dict[str, object],
     trace_schema: dict[str, object],
 ) -> list[str]:
-    trace = json.loads(trace_path.read_text(encoding="utf-8"))
     required_keys = trace_schema.get("required_top_level_keys")
     required_events = trace_schema.get("required_harness_events")
     errors: list[str] = []
+    if trace_schema.get("run") != trace.get("run"):
+        errors.append("trace_schema.json run identity does not match agent_trace.json")
     if isinstance(required_keys, list):
         missing_keys = sorted(set(required_keys) - set(trace))
         if missing_keys:
             errors.append(f"agent_trace.json missing schema-required keys: {missing_keys}")
-    if isinstance(required_events, list):
+    harness_events = trace.get("harness_events")
+    if isinstance(required_events, list) and isinstance(harness_events, list):
         event_types: set[str] = {
             str(event.get("event_type"))
-            for event in trace.get("harness_events", [])
+            for event in harness_events
             if isinstance(event, dict) and isinstance(event.get("event_type"), str)
         }
         required_event_set = {str(event) for event in required_events}
@@ -416,7 +436,9 @@ def _validate_trace_matches_harness_schema(
     return errors
 
 
-def _validate_harness_eval_cases(eval_cases_path: Path) -> list[str]:
+def _validate_harness_eval_cases(
+    eval_cases_path: Path, trace: dict[str, object] | None
+) -> list[str]:
     if not eval_cases_path.exists():
         return ["Missing artifacts/harness/eval_cases.jsonl"]
     lines = [line for line in eval_cases_path.read_text(encoding="utf-8").splitlines() if line]
@@ -431,6 +453,11 @@ def _validate_harness_eval_cases(eval_cases_path: Path) -> list[str]:
         except json.JSONDecodeError as exc:
             errors.append(f"Invalid eval_cases.jsonl line {line_number}: {exc}")
             continue
+        if not isinstance(payload, dict):
+            errors.append(f"eval_cases.jsonl line {line_number} must be an object")
+            continue
+        if trace is not None and payload.get("run") != trace.get("run"):
+            errors.append(f"eval_cases.jsonl line {line_number} run identity does not match trace")
         if not payload.get("case_id") or not payload.get("prompt"):
             errors.append(f"eval_cases.jsonl line {line_number} must include case_id and prompt")
         if not payload.get("expected_workflow"):
@@ -462,39 +489,79 @@ def _validate_harness_eval_cases(eval_cases_path: Path) -> list[str]:
     return errors
 
 
-def _validate_harness_judge_verdicts(judge_verdicts_path: Path) -> list[str]:
+def _validate_harness_judge_verdicts(
+    judge_verdicts_path: Path, trace: dict[str, object] | None
+) -> list[str]:
     if not judge_verdicts_path.exists():
         return ["Missing artifacts/harness/judge_verdicts.json"]
-    try:
-        payload = json.loads(judge_verdicts_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        return [f"Invalid judge_verdicts.json: {exc}"]
+    payload = _load_json_object(judge_verdicts_path)
+    if isinstance(payload, list):
+        return payload
 
     verdicts = payload.get("verdicts")
     summary = payload.get("summary")
     if not isinstance(verdicts, list) or len(verdicts) < 10:
         return ["judge_verdicts.json must include workflow and eval-case verdicts"]
     errors: list[str] = []
-    if not isinstance(summary, dict) or summary.get("failed") != 0:
-        errors.append("judge_verdicts.json summary must report zero failures")
+    if trace is not None and (
+        payload.get("run") != trace.get("run") or payload.get("question") != trace.get("question")
+    ):
+        errors.append("judge_verdicts.json run identity does not match agent_trace.json")
     case_ids = {
         verdict.get("case_id")
         for verdict in verdicts
-        if isinstance(verdict.get("case_id"), str)
+        if isinstance(verdict, dict) and isinstance(verdict.get("case_id"), str)
     }
     expected_case_ids = set(EXPECTED_EVAL_CASES)
     missing_case_ids = sorted(expected_case_ids - case_ids)
     if missing_case_ids:
         errors.append(f"judge_verdicts.json missing eval case verdicts: {missing_case_ids}")
+    passed_count = 0
     for verdict in verdicts:
-        if verdict.get("verdict") != "pass":
+        if not isinstance(verdict, dict):
+            errors.append("judge_verdicts.json verdicts must be objects")
+            continue
+        checks = verdict.get("checks")
+        passed = isinstance(checks, dict) and bool(checks) and all(
+            value is True for value in checks.values()
+        )
+        passed_count += int(passed)
+        if not passed:
+            errors.append("judge_verdicts.json checks must be non-empty boolean true values")
+        if verdict.get("verdict") != ("pass" if passed else "fail"):
+            errors.append("judge_verdicts.json verdict contradicts its checks")
+        if not passed or verdict.get("verdict") != "pass":
             errors.append("judge_verdicts.json contains a non-pass verdict")
-        if not isinstance(verdict.get("checks"), dict) or not verdict["checks"]:
-            errors.append("judge_verdicts.json verdicts must include checks")
+    expected_summary = {
+        "passed": passed_count,
+        "failed": len(verdicts) - passed_count,
+        "total": len(verdicts),
+    }
+    if summary != expected_summary or not isinstance(summary, dict) or any(
+        type(value) is not int for value in summary.values()
+    ):
+        errors.append("judge_verdicts.json summary must match counts derived from checks")
+    if expected_summary["failed"]:
+        errors.append("judge_verdicts.json summary must report zero failures")
+    injections = payload.get("failure_injections")
+    expected_injections = {
+        "Tool failure", "Guardrail trip", "Routing ambiguity", "Loop runaway", "Trace corruption"
+    }
+    if not isinstance(injections, dict) or set(injections) != expected_injections:
+        errors.append("judge_verdicts.json must report the five executed failure injections")
+    elif any(
+        not isinstance(outcome, dict)
+        or outcome.get("passed") is not True
+        or not outcome.get("observed")
+        for outcome in injections.values()
+    ):
+        errors.append("judge_verdicts.json failure injections must pass with observed evidence")
     return errors
 
 
-def _validate_harness_run_ledger(run_ledger_path: Path) -> list[str]:
+def _validate_harness_run_ledger(
+    run_ledger_path: Path, trace: dict[str, object] | None
+) -> list[str]:
     if not run_ledger_path.exists():
         return ["Missing artifacts/harness/run_ledger.jsonl"]
     lines = [line for line in run_ledger_path.read_text(encoding="utf-8").splitlines() if line]
@@ -503,12 +570,17 @@ def _validate_harness_run_ledger(run_ledger_path: Path) -> list[str]:
 
     errors: list[str] = []
     latest_status: str | None = None
+    latest_entry: dict[str, object] | None = None
     for line_number, line in enumerate(lines, start=1):
         try:
             payload = json.loads(line)
         except json.JSONDecodeError as exc:
             errors.append(f"Invalid run_ledger.jsonl line {line_number}: {exc}")
             continue
+        if not isinstance(payload, dict):
+            errors.append(f"run_ledger.jsonl line {line_number} must be an object")
+            continue
+        latest_entry = payload
         if payload.get("event") != "harness_lab_run":
             errors.append(f"run_ledger.jsonl line {line_number} has unexpected event")
         status = payload.get("status")
@@ -518,10 +590,17 @@ def _validate_harness_run_ledger(run_ledger_path: Path) -> list[str]:
             latest_status = status
     if latest_status != "pass":
         errors.append("run_ledger.jsonl latest run must report pass status")
+    if trace is not None and latest_entry is not None and (
+        latest_entry.get("run") != trace.get("run")
+        or latest_entry.get("question") != trace.get("question")
+    ):
+        errors.append("run_ledger.jsonl latest run identity does not match agent_trace.json")
     return errors
 
 
-def _validate_harness_failure_report(report_path: Path) -> list[str]:
+def _validate_harness_failure_report(
+    report_path: Path, trace: dict[str, object] | None
+) -> list[str]:
     if not report_path.exists():
         return ["Missing artifacts/harness/failure_injection_report.md"]
     text = report_path.read_text(encoding="utf-8")
@@ -536,4 +615,7 @@ def _validate_harness_failure_report(report_path: Path) -> list[str]:
     missing = [phrase for phrase in required_phrases if phrase not in text]
     if missing:
         return [f"failure_injection_report.md missing phrases: {missing}"]
+    run = trace.get("run") if trace is not None else None
+    if isinstance(run, dict) and f"Run ID: {run.get('run_id')}" not in text:
+        return ["failure_injection_report.md run identity does not match agent_trace.json"]
     return []

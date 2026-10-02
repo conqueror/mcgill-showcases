@@ -35,7 +35,7 @@ def load_runtime_config(
 ) -> LiveRuntimeConfig:
     """Load live runtime settings from environment variables and an optional `.env` file."""
 
-    environment = dict(environ or os.environ)
+    environment = dict(environ if environ is not None else os.environ)
     env_file_values = _load_env_file((project_root or _default_project_root()) / ".env")
     merged = {**env_file_values, **environment}
     return LiveRuntimeConfig(

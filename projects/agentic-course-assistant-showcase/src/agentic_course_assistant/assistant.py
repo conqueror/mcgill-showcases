@@ -66,14 +66,18 @@ def classify_question(question: str) -> Intent:
 def guardrail_notes(question: str) -> tuple[str, ...]:
     """Return safety notes that keep the assistant scoped to public learning work."""
 
-    normalized = question.lower()
-    terms = tokenize(question)
     notes: list[str] = ["Scope locked to course learning support and public artifacts."]
-    if any(_keyword_matches(term, normalized, terms) for term in SENSITIVE_TERMS):
+    if _has_sensitive_terms(question):
         notes.append(
             "Do not paste secrets. Replace credentials with placeholders before debugging."
         )
     return tuple(notes)
+
+
+def _has_sensitive_terms(question: str) -> bool:
+    return any(
+        _keyword_matches(term, question.lower(), tokenize(question)) for term in SENSITIVE_TERMS
+    )
 
 
 def _keyword_matches(keyword: str, normalized_text: str, terms: set[str]) -> bool:
@@ -94,22 +98,30 @@ def _ordered_tokens(text: str) -> tuple[str, ...]:
     return tuple(part for part in cleaned.split() if part)
 
 
-def answer_question(question: str, limit: int = 3) -> AssistantResult:
-    """Answer a course question with routing, tool lookup, and trace metadata."""
+def _require_safe_question(question: str) -> None:
+    """Reject flagged input before tools, hosted calls, or artifact writes."""
 
     if not question.strip():
         raise ValueError("question must not be empty")
+    if _has_sensitive_terms(question):
+        raise ValueError("question contains sensitive terms; use a public example instead")
+
+
+def answer_question(question: str, limit: int = 3) -> AssistantResult:
+    """Answer a course question with routing, tool lookup, and trace metadata."""
+
+    _require_safe_question(question)
 
     intent = classify_question(question)
     agent_name = AGENT_BY_INTENT[intent]
     resources = tuple(search_resources(question, limit=limit))
     notes = guardrail_notes(question)
     trace = (
+        "guardrail.scope_check",
         "triage_agent.received_question",
         f"triage_agent.selected_intent:{intent}",
         "course_catalog_tool.search_resources",
         f"{agent_name.lower().replace(' ', '_')}.draft_answer",
-        "guardrail.scope_check",
     )
     answer = _compose_answer(question, intent, agent_name, resources, notes)
     return AssistantResult(
@@ -140,7 +152,7 @@ def _compose_answer(
     }[intent]
     resource_lines = "\n".join(
         f"- {resource.title}: {resource.summary}" for resource in resources
-    )
+    ) or "No matching course resources were found."
     next_step = _next_step(intent, question)
     guardrail_lines = "\n".join(f"- {note}" for note in notes)
     return (

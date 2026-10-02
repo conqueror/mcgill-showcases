@@ -28,7 +28,8 @@ def test_offline_workflows_cover_required_patterns() -> None:
     assert results["parallel_resource_review"].state["review_count"] == 3
     rounds_completed = results["loop_refinement"].state["rounds_completed"]
     assert isinstance(rounds_completed, int)
-    assert rounds_completed >= 2
+    assert 1 <= rounds_completed <= 2
+    assert results["loop_refinement"].state["stop_reason"] == "quality_threshold"
     assert all(result.trace for result in results.values())
 
 
@@ -53,7 +54,7 @@ def test_load_runtime_config_reads_env_file_and_defaults(tmp_path: Path) -> None
         encoding="utf-8",
     )
 
-    config = load_runtime_config(tmp_path)
+    config = load_runtime_config(tmp_path, environ={})
 
     assert config.openai_api_key == "test-openai-key"
     assert config.gemini_api_key == "test-gemini-key"

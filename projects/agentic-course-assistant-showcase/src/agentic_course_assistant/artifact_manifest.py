@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterable
 from pathlib import Path
@@ -25,6 +26,23 @@ REQUIRED_HARNESS_FILES: tuple[str, ...] = (
     "artifacts/harness/judge_verdicts.json",
     "artifacts/harness/failure_injection_report.md",
 )
+
+
+def _run_identity(question: str) -> dict[str, object]:
+    """Identify the input, local source contents, and harness scenario version."""
+
+    project_root = Path(__file__).resolve().parents[2]
+    source = hashlib.sha256()
+    paths = sorted(project_root.glob("src/agentic_course_assistant/*.py"))
+    paths += sorted(project_root.glob("scripts/*.py"))
+    for path in paths:
+        source.update(str(path.relative_to(project_root)).encode())
+        source.update(b"\0" + path.read_bytes() + b"\0")
+    identity: dict[str, object] = {"source_sha256": source.hexdigest(), "scenario_version": 1}
+    identity["run_id"] = hashlib.sha256(
+        json.dumps({**identity, "question": question}, sort_keys=True).encode()
+    ).hexdigest()
+    return identity
 
 
 def all_required_files() -> tuple[str, ...]:

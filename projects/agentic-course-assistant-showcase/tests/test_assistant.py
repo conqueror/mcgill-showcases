@@ -38,11 +38,11 @@ def test_search_resources_prefers_leakage_content() -> None:
 
 
 def test_answer_contains_trace_and_guardrail() -> None:
-    result = answer_question("Help me build an agent SDK project without pasting an API key")
+    result = answer_question("Help me build an agent SDK project using public examples")
     assert result.intent == "project"
     assert result.agent_name == "Project planner"
     assert "triage_agent.selected_intent:project" in result.trace
-    assert any("secrets" in note.lower() for note in result.guardrails)
+    assert any("Scope locked" in note for note in result.guardrails)
 
 
 def test_secret_guardrail_requires_secret_phrase() -> None:

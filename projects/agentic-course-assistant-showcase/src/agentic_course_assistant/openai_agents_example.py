@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from importlib import import_module
 from typing import Any
 
-from agentic_course_assistant.assistant import Intent, classify_question
+from agentic_course_assistant.assistant import Intent, _require_safe_question, classify_question
 from agentic_course_assistant.course_catalog import search_resources
 from agentic_course_assistant.runtime_config import apply_live_environment
 
@@ -106,6 +106,7 @@ def _build_agents_bundle() -> OpenAIAgentsBundle:
 async def run_openai_agents_course_assistant(question: str) -> str:
     """Run the hosted triage agent and return its final answer."""
 
+    _require_safe_question(question)
     bundle = _build_agents_bundle()
     _require_openai_runtime()
     result = await bundle.runner.run(bundle.triage_agent, question)
@@ -120,6 +121,7 @@ async def run_openai_specialist_course_assistant(
 ) -> str:
     """Run one hosted specialist for the live teaching bundle."""
 
+    _require_safe_question(question)
     bundle = _build_agents_bundle()
     _require_openai_runtime()
     selected_intent = intent or classify_question(question)

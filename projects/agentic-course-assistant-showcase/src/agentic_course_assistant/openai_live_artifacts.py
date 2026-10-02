@@ -12,6 +12,7 @@ from agentic_course_assistant.artifacts import write_artifacts
 from agentic_course_assistant.assistant import (
     AGENT_BY_INTENT,
     AssistantResult,
+    _require_safe_question,
     classify_question,
     guardrail_notes,
 )
@@ -24,6 +25,7 @@ LIVE_TRACE_SOURCE = "hosted_response_with_local_teaching_adapter"
 async def run_live_openai_bundle(question: str, bundle_root: Path) -> dict[str, Any]:
     """Write the hosted bundle in the same format students inspect offline."""
 
+    _require_safe_question(question)
     bundle_root.mkdir(parents=True, exist_ok=True)
     artifacts_dir = bundle_root / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
@@ -44,12 +46,12 @@ async def run_live_openai_bundle(question: str, bundle_root: Path) -> dict[str, 
         resources=resources,
         guardrails=guardrail_notes(question),
         trace=(
+            "guardrail.scope_check",
             "teaching_adapter.received_question",
             f"teaching_adapter.selected_intent:{intent}",
             "course_catalog_tool.search_resources",
             f"teaching_adapter.selected_specialist:{agent_name.lower().replace(' ', '_')}",
             f"{agent_name.lower().replace(' ', '_')}.hosted_response",
-            "guardrail.scope_check",
         ),
     )
     written = write_artifacts(
@@ -80,8 +82,8 @@ async def run_live_openai_bundle(question: str, bundle_root: Path) -> dict[str, 
         "resource_ids": [resource.resource_id for resource in resources],
         "runtime": "openai_agents_sdk",
         "trace_source": LIVE_TRACE_SOURCE,
-        "bundle_root": str(bundle_root),
-        "written_files": [str(path) for path in written],
+        "bundle_root": ".",
+        "written_files": [str(path.relative_to(bundle_root)) for path in written],
     }
     run_summary_path.write_text(
         json.dumps(run_summary, indent=2, sort_keys=True) + "\n",
@@ -91,6 +93,8 @@ async def run_live_openai_bundle(question: str, bundle_root: Path) -> dict[str, 
     verification_errors = verify(bundle_root, require_harness=False)
     return {
         **run_summary,
+        "bundle_root": str(bundle_root),
+        "written_files": [str(path) for path in written],
         "manifest_path": str(artifacts_dir / "manifest.json"),
         "verification_errors": verification_errors,
     }

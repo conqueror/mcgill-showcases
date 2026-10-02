@@ -3,20 +3,28 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 from agentic_course_assistant.artifact_contract import verify
 from agentic_course_assistant.artifact_manifest import (
+    BASE_REQUIRED_FILES,
     REQUIRED_HARNESS_FILES,
+    _run_identity,
     all_required_files,
     merge_required_files,
 )
 from agentic_course_assistant.artifacts import write_artifacts
 from agentic_course_assistant.assistant import answer_question
 from agentic_course_assistant.runtime_config import load_runtime_config
-from agentic_course_assistant.workflow_examples import WorkflowExampleResult, run_offline_workflows
+from agentic_course_assistant.workflow_examples import (
+    MAX_REFINEMENT_ROUNDS,
+    WorkflowExampleResult,
+    run_offline_workflows,
+)
 
 DEFAULT_HARNESS_QUESTION = (
     "Help me build an agent project for debugging leakage without pasting any API keys."
@@ -27,6 +35,7 @@ TRACE_SCHEMA: dict[str, Any] = {
     "version": 1,
     "required_top_level_keys": [
         "question",
+        "run",
         "intent",
         "agent_name",
         "guardrails",
@@ -82,7 +91,8 @@ EVAL_CASES: tuple[dict[str, Any], ...] = (
         "case_id": "bounded_loop",
         "prompt": "Refine my answer until it has a checkable artifact.",
         "expected_workflow": "loop_refinement",
-        "expected_min_rounds": 2,
+        "expected_max_rounds": MAX_REFINEMENT_ROUNDS,
+        "expected_stop_reason": "quality_threshold",
     },
 )
 
@@ -106,6 +116,7 @@ def run_harness_lab(
     _write_base_artifacts(project_root, question)
 
     workflows = run_offline_workflows(question)
+    run = _run_identity(question)
     workflow_verdicts = _judge_workflows(workflows)
     eval_verdicts = _evaluate_cases(EVAL_CASES)
     judge_verdicts = workflow_verdicts + eval_verdicts
@@ -118,20 +129,24 @@ def run_harness_lab(
     failure_report_path = harness_dir / "failure_injection_report.md"
     run_ledger_path = harness_dir / "run_ledger.jsonl"
 
-    trace_schema_path.write_text(json.dumps(TRACE_SCHEMA, indent=2) + "\n", encoding="utf-8")
+    trace_schema_path.write_text(
+        json.dumps({**TRACE_SCHEMA, "run": run}, indent=2) + "\n", encoding="utf-8"
+    )
     eval_cases_path.write_text(
-        "".join(json.dumps(case, sort_keys=True) + "\n" for case in EVAL_CASES),
+        "".join(json.dumps({**case, "run": run}, sort_keys=True) + "\n" for case in EVAL_CASES),
         encoding="utf-8",
     )
     judge_payload = {
         "version": 1,
         "judge": "deterministic_harness_judge",
         "question": question,
+        "run": run,
         "workflows": {
             name: result.to_dict() for name, result in workflows.items()
         },
         "verdicts": judge_verdicts,
         "summary": _judge_summary(judge_verdicts),
+        "failure_injections": _run_failure_injections(question, workflows),
     }
     judge_verdicts_path.write_text(
         json.dumps(judge_payload, indent=2, sort_keys=True) + "\n",
@@ -173,7 +188,12 @@ def _judge_workflows(workflows: dict[str, Any]) -> list[dict[str, Any]]:
             checks["review_count_is_three"] = result.state.get("review_count") == 3
         if name == "loop_refinement":
             rounds = result.state.get("rounds_completed")
-            checks["bounded_loop_completed"] = isinstance(rounds, int) and rounds >= 2
+            checks["bounded_loop_completed"] = (
+                type(rounds) is int and 1 <= rounds <= MAX_REFINEMENT_ROUNDS
+            )
+            checks["stop_reason_present"] = result.state.get("stop_reason") in {
+                "quality_threshold", "round_limit"
+            }
         if name == "custom_policy_agent":
             checks["policy_decision_present"] = "allowed" in result.state
         if name == "router_triage":
@@ -200,8 +220,11 @@ def _judge_workflows(workflows: dict[str, Any]) -> list[dict[str, Any]]:
 def _evaluate_cases(eval_cases: tuple[dict[str, Any], ...]) -> list[dict[str, Any]]:
     verdicts: list[dict[str, Any]] = []
     for case in eval_cases:
-        result = run_offline_workflows(str(case["prompt"]))[str(case["expected_workflow"])]
-        checks = _evaluate_case_expectations(case, result)
+        result = run_offline_workflows(str(case["prompt"])).get(str(case["expected_workflow"]))
+        checks = (
+            _evaluate_case_expectations(case, result)
+            if result is not None else {"workflow_allowed": False}
+        )
         passed = all(checks.values())
         verdicts.append(
             {
@@ -237,10 +260,14 @@ def _evaluate_case_expectations(
         checks["expected_review_count"] = (
             result.state.get("review_count") == case["expected_review_count"]
         )
-    if "expected_min_rounds" in case:
+    if "expected_max_rounds" in case:
         rounds = result.state.get("rounds_completed")
-        checks["expected_min_rounds"] = (
-            isinstance(rounds, int) and rounds >= case["expected_min_rounds"]
+        checks["expected_max_rounds"] = (
+            type(rounds) is int and 1 <= rounds <= case["expected_max_rounds"]
+        )
+    if "expected_stop_reason" in case:
+        checks["expected_stop_reason"] = (
+            result.state.get("stop_reason") == case["expected_stop_reason"]
         )
     if "expected_guardrail" in case:
         raw_guardrails = result.state.get("guardrails", [])
@@ -251,9 +278,63 @@ def _evaluate_case_expectations(
 
 
 def _judge_summary(verdicts: list[dict[str, Any]]) -> dict[str, int]:
-    passed = sum(1 for verdict in verdicts if verdict.get("verdict") == "pass")
+    passed = sum(
+        1 for verdict in verdicts
+        if verdict.get("checks") and all(value is True for value in verdict["checks"].values())
+    )
     failed = len(verdicts) - passed
     return {"passed": passed, "failed": failed, "total": len(verdicts)}
+
+
+def _run_failure_injections(
+    question: str, workflows: dict[str, WorkflowExampleResult]
+) -> dict[str, dict[str, object]]:
+    """Exercise broken outputs at the verifier, policy, and judge boundaries."""
+
+    outcomes: dict[str, dict[str, object]] = {}
+    with TemporaryDirectory(prefix="course-assistant-injections-") as directory:
+        root = Path(directory)
+        artifacts_dir = root / "artifacts"
+        result = answer_question(question)
+        write_artifacts(replace(result, resources=()), artifacts_dir)
+        merge_required_files(artifacts_dir / "manifest.json", BASE_REQUIRED_FILES)
+        errors = verify(root, require_harness=False)
+        outcomes["Tool failure"] = {
+            "passed": any("resource" in error for error in errors),
+            "observed": errors,
+        }
+        write_artifacts(result, artifacts_dir)
+        trace_path = artifacts_dir / "agent_trace.json"
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+        trace["trace"].remove("course_catalog_tool.search_resources")
+        trace_path.write_text(json.dumps(trace), encoding="utf-8")
+        errors = verify(root, require_harness=False)
+        outcomes["Trace corruption"] = {
+            "passed": any("trace missing step for tool_call" in error for error in errors),
+            "observed": errors,
+        }
+
+    secret_case = next(case for case in EVAL_CASES if case["case_id"] == "block_secret_request")
+    try:
+        answer_question(str(secret_case["prompt"]))
+    except ValueError as exc:
+        outcomes["Guardrail trip"] = {"passed": True, "observed": str(exc)}
+    else:
+        outcomes["Guardrail trip"] = {"passed": False, "observed": "Input was accepted."}
+
+    ambiguous = run_offline_workflows("project debug")["router_triage"]
+    outcomes["Routing ambiguity"] = {
+        "passed": ambiguous.state["selected_intent"] == "debug",
+        "observed": f"Tied project/debug keywords selected {ambiguous.state['selected_intent']}.",
+    }
+    loop = workflows["loop_refinement"]
+    runaway = replace(loop, state={**loop.state, "rounds_completed": MAX_REFINEMENT_ROUNDS + 1})
+    verdict = _judge_workflows({"loop_refinement": runaway})[0]
+    outcomes["Loop runaway"] = {
+        "passed": verdict["verdict"] == "fail",
+        "observed": verdict["checks"],
+    }
+    return outcomes
 
 
 def _render_failure_report(question: str, judge_payload: dict[str, Any]) -> str:
@@ -261,20 +342,21 @@ def _render_failure_report(question: str, judge_payload: dict[str, Any]) -> str:
         f"- `{verdict.get('case_id', verdict['workflow_name'])}`: `{verdict['verdict']}`"
         for verdict in judge_payload["verdicts"]
     )
+    injection_lines = "\n".join(
+        f"- {name}: `{'pass' if outcome['passed'] else 'fail'}`; "
+        f"observed: {json.dumps(outcome['observed'], sort_keys=True)}"
+        for name, outcome in judge_payload["failure_injections"].items()
+    )
     return (
         "# Harness Failure Injection Report\n\n"
         f"Question: {question}\n\n"
-        "## Simulated Failures\n\n"
-        "- Tool failure: the course catalog returns no matches, so the verifier should "
-        "reject an empty resource list.\n"
-        "- Guardrail trip: a prompt includes an API key or secret, so the policy agent "
-        "blocks the request.\n"
-        "- Routing ambiguity: a question mixes project planning and debugging, so the "
-        "router trace must show the selected specialist.\n"
-        "- Loop runaway: a refinement loop must stop after the bounded quality threshold "
-        "instead of iterating forever.\n"
-        "- Trace corruption: a missing trace event should fail `make trace-check` before "
-        "a student trusts the answer.\n\n"
+        f"Run ID: {judge_payload['run']['run_id']}\n\n"
+        "## Executed Boundary Checks\n\n"
+        "The tool and trace checks inject corrupt outputs into the artifact verifier. "
+        "The loop check injects an excessive round count into the workflow judge. "
+        "The policy check sends a flagged prompt through the assistant, and the routing "
+        "check exercises a keyword tie.\n\n"
+        f"{injection_lines}\n\n"
         "## Current Judge Verdicts\n\n"
         f"{verdict_lines}\n"
     )
@@ -288,6 +370,7 @@ def _append_run_ledger(
     ledger_entry = {
         "timestamp_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "question": question,
+        "run": judge_payload["run"],
         "event": "harness_lab_run",
         "judge_summary": judge_payload["summary"],
         "artifact_paths": list(REQUIRED_HARNESS_FILES),

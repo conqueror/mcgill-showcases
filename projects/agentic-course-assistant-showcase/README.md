@@ -34,13 +34,14 @@ By the end of this project, you should be able to:
 cd projects/agentic-course-assistant-showcase
 make sync
 make smoke
+make eval
 make verify
 ```
 
 Ask your own question:
 
 ```bash
-make run QUESTION="I understand train/test splits, but why is leakage so dangerous?"
+make eval QUESTION="I understand train/test splits, but why is leakage so dangerous?"
 ```
 
 Run quality checks:
@@ -61,7 +62,7 @@ make verify-openai
 
 Use the docs in this order:
 
-1. Run the deterministic offline harness with `make smoke`.
+1. Run the offline assistant with `make smoke`, then generate its harness evidence with `make eval`.
 2. Follow [`docs/lab-guide.md`](docs/lab-guide.md) to inspect the answer, trace, tool output, and eval rubric.
 3. Read [`docs/concept-map.md`](docs/concept-map.md) to connect each local artifact to OpenAI Agents SDK and Google ADK concepts.
 4. Use [`docs/learning-guide.md`](docs/learning-guide.md) for reflection prompts and a small route-extension exercise.
@@ -93,7 +94,7 @@ After `make run`, inspect:
 - `artifacts/concepts/refined_questions.md`: expanded questions students should answer before building.
 - `artifacts/concepts/student_learning_path.md`: staged path from offline workflow to SDK, eval, A2A, and deployment extensions.
 - `artifacts/evals/agent_judge_rubric.json`: rubric for an agent-as-judge or trace-grading extension.
-- `artifacts/evals/concept_coverage.json`: coverage proof for requested concepts.
+- `artifacts/evals/concept_coverage.json`: checks that requested concept identifiers appear in the atlas; it does not test implemented capabilities.
 - `artifacts/manifest.json`: the artifact contract used by `make verify`.
 
 ## How The Assistant Works
@@ -102,7 +103,8 @@ The default offline workflow is intentionally small:
 
 ```mermaid
 flowchart TD
-    Q["Student question"] --> T["triage_agent"]
+    Q["Student question"] --> G["input policy check"]
+    G --> T["triage_agent"]
     T --> C["classify_question"]
     C --> I{"Intent"}
     I --> Concept["concept specialist"]
@@ -114,20 +116,25 @@ flowchart TD
     Debug --> R
     Project --> R
     R --> A["compose answer"]
-    A --> G["guardrail_notes"]
-    G --> W["write_artifacts"]
+    A --> W["write_artifacts"]
     W --> V["make verify"]
 ```
 
-1. `triage_agent` receives the question.
+1. The input policy rejects empty questions and recognized sensitive terms before routing or lookup.
 2. `classify_question` routes it to `concept`, `exercise`, `debug`, or `project`.
 3. `search_resources` acts as a deterministic course-catalog tool.
 4. The selected specialist composes a short answer.
-5. `guardrail_notes` adds scope and secret-handling reminders.
+5. `guardrail_notes` adds a public-learning scope reminder to accepted questions.
 6. `write_artifacts` writes the response, trace, and matched resources.
 7. `write_concept_artifacts` writes the concept atlas, refined questions, learning path, and eval rubric.
 
 That gives students the right mental model without making the first run depend on API credentials.
+
+The harness's reviewer records are sequential simulations, and `consensus_resource_id` names the
+first ranked catalog resource. The refinement loop checks for an artifact and a verification step;
+these checks do not measure reasoning quality or multi-agent agreement. Harness evidence must be
+regenerated with `make eval` before `make verify` after changing the question or source code.
+The run ledger records the current UTC time and appends an entry, so it is not byte-repeatable.
 
 ## SDK Examples
 
@@ -138,7 +145,7 @@ Google ADK:
 flowchart LR
     Offline["Offline control sample"] --> OAI["OpenAI Agents SDK module"]
     Offline --> ADK["Google ADK root_agent"]
-    OAI --> Same["Same mental model:<br/>route, tool, guardrail, trace"]
+    OAI --> Same["Compare routing, tools,<br/>policy, and trace boundaries"]
     ADK --> Same
     Same --> Review["Compare live output with offline artifacts"]
 ```
@@ -146,6 +153,10 @@ flowchart LR
 - `src/agentic_course_assistant/openai_agents_example.py` uses `Agent`, `Runner`, `function_tool`, tools, and handoffs.
 - `src/agentic_course_assistant/google_adk_example.py` defines the ADK `root_agent` and function tool.
 - `adk_course_assistant/agent.py` is an ADK-discoverable wrapper for `uv run adk run adk_course_assistant`.
+
+The OpenAI module configures specialist handoffs; the ADK module configures one agent. The Python
+OpenAI entry points reject recognized sensitive terms before hosted calls. The ADK instruction text
+asks the model to avoid secrets; neither example registers an SDK guardrail callback.
 
 Important boundary:
 
