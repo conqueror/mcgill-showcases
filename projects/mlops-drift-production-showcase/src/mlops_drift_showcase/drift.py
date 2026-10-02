@@ -33,7 +33,22 @@ def compute_drift_report(
     ks_alpha: float = 0.05,
     psi_threshold: float = 0.2,
 ) -> pd.DataFrame:
-    """Return per-feature KS and PSI drift signals."""
+    """Compare matching numeric features with at least two finite samples per dataset."""
+    if reference.shape[1] == 0:
+        raise ValueError("Drift evidence must contain features")
+    if (
+        not reference.columns.is_unique
+        or not incoming.columns.is_unique
+        or set(reference.columns) != set(incoming.columns)
+    ):
+        raise ValueError("Reference and incoming feature schemas must match without duplicates")
+    if len(reference) < 2 or len(incoming) < 2:
+        raise ValueError("Drift evidence requires at least two samples per dataset")
+    for frame in (reference, incoming):
+        if len(frame.select_dtypes(include="number").columns) != len(frame.columns):
+            raise ValueError("Drift evidence must contain finite numeric values")
+        if not np.isfinite(frame.to_numpy(dtype=float)).all():
+            raise ValueError("Drift evidence must contain finite numeric values")
     rows: list[dict[str, float | int | str]] = []
 
     for column in reference.columns:

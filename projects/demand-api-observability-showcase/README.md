@@ -15,7 +15,7 @@ cd projects/demand-api-observability-showcase
 make sync
 make train-demo
 make test
-make export-openapi
+make openapi-check
 make verify
 ```
 

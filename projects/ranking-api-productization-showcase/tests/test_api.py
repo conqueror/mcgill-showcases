@@ -1,24 +1,29 @@
 from __future__ import annotations
 
+import asyncio
 import importlib
 import io
 import json
 import logging
+import runpy
 import sys
 from pathlib import Path
 
 import lightgbm as lgb
 import numpy as np
+import pytest
 from fastapi.testclient import TestClient
+from numpy.typing import NDArray
 from pytest import MonkeyPatch
 
 from ranking_api_showcase.api.app import create_app
 from ranking_api_showcase.config import Settings, load_settings
 from ranking_api_showcase.logging import JsonFormatter
 from ranking_api_showcase.model.artifacts import load_artifacts
+from ranking_api_showcase.model.scoring import score as original_score
 
 
-def _write_test_artifacts(tmp_path: Path) -> Settings:
+def _write_test_artifacts(tmp_path: Path, feature_names: list[str] | None = None) -> Settings:
     artifacts_dir = tmp_path / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -26,8 +31,8 @@ def _write_test_artifacts(tmp_path: Path) -> Settings:
     feature_names_path = artifacts_dir / "feature_names.json"
     meta_path = artifacts_dir / "model_meta.json"
 
-    feature_names = ["x"]
-    matrix = np.asarray([[0.0], [1.0], [2.0], [3.0], [4.0]], dtype=np.float64)
+    feature_names = feature_names or ["x"]
+    matrix = np.asarray([[float(i)] * len(feature_names) for i in range(5)], dtype=np.float64)
     target = np.asarray([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float64)
 
     train_set = lgb.Dataset(matrix, label=target, feature_name=feature_names)
@@ -37,7 +42,7 @@ def _write_test_artifacts(tmp_path: Path) -> Settings:
             "metric": "l2",
             "verbosity": -1,
             "seed": 0,
-            "monotone_constraints": [1],
+            "monotone_constraints": [1] * len(feature_names),
             "min_data_in_leaf": 1,
         },
         train_set=train_set,
@@ -267,3 +272,73 @@ def test_load_artifacts_requires_files(tmp_path: Path) -> None:
         assert "Model file not found" in str(exc)
     else:
         raise AssertionError("Expected FileNotFoundError")
+
+
+@pytest.mark.parametrize("endpoint", ["/score", "/predict", "/rank"])
+def test_missing_feature_is_rejected(tmp_path: Path, endpoint: str) -> None:
+    client = TestClient(create_app(settings=_write_test_artifacts(tmp_path)))
+    response = client.post(endpoint, json={"records": [{"player_id": "p1", "features": {}}]})
+    assert response.status_code == 400
+    assert "missing feature keys" in response.json()["detail"]
+
+
+def test_omitted_features_are_rejected() -> None:
+    client = TestClient(create_app(load_model=False))
+    response = client.post("/score", json={"records": [{"player_id": "p1"}]})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("names", [["y", "x"], ["x", "x"], ["x"], ["x", "y", "z"]])
+def test_artifact_schema_must_match_booster(tmp_path: Path, names: list[str]) -> None:
+    settings = _write_test_artifacts(tmp_path, ["x", "y"])
+    settings.feature_names_path.write_text(json.dumps(names))
+    with pytest.raises(ValueError, match="schema|duplicate"):
+        load_artifacts(settings.model_path, settings.feature_names_path, settings.model_meta_path)
+
+
+def test_request_batch_size_is_bounded() -> None:
+    client = TestClient(create_app(load_model=False))
+    response = client.post(
+        "/score", json={"records": [{"player_id": "p", "features": {"x": 1.0}}] * 1001}
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("endpoint", ["/score", "/predict", "/rank"])
+def test_prediction_runs_outside_the_event_loop(
+    tmp_path: Path, monkeypatch: MonkeyPatch, endpoint: str
+) -> None:
+    module = importlib.import_module("ranking_api_showcase.api.app")
+
+    def checked_score(booster: lgb.Booster, matrix: NDArray[np.float64]) -> NDArray[np.float64]:
+        with pytest.raises(RuntimeError, match="no running event loop"):
+            asyncio.get_running_loop()
+        return original_score(booster, matrix)
+
+    monkeypatch.setattr(module, "score", checked_score)
+    client = TestClient(create_app(settings=_write_test_artifacts(tmp_path)))
+    response = client.post(endpoint, json={"records": [{"player_id": "p", "features": {"x": 1.0}}]})
+    assert response.status_code == 200
+
+
+def test_openapi_declares_error_responses() -> None:
+    spec = create_app(load_model=False).openapi()
+    for endpoint in ("/score", "/predict", "/rank"):
+        assert {"400", "503"} <= set(spec["paths"][endpoint]["post"]["responses"])
+    assert "503" in spec["paths"]["/model/schema"]["get"]["responses"]
+
+
+@pytest.mark.parametrize("filename", ["model.txt", "feature_names.json", "model_meta.json"])
+def test_verifier_rejects_corrupt_artifacts(
+    tmp_path: Path, monkeypatch: MonkeyPatch, filename: str
+) -> None:
+    _write_test_artifacts(tmp_path)
+    script = Path(__file__).resolve().parents[1] / "scripts/verify_artifacts.py"
+    verify = runpy.run_path(str(script))["main"]
+    monkeypatch.setitem(
+        verify.__globals__, "__file__", str(tmp_path / "scripts/verify_artifacts.py")
+    )
+    verify()
+    (tmp_path / "artifacts" / filename).write_text("broken artifact")
+    with pytest.raises(SystemExit):
+        verify()

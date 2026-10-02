@@ -44,6 +44,7 @@ def run_stream_pipeline(
                 "event_count": values["event_count"],
             }
             for window, values in sorted(aggregates.items())
-        ]
+        ],
+        columns=["window", "total_value", "event_count"],
     )
     return StreamResult(window_kpis=out, dropped_late_events=dropped)

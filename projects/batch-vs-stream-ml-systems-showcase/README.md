@@ -1,6 +1,6 @@
 # Batch vs Stream ML Systems Showcase
 
-Compare offline batch and near-real-time stream KPI processing on the same event data.
+Compare offline batch and simulated near-real-time stream KPI processing on the same event data.
 
 ## Learning outcomes
 - Understand event-time vs arrival-time behavior.

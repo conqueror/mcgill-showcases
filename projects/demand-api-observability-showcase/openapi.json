@@ -181,6 +181,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Model not loaded"
           }
         },
         "summary": "Predict"

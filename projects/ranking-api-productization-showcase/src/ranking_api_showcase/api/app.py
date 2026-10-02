@@ -4,9 +4,10 @@ import logging
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
+from fastapi import Request as FastAPIRequest
 from fastapi.responses import JSONResponse
 from starlette.responses import Response
 
@@ -24,7 +25,17 @@ from ranking_api_showcase.logging import configure_logging
 from ranking_api_showcase.model.artifacts import ModelArtifacts, load_artifacts
 from ranking_api_showcase.model.scoring import argsort_desc, build_feature_matrix, score
 
+# FastAPI requires the concrete Request class when evaluating route annotations.
+if TYPE_CHECKING:
+    Request = FastAPIRequest[Any]
+else:
+    Request = FastAPIRequest
+
 logger = logging.getLogger(__name__)
+PREDICTION_ERRORS: dict[int | str, dict[str, Any]] = {
+    400: {"description": "Invalid model features"},
+    503: {"description": "Model not loaded"},
+}
 
 
 def _get_trace_id(request: Request) -> str:
@@ -128,13 +139,17 @@ def create_app(settings: Settings | None = None, *, load_model: bool = True) -> 
         artifacts = cast(ModelArtifacts | None, getattr(request.app.state, "artifacts", None))
         return HealthResponse(status="ok", model_loaded=artifacts is not None)
 
-    @app.get("/model/schema", response_model=ModelSchemaResponse)
+    @app.get(
+        "/model/schema",
+        response_model=ModelSchemaResponse,
+        responses={503: {"description": "Model not loaded"}},
+    )
     async def model_schema(request: Request) -> ModelSchemaResponse:
         artifacts = _require_artifacts(request.app)
         return ModelSchemaResponse(feature_names=artifacts.feature_names, meta=artifacts.meta)
 
-    @app.post("/score", response_model=ScoreResponse)
-    async def score_endpoint(request: Request, payload: ScoreRequest) -> ScoreResponse:
+    @app.post("/score", response_model=ScoreResponse, responses=PREDICTION_ERRORS)
+    def score_endpoint(request: Request, payload: ScoreRequest) -> ScoreResponse:
         artifacts = _require_artifacts(request.app)
         try:
             matrix = build_feature_matrix(
@@ -152,12 +167,12 @@ def create_app(settings: Settings | None = None, *, load_model: bool = True) -> 
             ]
         )
 
-    @app.post("/predict", response_model=ScoreResponse)
-    async def predict_endpoint(request: Request, payload: ScoreRequest) -> ScoreResponse:
-        return await score_endpoint(request, payload)
+    @app.post("/predict", response_model=ScoreResponse, responses=PREDICTION_ERRORS)
+    def predict_endpoint(request: Request, payload: ScoreRequest) -> ScoreResponse:
+        return score_endpoint(request, payload)
 
-    @app.post("/rank", response_model=RankResponse)
-    async def rank_endpoint(request: Request, payload: ScoreRequest) -> RankResponse:
+    @app.post("/rank", response_model=RankResponse, responses=PREDICTION_ERRORS)
+    def rank_endpoint(request: Request, payload: ScoreRequest) -> RankResponse:
         artifacts = _require_artifacts(request.app)
 
         try:

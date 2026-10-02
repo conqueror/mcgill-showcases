@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 
 import pandas as pd
+import pytest
 
 from mlops_drift_showcase.drift import compute_drift_report
 
@@ -24,3 +25,23 @@ def test_constant_feature_does_not_break_psi_binning() -> None:
     assert report.shape[0] == 1
     psi_value = float(report.loc[0, "psi"])
     assert math.isfinite(psi_value)
+
+
+@pytest.mark.parametrize(
+    "reference,incoming",
+    [
+        (pd.DataFrame({"x": [0.0, 1.0]}), pd.DataFrame({"y": [0.0, 1.0]})),
+        (pd.DataFrame({"x": [0.0, 1.0]}), pd.DataFrame({"x": [0.0, float("nan")]})),
+        (pd.DataFrame({"x": [0.0, float("inf")]}), pd.DataFrame({"x": [0.0, 1.0]})),
+        (pd.DataFrame({"x": [0.0]}), pd.DataFrame({"x": [0.0, 1.0]})),
+        (pd.DataFrame({"x": [0.0, 1.0]}), pd.DataFrame({"x": []})),
+        (pd.DataFrame(index=[0, 1]), pd.DataFrame(index=[0, 1])),
+        (
+            pd.DataFrame([[0, 1], [2, 3]], columns=["x", "x"]),
+            pd.DataFrame([[0, 1], [2, 3]], columns=["x", "x"]),
+        ),
+    ],
+)
+def test_drift_rejects_invalid_evidence(reference: pd.DataFrame, incoming: pd.DataFrame) -> None:
+    with pytest.raises(ValueError, match="schema|finite|samples|features"):
+        compute_drift_report(reference, incoming)

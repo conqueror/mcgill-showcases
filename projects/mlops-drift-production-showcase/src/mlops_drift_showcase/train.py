@@ -9,7 +9,6 @@ import numpy.typing as npt
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -18,16 +17,11 @@ def train_and_evaluate(
     features: pd.DataFrame,
     target: pd.Series,
     *,
+    test_features: pd.DataFrame,
+    test_target: pd.Series,
     random_state: int = 42,
 ) -> tuple[Pipeline, pd.DataFrame, pd.DataFrame]:
-    """Train a baseline model and return metrics plus holdout predictions."""
-    x_train, x_test, y_train, y_test = train_test_split(
-        features,
-        target,
-        test_size=0.25,
-        random_state=random_state,
-        stratify=target,
-    )
+    """Fit the supplied training partition and evaluate the supplied held-out partition."""
 
     model = Pipeline(
         steps=[
@@ -35,34 +29,34 @@ def train_and_evaluate(
             ("clf", LogisticRegression(max_iter=400, random_state=random_state)),
         ]
     )
-    model.fit(x_train, y_train)
+    model.fit(features, target)
 
-    probs = model.predict_proba(x_test)[:, 1]
+    probs = model.predict_proba(test_features)[:, 1]
     preds = (probs >= 0.5).astype(int)
 
     metrics = pd.DataFrame(
         [
             {
                 "metric": "roc_auc",
-                "value": float(roc_auc_score(y_test, probs)),
+                "value": float(roc_auc_score(test_target, probs)),
             },
             {
                 "metric": "accuracy",
-                "value": float(accuracy_score(y_test, preds)),
+                "value": float(accuracy_score(test_target, preds)),
             },
             {
                 "metric": "n_train",
-                "value": float(len(x_train)),
+                "value": float(len(features)),
             },
             {
                 "metric": "n_test",
-                "value": float(len(x_test)),
+                "value": float(len(test_features)),
             },
         ]
     )
 
-    holdout = x_test.copy()
-    holdout["y_true"] = y_test.to_numpy()
+    holdout = test_features.copy()
+    holdout["y_true"] = test_target.to_numpy()
     holdout["y_pred_proba"] = probs
     holdout["y_pred"] = preds
     return model, metrics, holdout

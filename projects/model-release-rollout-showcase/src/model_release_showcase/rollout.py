@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 
+import numpy as np
 import pandas as pd
 
 
@@ -18,6 +20,12 @@ def evaluate_canary(
     min_gain: float,
     max_regression: float,
 ) -> DecisionResult:
+    """Compare means of finite, nonempty scores for a higher-is-better metric."""
+    if any(not isfinite(value) or value < 0 for value in (min_gain, max_regression)):
+        raise ValueError("Decision thresholds must be finite and nonnegative")
+    for scores in (champion_scores, challenger_scores):
+        if scores.empty or not np.isfinite(scores).all():
+            raise ValueError("Canary scores must be finite and nonempty")
     champ_mean = float(champion_scores.mean())
     chall_mean = float(challenger_scores.mean())
     delta = chall_mean - champ_mean

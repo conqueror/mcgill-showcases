@@ -18,15 +18,15 @@ from demand_api_observability_showcase.model.features import features_from_datet
 
 
 def _build_demo_dataset() -> tuple[pd.DataFrame, pd.Series]:
-    """Build a deterministic synthetic hourly demand dataset."""
+    """Build a deterministic synthetic hourly demand dataset in chronological order."""
 
     rng = np.random.default_rng(19)
     rows: list[dict[str, int]] = []
     targets: list[float] = []
 
-    for zone in range(1, 35):
+    for day in range(7):
         for hour in range(24):
-            for day in range(7):
+            for zone in range(1, 35):
                 dt = datetime(2026, 2, day + 1, hour, 0, 0)
                 features = features_from_datetime(zone, dt)
                 is_peak = hour in {7, 8, 9, 16, 17, 18}
@@ -49,6 +49,8 @@ def train_demo_model(out_dir: Path) -> None:
 
     frame, target = _build_demo_dataset()
     split = int(frame.shape[0] * 0.8)
+    # Keep all zones from the same hour on one side of the chronological split.
+    split -= split % frame["pickup_zone_id"].nunique()
 
     x_train = frame.iloc[:split].copy()
     y_train = target.iloc[:split].copy()

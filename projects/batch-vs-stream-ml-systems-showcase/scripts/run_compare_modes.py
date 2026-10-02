@@ -53,7 +53,7 @@ def main() -> None:
     parity.to_csv(parity_path, index=False)
 
     summary_lines = [
-        "# Latency and Throughput Summary",
+        "# Processing Time and Event Count Summary",
         "",
         f"- events_processed: {len(events)}",
         f"- batch_latency_ms: {batch_latency_ms:.3f}",

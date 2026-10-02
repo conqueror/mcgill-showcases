@@ -100,7 +100,8 @@
           }
         },
         "required": [
-          "player_id"
+          "player_id",
+          "features"
         ],
         "title": "PlayerRecord",
         "type": "object"
@@ -145,6 +146,7 @@
             "items": {
               "$ref": "#/components/schemas/PlayerRecord"
             },
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Records",
             "type": "array"
@@ -251,6 +253,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "description": "Model not loaded"
           }
         },
         "summary": "Model Schema"
@@ -280,6 +285,9 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "Invalid model features"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -289,6 +297,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Model not loaded"
           }
         },
         "summary": "Predict Endpoint"
@@ -318,6 +329,9 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "Invalid model features"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -327,6 +341,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Model not loaded"
           }
         },
         "summary": "Rank Endpoint"
@@ -356,6 +373,9 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "Invalid model features"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -365,6 +385,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "Model not loaded"
           }
         },
         "summary": "Score Endpoint"
