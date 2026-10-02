@@ -159,9 +159,9 @@ Verified commands:
 - `cd projects/adaptive-course-assistant-rl-showcase && make verify-full`
 - `cd projects/agentic-course-assistant-showcase && make smoke`
 - `cd projects/agentic-course-assistant-showcase && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && make docs-check`
-- `cd /Users/fatih/dev/mcgill-showcases && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && git diff --check`
+- `cd <repo> && make docs-check`
+- `cd <repo> && make verify`
+- `cd <repo> && git diff --check`
 
 Observed outcomes:
 

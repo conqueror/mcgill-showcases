@@ -16,7 +16,7 @@ Some large generated artifacts are excluded from git to keep the repo lightweigh
 It runs lint, type checks, tests, and supervised contract checks across projects.
 
 ## What does `make check-contracts` do?
-It bootstraps missing supervised artifacts in quick mode and then validates required train/val/test split manifests, EDA outputs, leakage reports, and experiment logs.
+It regenerates missing or stale supervised artifacts, then checks split metadata, table structure and values, experiment logs, and source/configuration and output hashes. It does not prove the models are leakage-free.
 
 ## Do supervised showcases always enforce train/val/test instead of train/test?
 Yes. Supervised showcase contracts enforce explicit `train_rows`, `val_rows`, and `test_rows` in split manifests.

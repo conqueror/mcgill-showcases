@@ -9,7 +9,7 @@
 ```bash
 git clone git@github.com:conqueror/mcgill-showcases.git
 cd mcgill-showcases
-make sync
+make -C projects/sota-supervised-learning-showcase sync
 ```
 
 ## Pick Your First Project
@@ -44,7 +44,7 @@ make help
 Then run the recommended quickstart in that project's README.
 
 ## Recommended Root Checks
-After your first project run, validate the repository-level workflow:
+Use your project's Makefile for its checks. The root commands below check the whole collection and require all project environments and generated artifacts. Harness commands are optional contributor tooling.
 
 ```bash
 make check-contracts
@@ -55,9 +55,9 @@ make harness-preflight
 make harness-lint
 ```
 
-- `make check-contracts` regenerates missing supervised artifacts in quick mode and validates contract files.
+- `make check-contracts` regenerates missing or stale supervised artifacts and checks their structure and source/configuration and output hashes.
 - `make check` runs lint, type checks, tests, and contract verification across projects.
-- `make verify` validates per-project artifact manifests where available.
+- `make verify` checks generated artifacts across all projects and fails when required outputs are missing.
 - `make docs-check` runs a strict MkDocs Material build for docs consistency.
 - `make harness-preflight` and `make harness-lint` validate the repo-local public harness-lite bootstrap.
 

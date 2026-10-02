@@ -136,8 +136,8 @@ Additional implementation and verification commands:
 - `cd projects/modern-nlp-pipeline-showcase && make smoke`
 - `cd projects/modern-nlp-pipeline-showcase && make run`
 - `cd projects/modern-nlp-pipeline-showcase && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && make docs-check`
+- `cd <repo> && make verify`
+- `cd <repo> && make docs-check`
 
 Observed outcome summary:
 

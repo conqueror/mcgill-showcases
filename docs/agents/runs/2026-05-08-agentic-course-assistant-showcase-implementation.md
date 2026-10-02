@@ -181,9 +181,9 @@ Verified commands:
 - `cd projects/agentic-course-assistant-showcase && make check`
 - `cd projects/agentic-course-assistant-showcase && make smoke`
 - `cd projects/agentic-course-assistant-showcase && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && make docs-check`
-- `cd /Users/fatih/dev/mcgill-showcases && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && git diff --check`
+- `cd <repo> && make docs-check`
+- `cd <repo> && make verify`
+- `cd <repo> && git diff --check`
 - `cd projects/agentic-course-assistant-showcase && uv lock`
 - `cd projects/agentic-course-assistant-showcase && make sync-live`
 - `cd projects/agentic-course-assistant-showcase && uv run python -c "from agentic_course_assistant.openai_agents_example import triage_agent; from agentic_course_assistant.google_adk_example import root_agent; print(triage_agent.name); print(root_agent.name)"`

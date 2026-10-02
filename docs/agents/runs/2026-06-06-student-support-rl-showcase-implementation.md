@@ -2,7 +2,7 @@
 
 ## 1) Intake Synthesis
 
-- Primary instruction: spawn multiple subagents and use `core-harness-flow` to plan, implement, review, and test `/Users/fatih/dev/McGill/agentic-ai/assignment-2-drl-showcase-agent-instructions.md`.
+- Primary instruction: spawn multiple subagents and use `core-harness-flow` to plan, implement, review, and test `<course-docs>/assignment-2-drl-showcase-agent-instructions.md`.
 - User-requested harness mode: `core-harness-flow`.
 - Delivery intent: implement a new student-facing RL showcase for Assignment 2 inside `mcgill-showcases`, including repo-local evidence and root integration.
 
@@ -35,11 +35,11 @@ Rationale:
 ## 4) Context Pack and Provenance
 
 - Assignment brief:
-  - `/Users/fatih/dev/McGill/agentic-ai/assignment-2-drl-showcase-agent-instructions.md`
+  - `<course-docs>/assignment-2-drl-showcase-agent-instructions.md`
 - Course concept source:
-  - `/Users/fatih/dev/McGill/agentic-ai/deep-reinforcement-learning-agentic-ai-deckset.md`
+  - `<course-docs>/deep-reinforcement-learning-agentic-ai-deckset.md`
 - Assignment rubric source:
-  - `/Users/fatih/dev/McGill/agentic-ai/mgsc-695-agentic-ai-assignments.docx`
+  - `<course-docs>/mgsc-695-agentic-ai-assignments.docx`
 - Active design spec:
   - `docs/superpowers/specs/2026-06-06-student-support-rl-showcase-design.md`
 - Active implementation plan:
@@ -150,9 +150,9 @@ Verified commands:
 - `cd projects/student-support-rl-showcase && make run`
 - `cd projects/student-support-rl-showcase && make check`
 - `cd projects/student-support-rl-showcase && uv run --extra drl python scripts/run_drl_optional.py --quick`
-- `cd /Users/fatih/dev/mcgill-showcases && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && make docs-check`
-- `cd /Users/fatih/dev/mcgill-showcases && git diff --check`
+- `cd <repo> && make verify`
+- `cd <repo> && make docs-check`
+- `cd <repo> && git diff --check`
 
 Observed outcomes:
 

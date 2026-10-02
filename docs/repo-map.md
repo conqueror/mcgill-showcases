@@ -10,7 +10,7 @@
 - `docs/aspect-coverage-matrix.md`: canonical mapping from requested ML aspects to showcase evidence artifacts.
 - `docs/showcase-architecture.md`: track-level map of in-repo showcase architecture.
 - `docs/new-showcase-playbook.md`: strict contributor checklist for adding new projects.
-- `docs/requirements-mkdocs.txt`: pinned docs site dependencies.
+- `docs/requirements-mkdocs.txt`: minimum versions for docs site dependencies.
 - `.github/`: issue templates, PR template, CI workflows.
 - `shared/contracts/`: JSON schemas for cross-project artifact contracts.
 - `shared/config/`: project-level contract registries (including supervised artifact bootstrap commands).

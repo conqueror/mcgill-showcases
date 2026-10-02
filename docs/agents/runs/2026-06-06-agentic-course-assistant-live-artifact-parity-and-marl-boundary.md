@@ -167,9 +167,9 @@ Verified commands:
 - `cd projects/agentic-course-assistant-showcase && make verify`
 - `cd projects/agentic-course-assistant-showcase && uv run python scripts/run_openai_showcase.py --question "How should I debug a suspicious validation score?"`
 - `cd projects/learning-agents-showcase && make check`
-- `cd /Users/fatih/dev/mcgill-showcases && make docs-check`
-- `cd /Users/fatih/dev/mcgill-showcases && make verify`
-- `cd /Users/fatih/dev/mcgill-showcases && git diff --check`
+- `cd <repo> && make docs-check`
+- `cd <repo> && make verify`
+- `cd <repo> && git diff --check`
 
 Observed outcomes:
 

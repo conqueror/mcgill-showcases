@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.pipeline import Pipeline
 
 
 def run_shap_importance(
@@ -23,7 +25,10 @@ def run_shap_importance(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    explainer = shap.Explainer(model, x_eval)
+    shap_model = (
+        getattr(model, "predict_proba", model.predict) if isinstance(model, Pipeline) else model
+    )
+    explainer = shap.Explainer(shap_model, x_eval)
     shap_values = explainer(x_eval)
     values = np.asarray(shap_values.values)
 
@@ -42,15 +47,16 @@ def run_shap_importance(
 
 
 def run_lime_local_explanations(
-    model_predict_proba: callable,
+    model_predict_proba: Callable[[np.ndarray], np.ndarray],
     x_train: pd.DataFrame,
     x_eval: pd.DataFrame,
     *,
     output_path: Path,
     class_names: list[str] | None = None,
     n_rows: int = 10,
+    random_state: int = 42,
 ) -> str:
-    """Write sample-level LIME explanation weights for classification models."""
+    """Write sample-level LIME weights and the random seed for classification models."""
 
     try:
         from lime.lime_tabular import LimeTabularExplainer
@@ -67,6 +73,7 @@ def run_lime_local_explanations(
         feature_names=[str(c) for c in x_train.columns],
         class_names=class_names,
         mode="classification",
+        random_state=random_state,
     )
 
     rows: list[dict[str, float | int | str]] = []
@@ -83,6 +90,7 @@ def run_lime_local_explanations(
                     "feature": feature_name,
                     "weight": float(weight),
                     "abs_weight": float(abs(weight)),
+                    "random_state": random_state,
                 }
             )
 

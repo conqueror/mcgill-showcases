@@ -88,7 +88,9 @@ def run_leakage_checks(frame: pd.DataFrame, target: pd.Series, split: SplitBundl
     """Run leakage checks and return a normalized diagnostics table.
 
     The output is written to ``artifacts/leakage/leakage_report.csv`` by
-    contract-writing helpers.
+    contract-writing helpers. Checks cover target copies, near-perfect numeric
+    target correlation, and duplicate feature rows across splits. A report without
+    findings does not establish feature availability at prediction time or label maturity.
     """
 
     rows = _exact_target_leakage(frame, target)

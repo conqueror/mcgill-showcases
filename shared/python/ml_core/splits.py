@@ -133,9 +133,12 @@ def _split_timeseries(
     val_size: float,
     test_size: float,
 ) -> SplitBundle3:
-    order = np.argsort(time_values.to_numpy())
+    if time_values.isna().any():
+        raise ValueError("time_values must not contain missing timestamps.")
+    order = np.argsort(time_values.to_numpy(), kind="stable")
     ordered_x = frame.iloc[order]
     ordered_y = target.iloc[order]
+    ordered_times = time_values.iloc[order].to_numpy()
 
     n_total = len(ordered_x)
     n_test = max(1, int(round(n_total * test_size)))
@@ -144,12 +147,19 @@ def _split_timeseries(
     if n_train <= 0:
         raise ValueError("Not enough rows for train/val/test split with requested sizes.")
 
-    x_train = ordered_x.iloc[:n_train]
-    y_train = ordered_y.iloc[:n_train]
-    x_val = ordered_x.iloc[n_train : n_train + n_val]
-    y_val = ordered_y.iloc[n_train : n_train + n_val]
-    x_test = ordered_x.iloc[n_train + n_val :]
-    y_test = ordered_y.iloc[n_train + n_val :]
+    boundaries = np.flatnonzero(ordered_times[1:] != ordered_times[:-1]) + 1
+    if len(boundaries) < 2:
+        raise ValueError("At least three distinct timestamps are required for train/val/test.")
+    train_end = int(boundaries[:-1][np.argmin(abs(boundaries[:-1] - n_train))])
+    later_boundaries = boundaries[boundaries > train_end]
+    val_end = int(later_boundaries[np.argmin(abs(later_boundaries - (n_train + n_val)))])
+
+    x_train = ordered_x.iloc[:train_end]
+    y_train = ordered_y.iloc[:train_end]
+    x_val = ordered_x.iloc[train_end:val_end]
+    y_val = ordered_y.iloc[train_end:val_end]
+    x_test = ordered_x.iloc[val_end:]
+    y_test = ordered_y.iloc[val_end:]
 
     return SplitBundle3(
         x_train=x_train,
@@ -183,6 +193,7 @@ def build_supervised_split(
         test_size: Test ratio in (0, 1).
         groups: Optional group IDs for ``group`` strategy.
         time_values: Optional sortable timestamps for ``timeseries`` strategy.
+            Equal timestamps stay in one partition; ratios are approximate when tied.
 
     Returns:
         SplitBundle3 containing disjoint train/val/test partitions.
@@ -250,6 +261,8 @@ def split_manifest_dict(
 
     The returned dictionary is written to ``artifacts/splits/split_manifest.json``
     by pipeline scripts and consumed by contract validation tooling.
+    ``no_overlap_checks_passed`` checks row indices only. It does not certify
+    group isolation, timestamp boundaries, or feature availability at prediction time.
     """
 
     return {
