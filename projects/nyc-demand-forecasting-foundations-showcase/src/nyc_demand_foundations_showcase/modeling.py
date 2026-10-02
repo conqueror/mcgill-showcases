@@ -83,6 +83,17 @@ def train_forecaster(
         _metric_row("val", y_val.to_numpy(dtype=np.float64), val_pred),
         _metric_row("test", y_test.to_numpy(dtype=np.float64), test_pred),
     ]
+    for row in rows:
+        row["model"] = "lightgbm"
+    last_counts = (
+        split.train.sort_values("pickup_hour")
+        .groupby("pickup_zone_id")[split.target_column].last()
+    )
+    for name, frame in [("val", split.val), ("test", split.test)]:
+        naive_pred = frame["pickup_zone_id"].map(last_counts).to_numpy(dtype=np.float64)
+        row = _metric_row(name, frame[split.target_column].to_numpy(dtype=np.float64), naive_pred)
+        row["model"] = "last_train_naive"
+        rows.append(row)
 
     return TrainingOutput(
         model=model,

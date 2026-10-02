@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from causal_showcase.diagnostics import covariate_balance_table, propensity_diagnostics
 
@@ -42,3 +43,14 @@ def test_propensity_diagnostics_returns_valid_metrics() -> None:
     assert diagnostics.scores.shape[0] == n
     assert 0.0 <= diagnostics.auc <= 1.0
     assert 0.0 <= diagnostics.overlap_share <= 1.0
+
+
+def test_smd_distinguishes_constant_separation_from_balance() -> None:
+    table = covariate_balance_table(
+        pd.DataFrame({"separated": [0, 0, 1, 1], "equal": [3, 3, 3, 3],
+                      "varying": [0, 2, 2, 4]}), np.array([0, 0, 1, 1]),
+    ).set_index("feature")
+    assert table.loc["separated", "standardized_mean_difference"] == float("inf")
+    assert table.loc["equal", "standardized_mean_difference"] == 0.0
+    # Means 1 and 3; each sample variance is 2. SMD = (3 - 1)/sqrt(2) = sqrt(2).
+    assert table.loc["varying", "standardized_mean_difference"] == pytest.approx(np.sqrt(2))

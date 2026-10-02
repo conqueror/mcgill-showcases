@@ -41,7 +41,7 @@ def local_linear_contributions(
     *,
     n_rows: int = 25,
 ) -> pd.DataFrame:
-    """Approximate local feature contributions for a linear model pipeline."""
+    """Exact additive log-odds terms, including the intercept, for this logistic pipeline."""
     scaler = model.named_steps["scaler"]
     clf = model.named_steps["clf"]
     transformed = scaler.transform(x_eval.iloc[:n_rows])
@@ -50,6 +50,9 @@ def local_linear_contributions(
 
     rows: list[dict[str, float | int | str]] = []
     for idx, contrib_row in enumerate(contributions):
+        intercept = float(clf.intercept_[0])
+        rows.append({"sample_id": idx, "feature": "intercept", "contribution": intercept,
+                     "abs_contribution": abs(intercept)})
         for feat_name, value in zip(x_eval.columns, contrib_row, strict=True):
             rows.append(
                 {

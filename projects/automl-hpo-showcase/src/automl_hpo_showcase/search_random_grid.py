@@ -10,15 +10,23 @@ from automl_hpo_showcase.search_space import GRID_SPACE
 
 def run_grid_search(*, budget: int, random_state: int = 42) -> pd.DataFrame:
     rows: list[dict[str, float | int | str]] = []
-    for trial_id, (n_estimators, max_depth, min_samples_split) in enumerate(
+    # Cycle all levels before revisiting them, so short budgets cover each parameter.
+    for trial_id, (depth_offset, split_offset, tree_index) in enumerate(
         product(
-            GRID_SPACE["n_estimators"],
-            GRID_SPACE["max_depth"],
-            GRID_SPACE["min_samples_split"],
+            range(len(GRID_SPACE["max_depth"])),
+            range(len(GRID_SPACE["min_samples_split"])),
+            range(len(GRID_SPACE["n_estimators"])),
         )
     ):
         if trial_id >= budget:
             break
+        n_estimators = GRID_SPACE["n_estimators"][tree_index]
+        max_depth = GRID_SPACE["max_depth"][
+            (tree_index + depth_offset) % len(GRID_SPACE["max_depth"])
+        ]
+        min_samples_split = GRID_SPACE["min_samples_split"][
+            (tree_index + split_offset) % len(GRID_SPACE["min_samples_split"])
+        ]
         score = score_config(
             n_estimators=n_estimators,
             max_depth=max_depth,

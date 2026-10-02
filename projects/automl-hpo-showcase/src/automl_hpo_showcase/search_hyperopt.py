@@ -1,30 +1,19 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from automl_hpo_showcase.objective import score_config
+from automl_hpo_showcase.search_space import GRID_SPACE
 
 
 def run_hyperopt_search(*, budget: int, seed: int = 42) -> pd.DataFrame:
     try:
         from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
-    except Exception:
-        return pd.DataFrame(
-            columns=[
-                "strategy",
-                "trial_id",
-                "n_estimators",
-                "max_depth",
-                "min_samples_split",
-                "score",
-            ]
-        )
+    except ImportError as exc:
+        raise RuntimeError("Hyperopt was requested but could not be imported.") from exc
 
-    space = {
-        "n_estimators": hp.quniform("n_estimators", 30, 150, 1),
-        "max_depth": hp.quniform("max_depth", 2, 12, 1),
-        "min_samples_split": hp.quniform("min_samples_split", 2, 12, 1),
-    }
+    space = {name: hp.choice(name, values) for name, values in GRID_SPACE.items()}
 
     trials = Trials()
 
@@ -46,7 +35,7 @@ def run_hyperopt_search(*, budget: int, seed: int = 42) -> pd.DataFrame:
         algo=tpe.suggest,
         max_evals=budget,
         trials=trials,
-        rstate=None,
+        rstate=np.random.default_rng(seed),
         show_progressbar=False,
     )
 
@@ -58,9 +47,11 @@ def run_hyperopt_search(*, budget: int, seed: int = 42) -> pd.DataFrame:
             {
                 "strategy": "hyperopt_tpe",
                 "trial_id": trial_id,
-                "n_estimators": int(vals["n_estimators"][0]),
-                "max_depth": int(vals["max_depth"][0]),
-                "min_samples_split": int(vals["min_samples_split"][0]),
+                "n_estimators": GRID_SPACE["n_estimators"][int(vals["n_estimators"][0])],
+                "max_depth": GRID_SPACE["max_depth"][int(vals["max_depth"][0])],
+                "min_samples_split": GRID_SPACE["min_samples_split"][
+                    int(vals["min_samples_split"][0])
+                ],
                 "score": score,
             }
         )

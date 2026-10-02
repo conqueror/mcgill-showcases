@@ -17,7 +17,7 @@ By the end of this project, you should be able to:
 - explain why a fixed 5-minute budget makes experiments comparable,
 - interpret `val_bpb` as the keep-or-discard metric,
 - compare the macOS and Unix variants of autoresearch,
-- decide when a change is worth keeping based on quality, memory, and complexity,
+- decide when a change is worth keeping based on quality and complexity; memory is recorded for discussion,
 - launch a real Codex or Claude Code run against the upstream repo for your platform.
 
 ## Quickstart

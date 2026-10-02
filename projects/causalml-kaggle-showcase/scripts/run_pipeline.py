@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
 import pandas as pd
 import typer
 from sklearn.linear_model import LogisticRegression
@@ -16,7 +17,7 @@ from causal_showcase.config import (
     REPORT_PATH,
     TREE_SUMMARY_PATH,
 )
-from causal_showcase.data import load_marketing_ab_data, train_test_split_prepared
+from causal_showcase.data import PreparedData, load_marketing_ab_data, train_val_test_split_prepared
 from causal_showcase.evaluation import estimate_empirical_ate, qini_auc, qini_curve, uplift_at_k
 from causal_showcase.modeling import fit_meta_learners, fit_uplift_tree
 from causal_showcase.plots import plot_qini_curves, plot_uplift_distribution
@@ -55,66 +56,85 @@ def main(
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
     prepared = load_marketing_ab_data(data_path)
-    train_data, test_data = train_test_split_prepared(prepared)
+    train_data, val_data, test_data = train_val_test_split_prepared(prepared)
+    evaluation_data = PreparedData(
+        X=pd.concat([val_data.X, test_data.X], ignore_index=True),
+        treatment=np.r_[val_data.treatment, test_data.treatment],
+        outcome=np.r_[val_data.outcome, test_data.outcome],
+        feature_names=prepared.feature_names,
+    )
+    n_val = len(val_data.X)
 
     baseline_ate = estimate_empirical_ate(test_data.outcome, test_data.treatment)
 
-    learner_results = fit_meta_learners(train_data, test_data)
-    tree_result = fit_uplift_tree(train_data, test_data)
+    learner_results = fit_meta_learners(train_data, evaluation_data)
+    tree_result = fit_uplift_tree(train_data, evaluation_data)
 
     summary_rows: list[dict[str, float | str]] = []
     curves: dict[str, pd.DataFrame] = {}
 
     for learner_name, result in learner_results.items():
-        curve = qini_curve(test_data.outcome, test_data.treatment, result.uplift_scores)
+        test_scores = result.uplift_scores[n_val:]
+        curve = qini_curve(test_data.outcome, test_data.treatment, test_scores)
         curves[learner_name] = curve
 
         summary_rows.append(
             {
                 "model": learner_name,
                 "baseline_empirical_ate": baseline_ate,
+                "baseline_ate_population": "test",
                 "estimated_ate": result.ate,
+                "estimated_ate_population": "train",
                 "ate_ci_low": result.ate_ci_low,
                 "ate_ci_high": result.ate_ci_high,
                 "uplift_at_30pct": uplift_at_k(
                     test_data.outcome,
                     test_data.treatment,
-                    result.uplift_scores,
+                    test_scores,
                     top_fraction=0.30,
                 ),
                 "qini_auc": qini_auc(curve),
+                "validation_qini_auc": qini_auc(qini_curve(
+                    val_data.outcome, val_data.treatment, result.uplift_scores[:n_val],
+                )),
             }
         )
 
-    tree_curve = qini_curve(test_data.outcome, test_data.treatment, tree_result.uplift_scores)
+    tree_curve = qini_curve(test_data.outcome, test_data.treatment,
+                           tree_result.uplift_scores[n_val:])
     curves["Uplift Tree (KL)"] = tree_curve
     summary_rows.append(
         {
             "model": "Uplift Tree (KL)",
             "baseline_empirical_ate": baseline_ate,
+            "baseline_ate_population": "test",
             "estimated_ate": float("nan"),
+            "estimated_ate_population": "not_estimated",
             "ate_ci_low": float("nan"),
             "ate_ci_high": float("nan"),
             "uplift_at_30pct": uplift_at_k(
                 test_data.outcome,
                 test_data.treatment,
-                tree_result.uplift_scores,
+                tree_result.uplift_scores[n_val:],
                 top_fraction=0.30,
             ),
             "qini_auc": qini_auc(tree_curve),
+            "validation_qini_auc": qini_auc(qini_curve(
+                val_data.outcome, val_data.treatment, tree_result.uplift_scores[:n_val],
+            )),
         }
     )
 
-    summary_df = pd.DataFrame(summary_rows).sort_values("qini_auc", ascending=False)
+    summary_df = pd.DataFrame(summary_rows).sort_values("validation_qini_auc", ascending=False)
     summary_df.to_csv(REPORT_PATH, index=False)
 
     plot_qini_curves(curves, FIGURES_DIR / "qini_curves.png")
 
     best_model_name = str(summary_df.iloc[0]["model"])
     if best_model_name in learner_results:
-        best_scores = learner_results[best_model_name].uplift_scores
+        best_scores = learner_results[best_model_name].uplift_scores[n_val:]
     else:
-        best_scores = tree_result.uplift_scores
+        best_scores = tree_result.uplift_scores[n_val:]
     plot_uplift_distribution(
         best_scores,
         best_model_name,

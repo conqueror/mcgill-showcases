@@ -1,6 +1,6 @@
 # Platform Notes
 
-This showcase uses a unified learning flow, but the real upstream execution path depends on your hardware.
+These notes describe the upstream snapshots checked on 2026-03-13. This showcase does not recheck them during generation; the upstream execution path depends on your hardware.
 
 ## macOS track
 

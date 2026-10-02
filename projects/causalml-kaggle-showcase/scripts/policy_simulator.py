@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Annotated
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 import typer
 
 from causal_showcase.config import ARTIFACTS_DIR, FIGURES_DIR, RAW_DATA_PATH
-from causal_showcase.data import load_marketing_ab_data, train_test_split_prepared
+from causal_showcase.data import PreparedData, load_marketing_ab_data, train_val_test_split_prepared
 from causal_showcase.modeling import fit_meta_learners, fit_uplift_tree
 from causal_showcase.policy import select_best_model_per_budget, simulate_policy_table
 
@@ -55,21 +57,35 @@ def main(
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
     prepared = load_marketing_ab_data(data_path)
-    train_data, test_data = train_test_split_prepared(prepared)
+    train_data, val_data, test_data = train_val_test_split_prepared(prepared)
+    evaluation_data = PreparedData(
+        X=pd.concat([val_data.X, test_data.X], ignore_index=True),
+        treatment=np.r_[val_data.treatment, test_data.treatment],
+        outcome=np.r_[val_data.outcome, test_data.outcome],
+        feature_names=prepared.feature_names,
+    )
+    n_val = len(val_data.X)
 
-    learner_results = fit_meta_learners(train_data, test_data)
-    tree_result = fit_uplift_tree(train_data, test_data)
+    learner_results = fit_meta_learners(train_data, evaluation_data)
+    tree_result = fit_uplift_tree(train_data, evaluation_data)
 
     score_by_model = {name: result.uplift_scores for name, result in learner_results.items()}
     score_by_model["Uplift Tree (KL)"] = tree_result.uplift_scores
 
-    policy_df = simulate_policy_table(
-        y=test_data.outcome,
-        treatment=test_data.treatment,
-        score_by_model=score_by_model,
+    # Score on test rows only after freezing the per-budget winners on validation rows.
+    validation_df = simulate_policy_table(
+        y=val_data.outcome, treatment=val_data.treatment,
+        score_by_model={name: scores[:n_val] for name, scores in score_by_model.items()},
         budgets=budget_values,
     )
-    best_df = select_best_model_per_budget(policy_df)
+    best_validation = select_best_model_per_budget(validation_df)
+    policy_df = simulate_policy_table(
+        y=test_data.outcome, treatment=test_data.treatment,
+        score_by_model={name: scores[n_val:] for name, scores in score_by_model.items()},
+        budgets=budget_values,
+    )
+    best_df = policy_df.merge(best_validation[["model", "budget_fraction"]],
+                              on=["model", "budget_fraction"], how="inner")
 
     policy_csv = ARTIFACTS_DIR / "policy_simulation.csv"
     best_csv = ARTIFACTS_DIR / "policy_best_models.csv"

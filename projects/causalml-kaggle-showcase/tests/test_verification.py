@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib.image as mpimg
+import numpy as np
 import pandas as pd
+import pytest
 
 from causal_showcase.verification import verify_learning_artifacts
-
-PNG_BYTES = b"\x89PNG\r\n\x1a\nplaceholder"
 
 
 def _write_file(path: Path, content: bytes | str) -> None:
@@ -27,22 +28,25 @@ def _create_minimal_artifacts(
 
     _write_file(artifacts / "uplift_tree.txt", "root -> split -> leaf\n")
 
-    _write_file(figures / "qini_curves.png", PNG_BYTES)
-    _write_file(figures / "best_model_uplift_distribution.png", PNG_BYTES)
-    _write_file(figures / "policy_incremental_conversions.png", PNG_BYTES)
-    _write_file(figures / "propensity_overlap.png", PNG_BYTES)
+    figures.mkdir(parents=True, exist_ok=True)
+    for name in ["qini_curves", "best_model_uplift_distribution",
+                 "policy_incremental_conversions", "propensity_overlap"]:
+        mpimg.imsave(figures / f"{name}.png", np.ones((2, 2, 3)))
 
     if include_notebook_outputs:
-        _write_file(figures / "notebook_qini_curves.png", PNG_BYTES)
-        _write_file(figures / "notebook_shap_summary.png", PNG_BYTES)
+        mpimg.imsave(figures / "notebook_qini_curves.png", np.ones((2, 2, 3)))
+        mpimg.imsave(figures / "notebook_shap_summary.png", np.ones((2, 2, 3)))
 
     pd.DataFrame(
         {
             "model": ["S", "T", "X"],
             "baseline_empirical_ate": [0.02, 0.02, 0.02],
             "estimated_ate": [0.01, 0.02, 0.03],
+            "ate_ci_low": [0.0, 0.01, 0.02],
+            "ate_ci_high": [0.02, 0.03, 0.04],
             "uplift_at_30pct": [0.04, 0.05, 0.06],
             "qini_auc": [1.0, 1.1, 1.2],
+            "validation_qini_auc": [1.0, 1.1, 1.2],
         }
     ).to_csv(artifacts / "metrics_summary.csv", index=False)
 
@@ -120,3 +124,35 @@ def test_verify_learning_artifacts_requires_notebook_outputs_when_requested(tmp_
 
     assert result.passed is False
     assert any("notebook_qini_curves.png" in err for err in result.errors)
+
+
+def test_verifier_rejects_placeholder_png(tmp_path: Path) -> None:
+    _create_minimal_artifacts(tmp_path)
+    (tmp_path / "artifacts/figures/qini_curves.png").write_bytes(b"\x89PNG\r\n\x1a\nplaceholder")
+    result = verify_learning_artifacts(tmp_path)
+    assert not result.passed
+    assert any("qini_curves.png" in error for error in result.errors)
+
+
+@pytest.mark.parametrize("filename,column", [("metrics_summary.csv", "estimated_ate"),
+    ("metrics_summary.csv", "ate_ci_low"), ("metrics_summary.csv", "ate_ci_high"),
+    ("metrics_summary.csv", "validation_qini_auc"),
+    ("policy_simulation.csv", "uplift_rate"), ("propensity_scores.csv", "propensity_score")])
+def test_verifier_rejects_nonfinite_estimates(tmp_path: Path, filename: str, column: str) -> None:
+    _create_minimal_artifacts(tmp_path)
+    path = tmp_path / "artifacts" / filename
+    frame = pd.read_csv(path)
+    frame.loc[0, column] = float("nan")
+    frame.to_csv(path, index=False)
+    result = verify_learning_artifacts(tmp_path)
+    assert not result.passed
+    assert any(filename in error for error in result.errors)
+
+
+def test_verifier_rejects_missing_ate_interval_columns(tmp_path: Path) -> None:
+    _create_minimal_artifacts(tmp_path)
+    path = tmp_path / "artifacts/metrics_summary.csv"
+    pd.read_csv(path).drop(columns=["ate_ci_low", "ate_ci_high"]).to_csv(path, index=False)
+    result = verify_learning_artifacts(tmp_path)
+    assert not result.passed
+    assert any("ate_ci_low" in error for error in result.errors)

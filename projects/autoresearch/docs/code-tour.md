@@ -13,7 +13,7 @@ These keep the project explicit and easy to inspect.
 
 ## `src/autoresearch_showcase/platforms.py`
 
-Stores the grounded facts about the macOS and Unix upstream repos:
+Stores descriptions from the 2026-03-13 upstream snapshot; generation does not verify current upstream code:
 
 - repository URLs,
 - commit snapshots,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from causal_showcase.data import load_marketing_ab_data, train_test_split_prepared
 
@@ -55,3 +56,19 @@ def test_train_test_split_prepared_preserves_total_rows(tmp_path: Path) -> None:
 
     assert train_data.X.shape[0] + test_data.X.shape[0] == prepared.X.shape[0]
     assert len(train_data.feature_names) == len(prepared.feature_names)
+
+
+@pytest.mark.parametrize("column,value", [("test_group", "unknown"), ("converted", 2),
+                                          ("converted", 0.5), ("test_group", None)])
+def test_loader_rejects_invalid_assignments_and_outcomes(
+    tmp_path: Path, column: str, value: object,
+) -> None:
+    frame = pd.DataFrame({"test_group": ["ad", "psa"], "converted": [1, 0],
+                          "total_ads": [4, 2], "most_ads_day": ["Monday", "Tuesday"],
+                          "most_ads_hour": [18, 9]})
+    frame[column] = frame[column].astype(object)
+    frame.loc[0, column] = value
+    path = tmp_path / "marketing.csv"
+    frame.to_csv(path, index=False)
+    with pytest.raises(ValueError):
+        load_marketing_ab_data(path)

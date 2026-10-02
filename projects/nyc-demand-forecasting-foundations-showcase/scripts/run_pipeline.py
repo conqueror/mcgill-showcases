@@ -9,8 +9,11 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
 from datetime import UTC, datetime
+from importlib.metadata import version
 from pathlib import Path
 
 import joblib
@@ -92,11 +95,22 @@ def main() -> None:
     joblib.dump(output.model, model_dir / "model.joblib")
     model_meta = {
         "source": grouped_bundle.source,
-        "trained_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "seed": args.seed,
+        "quick": args.quick,
+        "data_sha256": hashlib.sha256(featured.to_csv(index=False).encode("utf-8")).hexdigest(),
+        "environment": {
+            "python": platform.python_version(),
+            "packages": {name: version(name) for name in
+                         ["numpy", "pandas", "lightgbm", "scikit-learn", "pyarrow", "joblib"]},
+        },
         "features": FEATURE_COLUMNS,
         "task": "demand_forecasting",
     }
     (model_dir / "model_meta.json").write_text(json.dumps(model_meta, indent=2), encoding="utf-8")
+    (model_dir / "run_meta.json").write_text(
+        json.dumps({"trained_at_utc": datetime.now(UTC).isoformat(timespec="seconds")}, indent=2),
+        encoding="utf-8",
+    )
 
     metrics_df = pd.DataFrame(output.metric_rows)
     metrics_df.to_csv(eval_dir / "metrics_summary.csv", index=False)
