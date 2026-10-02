@@ -38,3 +38,23 @@ def test_activation_comparison_table_has_stable_columns() -> None:
         "leaky_relu",
     ]
     assert table.shape == (3, 5)
+
+
+def test_leaky_relu_derivative_uses_the_forward_slope() -> None:
+    """A slope of 1/4 gives derivative 1/4 on the negative side."""
+
+    outputs = activations.leaky_relu(np.array([-2.0, 2.0]), slope=0.25)
+    np.testing.assert_allclose(
+        activations.activation_derivative("leaky_relu", outputs, slope=0.25),
+        [0.25, 1.0],
+    )
+
+
+def test_sigmoid_handles_large_negative_inputs_without_overflow() -> None:
+    """Extreme logits should still give probabilities in [0, 1]."""
+
+    with np.errstate(over="raise"):
+        np.testing.assert_allclose(
+            activations.sigmoid(np.array([-1000.0, 0.0, 1000.0])),
+            [0.0, 0.5, 1.0],
+        )

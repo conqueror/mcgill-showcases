@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -34,35 +35,48 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def required_artifact_files() -> list[str]:
+def required_artifact_files(output_dir: Path | None = None) -> list[str]:
     """Read the artifact manifest and return the required filenames."""
 
-    manifest_path = config.ARTIFACTS_DIR / "manifest.json"
-    if not manifest_path.exists():
-        return list(DEFAULT_REQUIRED_ARTIFACTS)
-
+    manifest_path = (
+        config.ARTIFACTS_DIR if output_dir is None else output_dir
+    ) / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    return [Path(path).name for path in manifest["required_files"]]
+    files = manifest["required_files"]
+    if (
+        not isinstance(files, list)
+        or len(files) != len(DEFAULT_REQUIRED_ARTIFACTS)
+        or set(files) != set(DEFAULT_REQUIRED_ARTIFACTS)
+    ):
+        raise ValueError("Manifest does not match the required artifact contract.")
+    return files
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Verify that all required artifact files exist."""
+    """Reject incomplete, empty, or changed outputs using the run manifest."""
 
     args = parse_args(argv)
     output_dir = args.output_dir
-    missing = [
-        artifact_name
-        for artifact_name in required_artifact_files()
-        if not (output_dir / artifact_name).exists()
-    ]
-
-    if missing:
-        print("Missing required artifacts:")
-        for artifact_name in missing:
-            print(f"- {artifact_name}")
+    try:
+        required = required_artifact_files(output_dir)
+        manifest = json.loads(
+            (output_dir / "manifest.json").read_text(encoding="utf-8")
+        )
+        hashes = manifest["sha256"]
+        if not isinstance(hashes, dict) or set(hashes) != set(required):
+            raise ValueError("Manifest must hash every required output.")
+        for name in required:
+            content = (output_dir / name).read_bytes()
+            if (
+                not content.strip()
+                or hashlib.sha256(content).hexdigest() != hashes[name]
+            ):
+                raise ValueError(f"Empty or corrupt artifact: {name}")
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Artifact verification failed: {error}")
         return 1
 
-    print("All required artifacts are present.")
+    print("All required artifacts match the run manifest.")
     return 0
 
 

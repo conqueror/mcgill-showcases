@@ -167,6 +167,10 @@ def train_classifier(
 
     effective_config = config or TrainingConfig()
     torch.manual_seed(effective_config.random_state)
+    if bundle.train_loader.generator is not None:
+        bundle.train_loader.generator.manual_seed(
+            bundle.train_loader.generator.initial_seed(),
+        )
     model = models.build_classifier(
         input_dim=bundle.input_dim,
         num_classes=bundle.num_classes,
@@ -240,13 +244,20 @@ def measure_gradient_health(
 ) -> pd.DataFrame:
     """Collect gradient norms for one batch to explain training stability."""
 
-    criterion = nn.CrossEntropyLoss()
-    model.train()
-    features, targets = next(iter(loader))
-    model.zero_grad()
-    logits = model(features)
-    loss = criterion(logits, targets)
-    loss.backward()
+    model = copy.deepcopy(model)
+    generator = loader.generator
+    loader_state = generator.get_state() if generator is not None else None
+    with torch.random.fork_rng(devices=[]):
+        try:
+            model.train()
+            features, targets = next(iter(loader))
+            model.zero_grad()
+            logits = model(features)
+            loss = nn.CrossEntropyLoss()(logits, targets)
+            loss.backward()
+        finally:
+            if generator is not None and loader_state is not None:
+                generator.set_state(loader_state)
 
     rows = []
     for name, parameter in model.named_parameters():

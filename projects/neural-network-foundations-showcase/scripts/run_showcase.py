@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -190,13 +191,17 @@ def main(argv: list[str] | None = None) -> int:
         regime_table["regime"] == "well_fit",
         "generalization_gap",
     ].iloc[0]
+    best_xor_accuracy = decision_boundary_summary.loc[
+        decision_boundary_summary["dataset"] == "xor",
+        "validation_accuracy",
+    ].max()
 
     summary = reporting.build_summary_markdown(
         project_title="Neural Network Foundations Showcase",
         highlights=[
             reporting.to_highlight(
                 "Best XOR validation accuracy",
-                f"{decision_boundary_summary.iloc[-1]['validation_accuracy']:.3f}",
+                f"{best_xor_accuracy:.3f}",
             ),
             reporting.to_highlight(
                 "Well-fit regime gap",
@@ -220,6 +225,12 @@ def main(argv: list[str] | None = None) -> int:
         },
     )
     reporting.write_markdown_artifact(summary, artifact_paths["summary"])
+    reporting.write_artifact_manifest(
+        artifact_paths,
+        ["scripts/run_showcase.py", *(sys.argv[1:] if argv is None else argv)],
+        [7, 8, 9, 10, 11],
+        {"base_random_state": 7},
+    )
     return 0
 
 

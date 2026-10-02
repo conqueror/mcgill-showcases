@@ -9,7 +9,7 @@ import pandas as pd
 def sigmoid(values: np.ndarray) -> np.ndarray:
     """Apply the sigmoid nonlinearity elementwise."""
 
-    return 1.0 / (1.0 + np.exp(-values))
+    return np.exp(-np.logaddexp(0.0, -values))
 
 
 def tanh(values: np.ndarray) -> np.ndarray:
@@ -44,7 +44,11 @@ def activation_forward(name: str, values: np.ndarray) -> np.ndarray:
     raise ValueError(f"Unsupported activation: {name}")
 
 
-def activation_derivative(name: str, activated_values: np.ndarray) -> np.ndarray:
+def activation_derivative(
+    name: str,
+    activated_values: np.ndarray,
+    slope: float = 0.1,
+) -> np.ndarray:
     """Return the derivative evaluated from activation outputs."""
 
     if name == "sigmoid":
@@ -54,7 +58,7 @@ def activation_derivative(name: str, activated_values: np.ndarray) -> np.ndarray
     if name == "relu":
         return (activated_values > 0.0).astype(np.float64)
     if name == "leaky_relu":
-        return np.where(activated_values > 0.0, 1.0, 0.1)
+        return np.where(activated_values > 0.0, 1.0, slope)
     raise ValueError(f"Unsupported activation: {name}")
 
 

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from pytorch_training_regularization_showcase import (
@@ -138,11 +140,11 @@ def main(argv: list[str] | None = None) -> int:
                 f"{baseline_run.test_metrics['test_accuracy']:.3f}",
             ),
             reporting.to_highlight(
-                "Best optimizer",
+                "Highest-validation optimizer in this run",
                 best_optimizer["optimizer"],
             ),
             reporting.to_highlight(
-                "Best regularization setup",
+                "Highest-validation regularization setup in this run",
                 best_regularization["experiment"],
             ),
         ],
@@ -162,6 +164,17 @@ def main(argv: list[str] | None = None) -> int:
         },
     )
     reporting.write_markdown_artifact(summary, artifact_paths["summary"])
+    reporting.write_artifact_manifest(
+        artifact_paths,
+        ["scripts/run_showcase.py", *(sys.argv[1:] if argv is None else argv)],
+        [7],
+        {
+            "dataset": args.dataset,
+            "quick": args.quick,
+            "batch_size": bundle.train_loader.batch_size,
+            "training": asdict(base_config),
+        },
+    )
     return 0
 
 

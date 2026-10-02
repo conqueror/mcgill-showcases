@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import pandas as pd
@@ -21,6 +21,7 @@ class TrainingConfig:
     init_strategy: str = "xavier"
     validation_fraction: float = 0.25
     random_state: int = 7
+    label_noise_fraction: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -40,10 +41,15 @@ def evaluate_binary_classifier(
 ) -> dict[str, float]:
     """Compute loss and accuracy for a binary classifier."""
 
-    probabilities = networks.predict_proba(network, features)
+    forward = networks.forward_pass(network, features)
+    probabilities = forward.output
     predictions = (probabilities >= 0.5).astype(np.float64)
     return {
-        "loss": losses.binary_cross_entropy(probabilities, labels),
+        "loss": losses.binary_cross_entropy(
+            forward.pre_activations[-1].reshape(-1),
+            labels,
+            from_logits=True,
+        ),
         "accuracy": float(np.mean(predictions == labels)),
     }
 
@@ -61,6 +67,17 @@ def train_network(
         validation_fraction=effective_config.validation_fraction,
         random_state=effective_config.random_state,
     )
+    noisy_train = _inject_label_noise(
+        data.ToyDataset(
+            dataset.name,
+            split.train_features,
+            split.train_labels,
+            dataset.description,
+        ),
+        effective_config.label_noise_fraction,
+        effective_config.random_state,
+    )
+    split = replace(split, train_labels=noisy_train.labels)
     network = networks.build_network(
         layer_sizes=effective_config.layer_sizes,
         init_strategy=effective_config.init_strategy,
@@ -120,18 +137,18 @@ def _inject_label_noise(
 ) -> data.ToyDataset:
     """Flip a deterministic subset of labels to provoke overfitting."""
 
+    if not 0.0 <= fraction <= 1.0:
+        raise ValueError("Label noise fraction must be between 0 and 1.")
     rng = np.random.default_rng(random_state)
     noisy_labels = dataset.labels.copy()
-    flips = max(1, int(round(len(noisy_labels) * fraction)))
+    flips = int(round(len(noisy_labels) * fraction))
     indices = rng.choice(len(noisy_labels), size=flips, replace=False)
     noisy_labels[indices] = 1.0 - noisy_labels[indices]
     return data.ToyDataset(
         name=f"{dataset.name}_with_label_noise",
         features=dataset.features,
         labels=noisy_labels,
-        description=(
-            dataset.description + " Training labels include a small noisy subset."
-        ),
+        description=(dataset.description + " Labels include a noisy subset."),
     )
 
 
@@ -144,15 +161,11 @@ def _regime_runs(random_state: int) -> list[tuple[str, TrainingResult]]:
         noise=0.22,
         random_state=random_state,
     )
-    noisy_small_dataset = _inject_label_noise(
-        data.make_toy_dataset(
-            "xor",
-            samples_per_class=14,
-            noise=0.3,
-            random_state=random_state + 1,
-        ),
-        fraction=0.18,
-        random_state=random_state + 2,
+    small_dataset = data.make_toy_dataset(
+        "xor",
+        samples_per_class=14,
+        noise=0.3,
+        random_state=random_state + 1,
     )
     scenarios = [
         (
@@ -177,7 +190,7 @@ def _regime_runs(random_state: int) -> list[tuple[str, TrainingResult]]:
         ),
         (
             "overfit",
-            noisy_small_dataset,
+            small_dataset,
             TrainingConfig(
                 layer_sizes=(2, 16, 16, 1),
                 epochs=320,
@@ -186,6 +199,7 @@ def _regime_runs(random_state: int) -> list[tuple[str, TrainingResult]]:
                 init_strategy="he",
                 validation_fraction=0.4,
                 random_state=random_state + 4,
+                label_noise_fraction=0.18,
             ),
         ),
     ]

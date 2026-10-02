@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from neural_network_foundations_showcase import backprop, data, networks
+import numpy as np
+import pytest
+
+from neural_network_foundations_showcase import backprop, data, networks, training
 
 
 def test_compute_gradients_matches_network_shapes() -> None:
@@ -52,3 +55,55 @@ def test_backprop_gradient_trace_has_one_row_per_layer() -> None:
     ]
     assert len(trace) == 2
     assert (trace["weight_grad_norm"] >= 0.0).all()
+
+
+def test_all_weights_and_biases_match_central_differences() -> None:
+    """Perturb every parameter of a smooth 2-2-1 network independently."""
+
+    network = networks.FeedForwardNetwork(
+        weights=[np.array([[0.2, -0.3], [0.4, 0.1]]), np.array([[0.5], [-0.6]])],
+        biases=[np.array([[0.1, -0.2]]), np.array([[0.3]])],
+    )
+    features = np.array([[0.2, -0.4], [0.8, 0.3], [-0.5, 0.7]])
+    labels = np.array([0.0, 1.0, 1.0])
+    gradients = backprop.compute_gradients(network, features, labels)
+    step = 1e-5
+    for parameters, expected_gradients in (
+        (network.weights, gradients.weight_gradients),
+        (network.biases, gradients.bias_gradients),
+    ):
+        for parameter, gradient in zip(parameters, expected_gradients, strict=True):
+            for index in np.ndindex(parameter.shape):
+                original = parameter[index]
+                parameter[index] = original + step
+                plus = training.evaluate_binary_classifier(network, features, labels)[
+                    "loss"
+                ]
+                parameter[index] = original - step
+                minus = training.evaluate_binary_classifier(network, features, labels)[
+                    "loss"
+                ]
+                parameter[index] = original
+                assert gradient[index] == pytest.approx(
+                    (plus - minus) / (2 * step), abs=1e-8
+                )
+
+
+def test_saturated_loss_matches_its_backprop_gradient() -> None:
+    """Wrong logits +/-100 give mean loss ~100 and dL/dw ~1, not a flat loss."""
+
+    network = networks.FeedForwardNetwork(
+        weights=[np.array([[100.0]])],
+        biases=[np.array([[0.0]])],
+    )
+    features, labels = np.array([[1.0], [-1.0]]), np.array([0.0, 1.0])
+    assert training.evaluate_binary_classifier(network, features, labels)[
+        "loss"
+    ] == pytest.approx(100.0)
+    gradients = backprop.compute_gradients(network, features, labels)
+    assert gradients.weight_gradients[0][0, 0] == pytest.approx(1.0)
+    network.weights[0][0, 0] += 1e-4
+    plus = training.evaluate_binary_classifier(network, features, labels)["loss"]
+    network.weights[0][0, 0] -= 2e-4
+    minus = training.evaluate_binary_classifier(network, features, labels)["loss"]
+    assert (plus - minus) / 2e-4 == pytest.approx(1.0)

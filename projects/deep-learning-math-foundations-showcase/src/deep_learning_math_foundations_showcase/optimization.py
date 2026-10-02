@@ -10,18 +10,20 @@ def run_gradient_descent_trace(
     learning_rate: float = 0.1,
     steps: int = 8,
 ) -> pd.DataFrame:
-    """Run gradient descent on f(x) = x^2 and capture the trace."""
+    """Record f'(x_before), then the updated x and f(x), for f(x) = x^2."""
 
     x_value = float(start_x)
     rows: list[dict[str, float]] = []
 
     for iteration in range(1, steps + 1):
+        x_before = x_value
         gradient = 2.0 * x_value
         x_value = x_value - learning_rate * gradient
         loss = x_value**2
         rows.append(
             {
                 "iteration": float(iteration),
+                "x_before": x_before,
                 "x": x_value,
                 "gradient": gradient,
                 "loss": loss,
