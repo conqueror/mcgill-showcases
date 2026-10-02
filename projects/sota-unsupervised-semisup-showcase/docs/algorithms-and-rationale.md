@@ -148,7 +148,7 @@ Intuition:
 How to think about DEC:
 1. Pretrain an autoencoder.
 2. Cluster in latent space.
-3. Fine-tune latent space to sharpen cluster assignments.
+3. Fine-tune latent space using minibatch target frequencies and KL loss plus 0.1 times reconstruction loss. This project implements that reconstruction-regularized variant, rather than canonical DEC.
 
 Why it matters:
 - Bridges deep representation learning and clustering in one objective.

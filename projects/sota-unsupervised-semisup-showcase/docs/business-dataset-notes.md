@@ -33,11 +33,11 @@ Open statuses are excluded because they are not final outcomes.
    - `int_rate`: `13.56%` -> `13.56`
    - `revol_util`: `83.7%` -> `83.7`
    - `emp_length`: `< 1 year` -> `0.5`
-3. Fill numeric missing values with medians.
+3. Fill numeric missing values with training-row medians (zero for a column missing throughout training).
 4. Fill categorical missing values with `Unknown`.
-5. One-hot encode categorical features.
-6. Standardize for distance-based methods.
-7. Draw a stratified sample for faster learning runs.
+5. One-hot encode using training-row categories; unseen test categories have all-zero indicators.
+6. Fit standardization on training rows and transform both splits.
+7. The stratified sample is drawn before these preprocessing steps. The pipeline uses the same seeded split to choose preprocessing fit rows and held-out evaluation rows; clustering and anomaly detection still fit and score the full sample.
 
 ## Why This Is Useful
 

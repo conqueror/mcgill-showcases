@@ -51,6 +51,9 @@ def test_active_learning_budget_grows_over_rounds() -> None:
         query_size=15,
     )
 
+    initial_budget = int((split.y_train_masked != -1).sum())
+    expected = [min(initial_budget + 15 * round_idx, len(split.y_train)) for round_idx in range(5)]
+    assert set(output.metrics["strategy"]) == {"random", "uncertainty"}
     for _, group in output.metrics.groupby("strategy"):
         budgets = group.sort_values("round")["labeled_budget"].tolist()
-        assert budgets == sorted(budgets)
+        assert budgets == expected

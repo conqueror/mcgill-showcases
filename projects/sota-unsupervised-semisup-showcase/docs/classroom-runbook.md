@@ -68,7 +68,7 @@ You should finish this guide able to:
   2. When do raw features still win?
 
 ### 7. Learn DEC as a capstone (10 minutes)
-- Open `artifacts/reports/<mode>_dec_metrics.csv`
+- Open `artifacts/reports/<mode>_dec_metrics.csv`; its DEC row is a minibatch variant with reconstruction regularization, not canonical DEC.
 - Questions to answer:
   1. Does DEC beat KMeans on pretrained latent space?
   2. How sensitive is DEC to training epochs?

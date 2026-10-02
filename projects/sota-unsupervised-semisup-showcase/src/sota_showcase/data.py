@@ -69,16 +69,39 @@ class SplitDataset:
     y_train_masked: ArrayI
 
 
-def load_digits_dataset(scale: bool = True) -> LabeledDataset:
-    """Load the sklearn digits dataset as standardized floating point features."""
+def _preprocessing_fit_indices(
+    y: ArrayI,
+    test_size: float | None,
+    random_state: int,
+) -> ArrayI:
+    indices = np.arange(y.size, dtype=np.int64)
+    if test_size is None:
+        return indices
+    train_indices, _ = train_test_split(
+        indices,
+        test_size=test_size,
+        stratify=y,
+        random_state=random_state,
+    )
+    return train_indices
+
+
+def load_digits_dataset(
+    scale: bool = True,
+    test_size: float | None = None,
+    random_state: int = 42,
+) -> LabeledDataset:
+    """Load digits; supply test_size to fit scaling on the seeded training split only."""
 
     bunch = load_digits()
     X = bunch.data.astype(np.float64)
+    y = bunch.target.astype(np.int64)
     if scale:
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+        fit_indices = _preprocessing_fit_indices(y, test_size, random_state)
+        scaler.fit(X[fit_indices])
+        X = scaler.transform(X)
 
-    y = bunch.target.astype(np.int64)
     feature_names = [f"pixel_{i}" for i in range(X.shape[1])]
     target_names = [str(label) for label in bunch.target_names]
     return LabeledDataset(
@@ -133,8 +156,9 @@ def load_business_loan_dataset(
     sample_size: int = 3_000,
     scale: bool = True,
     random_state: int = 42,
+    test_size: float | None = None,
 ) -> LabeledDataset:
-    """Load and preprocess a learner-friendly Lending Club credit-risk dataset."""
+    """Load loans; supply test_size to fit preprocessing on the seeded training split only."""
 
     path = csv_path if csv_path is not None else _default_loan_csv_path()
     if not path.exists():
@@ -193,16 +217,24 @@ def load_business_loan_dataset(
     for col in numeric_cols:
         features[col] = pd.to_numeric(features[col], errors="coerce")
 
-    numeric_fill_values = features[numeric_cols].median(numeric_only=True)
+    fit_indices = _preprocessing_fit_indices(y, test_size, random_state)
+    numeric_fill_values = features.iloc[fit_indices][numeric_cols].median().fillna(0.0)
     features[numeric_cols] = features[numeric_cols].fillna(numeric_fill_values)
 
     features[categorical_cols] = features[categorical_cols].fillna("Unknown").astype(str)
+    for col in categorical_cols:
+        categories = features.iloc[fit_indices][col].unique()
+        features[col] = pd.Categorical(
+            features[col].where(features[col].isin(categories)),
+            categories=categories,
+        )
     encoded = pd.get_dummies(features, columns=categorical_cols, drop_first=False)
 
     X = encoded.to_numpy(dtype=np.float64)
     if scale:
         scaler = StandardScaler()
-        X = scaler.fit_transform(X)
+        scaler.fit(X[fit_indices])
+        X = scaler.transform(X)
 
     return LabeledDataset(
         X=X,

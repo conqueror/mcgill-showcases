@@ -174,8 +174,8 @@ def _co_training_consensus(
             left_proba = model_left.predict_proba(X_left[unlabeled_idx])
             right_proba = model_right.predict_proba(X_right[unlabeled_idx])
 
-        left_pred = left_proba.argmax(axis=1)
-        right_pred = right_proba.argmax(axis=1)
+        left_pred = model_left.classes_[left_proba.argmax(axis=1)]
+        right_pred = model_right.classes_[right_proba.argmax(axis=1)]
         left_conf = left_proba.max(axis=1)
         right_conf = right_proba.max(axis=1)
 

@@ -1,4 +1,4 @@
-"""Educational Deep Embedded Clustering (DEC) implementation in PyTorch."""
+"""Educational minibatch DEC variant with reconstruction regularization in PyTorch."""
 
 from __future__ import annotations
 
@@ -10,9 +10,11 @@ import torch
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from sklearn.cluster import KMeans
-from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, silhouette_score
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
+
+from .unsupervised import _safe_silhouette_score
 
 ArrayF = NDArray[np.float64]
 ArrayI = NDArray[np.int64]
@@ -84,7 +86,7 @@ def run_dec_benchmark(
     latent_dim: int = 16,
     batch_size: int = 256,
 ) -> DECArtifacts:
-    """Run an intentionally compact DEC example for tutorial demonstration."""
+    """Run a minibatch DEC variant using KL + 0.1 * reconstruction loss."""
 
     torch.manual_seed(random_state)
     np.random.seed(random_state)
@@ -142,10 +144,10 @@ def run_dec_benchmark(
     metrics = pd.DataFrame(
         [
             {
-                "algorithm": "DEC",
+                "algorithm": "DEC_minibatch_reconstruction",
                 "ari": float(adjusted_rand_score(y, dec_labels)),
                 "nmi": float(normalized_mutual_info_score(y, dec_labels)),
-                "silhouette": float(silhouette_score(X, dec_labels)),
+                "silhouette": _safe_silhouette_score(X, dec_labels),
                 "pretrain_epochs": pretrain_epochs,
                 "finetune_epochs": finetune_epochs,
                 "n_clusters": n_clusters,
@@ -154,7 +156,7 @@ def run_dec_benchmark(
                 "algorithm": "KMeans_on_Pretrained_Latent",
                 "ari": float(adjusted_rand_score(y, kmeans_labels)),
                 "nmi": float(normalized_mutual_info_score(y, kmeans_labels)),
-                "silhouette": float(silhouette_score(X, kmeans_labels)),
+                "silhouette": _safe_silhouette_score(X, kmeans_labels),
                 "pretrain_epochs": pretrain_epochs,
                 "finetune_epochs": 0,
                 "n_clusters": n_clusters,

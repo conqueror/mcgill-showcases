@@ -21,7 +21,7 @@ def main() -> None:
     missing = verify_required_artifacts(project_root, required_artifact_paths())
     if missing:
         formatted = "\n".join(f"- {path}" for path in missing)
-        raise SystemExit(f"Missing required artifacts:\n{formatted}")
+        raise SystemExit(f"Missing or invalid required artifacts:\n{formatted}")
     print("Artifact contract verified.")
 
 

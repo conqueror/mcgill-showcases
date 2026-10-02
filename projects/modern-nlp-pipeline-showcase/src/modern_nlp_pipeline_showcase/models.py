@@ -103,7 +103,7 @@ class HeuristicQABackend:
             key=lambda sentence: _overlap_score(question, sentence),
             reverse=True,
         )
-        return ranked[0] if ranked else context.strip()
+        return ranked[0] if ranked and _overlap_score(question, ranked[0]) > 0 else ""
 
 
 @dataclass
@@ -186,7 +186,9 @@ def load_dense_encoder(
     """Load the preferred dense encoder, falling back when unavailable."""
     if prefer_transformer:
         try:
-            return TransformerSentenceEncoder(model_name=model_name)
+            encoder = TransformerSentenceEncoder(model_name=model_name)
+            encoder.encode(["healthcheck"])
+            return encoder
         except Exception:
             pass
     return HashingSentenceEncoder()
@@ -199,7 +201,9 @@ def load_qa_backend(
     """Load the preferred QA backend, falling back when unavailable."""
     if prefer_transformer:
         try:
-            return TransformersQABackend(model_name=model_name)
+            backend = TransformersQABackend(model_name=model_name)
+            backend.answer("What is being studied?", "This work studies retrieval quality.")
+            return backend
         except Exception:
             pass
     return HeuristicQABackend()
@@ -211,7 +215,9 @@ def load_summarizer_backend(
     """Load the preferred summarization backend, falling back when unavailable."""
     if prefer_transformer:
         try:
-            return TransformersSummarizerBackend(model_name=model_name)
+            backend = TransformersSummarizerBackend(model_name=model_name)
+            backend.summarize("retrieval quality", "This work studies retrieval quality.")
+            return backend
         except Exception:
             pass
     return HeuristicSummarizerBackend()
