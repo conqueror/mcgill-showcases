@@ -32,6 +32,46 @@ import pytest
 from student_support_rl.policy_gradient import ReinforcePolicy, softmax, train_reinforce
 
 
+def test_one_step_reinforce_uses_an_action_independent_baseline() -> None:
+    """The first episode has b=0; its only return must not cancel its own update.
+
+    Seed 7 samples action 1 from the uniform policy in state (1,1,3,3,2,0).
+    Progress is 1, risk reduction is 0, email cost is .2 and terminal penalty is 1.2:
+    G_1 = 1 - .2 - 1.2 = -.4. With alpha=1, scores are (-.25,.75,-.25,-.25),
+    so the four updated logits are (.1,-.3,.1,.1).
+    """
+    result = train_reinforce(episodes=1, seed=7, scenario_ids=(1,), horizon=1, alpha=1.0)
+
+    assert result.training_curve[0]["baseline"] == 0.0
+    assert result.theta[(1, 1, 3, 3, 2, 0)] == pytest.approx([0.1, -0.3, 0.1, 0.1])
+
+
+def test_reinforce_discounts_later_gradients_for_start_return() -> None:
+    """Hand calculation: r=(.8,-4.6), gamma=.5 gives G=(-1.5,-4.6).
+
+    The first action is 1, the second is 0, both sampled from uniform logits.
+    At alpha=1, step 1 uses -1.5 times its score. Step 2 uses .5*(-4.6)=-2.3,
+    giving the chosen logit -2.3*.75=-1.725 and others -2.3*(-.25)=.575.
+    The terminal reward contributes to both returns, including G_H itself.
+    """
+    result = train_reinforce(
+        episodes=1, seed=7, scenario_ids=(1,), horizon=2,
+        alpha=1.0, gamma=0.5, use_baseline=False,
+    )
+
+    assert result.theta[(1, 1, 3, 3, 2, 0)] == pytest.approx([0.375, -1.125, 0.375, 0.375])
+    assert result.theta[(2, 2, 3, 3, 2, 1)] == pytest.approx([-1.725, 0.575, 0.575, 0.575])
+
+
+def test_reinforce_baseline_uses_only_earlier_episodes() -> None:
+    """Episode 2 uses episode 1's mean return (-1.5-4.6)/2=-3.05, frozen before sampling."""
+    result = train_reinforce(
+        episodes=2, seed=7, scenario_ids=(1,), horizon=2, alpha=0.0, gamma=0.5,
+    )
+
+    assert [row["baseline"] for row in result.training_curve] == [0.0, -3.05]
+
+
 def test_softmax_is_a_valid_probability_distribution() -> None:
     """softmax(logits) is a proper distribution: right length, sums to 1, entries in [0, 1].
 
@@ -148,7 +188,7 @@ def test_training_returns_curve_with_expected_schema() -> None:
 
 
 def test_greedy_policy_falls_back_to_action_zero_for_unseen_state() -> None:
-    """An unseen state returns action 0, the conservative do-nothing fallback.
+    """An unseen state returns action 0, the do-nothing baseline (questionable at risk 3).
 
     With empty ``theta`` every state is unseen, so the greedy readout returns action 0
     (``no_intervention``). This keeps the deployed policy total over the whole state space

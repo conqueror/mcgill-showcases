@@ -7,7 +7,8 @@ of the same ideas live in ``q_learning.py`` (tabular value-based control) and
 ``policy_gradient.py`` (tabular REINFORCE). The point of the bridge is comparison, not
 re-derivation: it wraps the student-support environment as a ``gymnasium.Env``, trains a DQN and a
 PPO agent, and evaluates both against the tabular Q-learning baseline on the SAME scenarios,
-horizon, and seed family so the numbers are apples-to-apples.
+horizon, and seed family. The budgets are small and unequal, so this is an illustration rather
+than a controlled algorithm benchmark.
 
 Where this sits on the ladder: contextual bandit -> MDP -> Q-learning -> DQN -> policy gradient ->
 actor-critic -> PPO. DQN is the deep generalization of Q-learning (a neural net replaces the
@@ -92,16 +93,18 @@ class DRLComparisonResult:
 class TrainablePredictModel(Protocol):
     """Structural type for a Stable-Baselines3 agent that can be trained and queried.
 
-    This Protocol captures only the two methods the bridge actually uses from an SB3 model -- the
-    ``learn``/``predict`` pair shared by DQN and PPO -- so the rest of the module can stay agnostic
-    to the concrete algorithm class and avoid a hard import of Stable-Baselines3 at type-check
-    time. ``predict`` returns an ``(action, state)`` pair following the SB3 convention; only the
+    This Protocol captures the methods and step counter the bridge uses from an SB3 model --
+    ``learn``, ``predict`` and ``num_timesteps``, shared by DQN and PPO -- so the module stays
+    agnostic to the algorithm class without importing Stable-Baselines3 during type checking.
+    ``predict`` returns an ``(action, state)`` pair following the SB3 convention; only the
     action is consumed here (the recurrent-state slot is ignored for these feedforward policies).
 
     RL concept:
         Agent training/inference interface (deep value-based and actor-critic); see
         docs/deep-rl.md.
     """
+
+    num_timesteps: int
 
     def learn(
         self,
@@ -137,8 +140,8 @@ def run_drl_comparison(
     discrete problem; this bridge then asks "does the *deep* version of the same idea agree?" It
     wraps the student-support MDP as a ``gymnasium.Env``, trains a DQN agent (deep value-based) and
     a PPO agent (deep actor-critic policy gradient) for ``timesteps`` steps each, and evaluates all
-    three policies on the SAME scenario set, horizon, and seed family so differences reflect the
-    learning method rather than the test conditions. All RNGs (Python, NumPy, and -- if installed
+    three policies on the SAME scenario set, horizon, and seed family. Training budgets differ, so
+    this is not a controlled algorithm benchmark. All RNGs (Python, NumPy, and -- if installed
     -- PyTorch) are seeded up front for reproducibility.
 
     DQN here learns ``Q(s,a)`` with a neural approximator, stabilized by experience replay
@@ -150,7 +153,8 @@ def run_drl_comparison(
     schedules persist across chunks while an evaluation snapshot is recorded after each chunk.
 
     Args:
-        timesteps: Total environment steps to train EACH deep agent (DQN and PPO).
+        timesteps: Requested environment steps for each deep agent. Library rollout sizes can
+            round this up; training rows record the actual cumulative ``num_timesteps``.
         output_dir: Accepted for interface symmetry with other runners but unused (see ``del``
             below); this function returns its artifacts in memory.
         quick: When True, use lighter evaluation/training budgets for a fast smoke run.
@@ -226,16 +230,19 @@ def run_drl_comparison(
             Scenarios are cycled deterministically by reset count (unless an explicit
             ``scenario_id`` is passed via ``options``), and each episode gets a distinct
             ``seed + reset_count`` so the comparison is reproducible yet not degenerate.
+            An explicit seed restarts the counter and the Gym RNG to reproduce the reset sequence.
 
             Args:
-                seed: Optional override for the episode seed family.
+                seed: Optional seed that restarts the episode seed family and scenario cycle.
                 options: Optional dict; an ``"scenario_id"`` entry forces a specific scenario.
 
             Returns:
                 A ``(observation, info)`` pair following the Gymnasium reset contract.
             """
+            super().reset(seed=seed)
             if seed is not None:
                 self._seed = seed
+                self._reset_count = 0
             # Cycle scenarios by reset count unless the caller pins one via options.
             scenario_value = (
                 self._scenario_ids[self._reset_count % len(self._scenario_ids)]
@@ -343,7 +350,7 @@ def run_drl_comparison(
             # reset_num_timesteps=False keeps the step counter and exploration schedule across
             # chunks; we snapshot evaluation performance after each chunk to build a learning curve.
             model.learn(total_timesteps=learn_chunk, reset_num_timesteps=False, progress_bar=False)
-            learned_steps += learn_chunk
+            learned_steps = model.num_timesteps
             evaluation_rows, _ = evaluate_policies(
                 policies=[
                     ModelPolicy(
@@ -374,12 +381,13 @@ def run_drl_comparison(
         )
         env.close()
 
-    # Tabular Q-learning baseline trained on the SAME scenarios/horizon/seed for a fair comparison.
+    # Match the training discount as well as scenarios/horizon/seed; budgets remain unequal.
     q_learning = train_q_learning(
         episodes=240 if quick else 900,
         seed=seed,
         scenario_ids=scenario_ids,
         horizon=horizon,
+        gamma=0.95,
     ).greedy_policy()
     # Evaluate all three policies (tabular baseline + the two deep agents) on identical conditions.
     comparison_rows, scenario_rows = evaluate_policies(
@@ -395,11 +403,14 @@ def run_drl_comparison(
     policy_gradient_notes = _policy_gradient_notes(comparison_rows)
     bridge_report = (
         "# Optional DRL Bridge\n\n"
-        f"Ran DQN and PPO for {timesteps} timesteps on the same student-support environment family "
-        f"used by tabular Q-learning, with seed {seed}.\n\n"
+        f"Requested {timesteps} timesteps each for DQN and PPO on the student-support environment "
+        f"with seed {seed}; actual environment steps are recorded in training_summary.csv.\n\n"
         "- DQN extends value-based control from a Q-table to a neural approximator.\n"
         "- PPO provides an actor-critic, policy-gradient reference point.\n"
         "- The comparison artifacts reuse the same scenario set, horizon, and seed family.\n"
+        "- All three learners use gamma 0.95; evaluation reports undiscounted episode reward.\n"
+        f"- Tabular Q-learning uses {240 if quick else 900} episodes of {horizon} steps. "
+        "Training budgets differ, so this is an illustration, not a controlled benchmark.\n"
     )
     return DRLComparisonResult(
         comparison_rows=comparison_rows,

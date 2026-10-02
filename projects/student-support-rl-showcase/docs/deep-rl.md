@@ -144,8 +144,9 @@ What to open:
   tabular Q-learning baseline on the **same** scenarios, horizon, and seed family. Look at the
   `build_model("dqn")` branch: `buffer_size`, `batch_size`, and `learning_starts` configure
   **experience replay**; the **target network** is maintained internally by SB3 (you will not see it
-  in the source — that is the black-box boundary). Note `gamma=0.95` here versus `0.9` in the
-  tabular code (§ Notation in [math-notes.md](math-notes.md)). Note too the `GymStudentSupportEnv`
+  in the source — that is the black-box boundary). All three learners in this comparison use
+  `gamma=0.95`; standalone tabular runners default to `0.9` (§ Notation in
+  [math-notes.md](math-notes.md)). Note too the `GymStudentSupportEnv`
   exposes a **6-dim normalized `Box`** observation (`as_normalized_vector`) and a `Discrete(4)`
   action space — this normalized feature vector is the input `s` to `Q_φ`, the concrete face of
   function approximation in this codebase. The dependencies are loaded lazily and a missing stack
@@ -162,9 +163,9 @@ What to open:
   cleanly the way the tabular training curve does.
 
 **Honest reading of the numbers.** Read the actual ordering off the CSV rather than assuming one — it
-depends on the seed, the training budget, and tuning. In the checked-in run the deep agents happen to
-edge out the tabular baseline (PPO `0.61`, DQN `0.34`, tabular Q-learning `−3.62` average reward), but
-do **not** over-read that single result: the hyperparameters are deliberately tiny (a 512-transition
+depends on the seed, the training budget, and tuning. Generated result artifacts and run receipts
+are not checked in, so there is no retained run here establishing an algorithm ranking.
+Do **not** over-read your own single result: the hyperparameters are deliberately tiny (a 512-transition
 buffer, 32-step rollouts) and both deep agents train for only a few thousand steps on five scenarios,
 so this is a fast demo, not a tuned benchmark. The real lesson is methodological — on a small,
 fully-observed MDP like this one a tabular method is often competitive with (and can beat) an

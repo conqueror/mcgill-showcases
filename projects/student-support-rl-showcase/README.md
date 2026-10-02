@@ -32,7 +32,7 @@ with full equations and a diagram:
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.11 or 3.12
 - `uv`
 - Basic Python functions and loops
 - Comfort reading CSV and Markdown artifacts
@@ -134,7 +134,7 @@ Read the full policy in [docs/anti-copy-policy.md](docs/anti-copy-policy.md) and
 - `make smoke` should finish in under 60 seconds on a normal laptop.
 - `make run` should finish in under 10 minutes on a normal laptop.
 - `make run-drl-optional` is a bridge to Gymnasium and Stable-Baselines3 and is not required for the core learning path.
-- `make run-drl-optional` produces a fallback bridge report even when the optional DRL extras are not installed.
+- `make run-drl-optional` requests the DRL extras. To get the fallback report in an environment without them, run `PYTHONPATH=src python scripts/run_drl_optional.py` directly.
 
 ## Common Failure Modes
 

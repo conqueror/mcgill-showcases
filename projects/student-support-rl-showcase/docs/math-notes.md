@@ -14,7 +14,7 @@ action `A_t` in state `S_t` is `R_{t+1}`.
 |---|---|---|
 | `S_t, A_t, R_{t+1}` | state, action, reward after acting | `StudentState`, action `0..3`, `default_reward` |
 | `H` | horizon (episode length) | `6` weekly decisions |
-| `γ ∈ [0,1]` | discount factor | `0.9` tabular, `0.95` DRL bridge |
+| `γ ∈ [0,1]` | discount factor | `0.9` tabular defaults; `0.95` for all learners in the DRL bridge |
 | `π(a\|s)` / `π(s)` | stochastic / deterministic policy | `policies.py` |
 | `V^π(s)` | state value under `π` | — |
 | `Q^π(s,a)` | action value under `π` | `q_table`, `artifacts/q_learning/q_table.csv` |
@@ -29,7 +29,7 @@ A Markov Decision Process is the tuple `(S, A, P, R, γ, H)`. The agent–enviro
 trajectory `S_1, A_1, R_2, S_2, A_2, R_3, …`. The **(discounted) return** from step `t` is
 
 ```
-G_t = R_{t+1} + γ·R_{t+2} + γ²·R_{t+3} + … = Σ_{k=0}^{H-t-1} γ^k · R_{t+k+1}
+G_t = R_{t+1} + γ·R_{t+2} + γ²·R_{t+3} + … = Σ_{k=0}^{H-t} γ^k · R_{t+k+1}
 ```
 
 The agent maximizes expected return. Two value functions summarize "how good" things are:
@@ -157,11 +157,14 @@ Instead of learning values and acting greedily, policy-gradient methods paramete
 theorem** gives an estimator that needs no model:
 
 ```
-∇_θ J(θ) = E_{π_θ}[ Σ_t ∇_θ log π_θ(A_t | S_t) · (G_t − b(S_t)) ]
+∇_θ J(θ) = E_{π_θ}[ Σ_{t=1}^H γ^{t-1} · ∇_θ log π_θ(A_t | S_t) · (G_t − b(S_t)) ]
 ```
 
-`b(S_t)` is a **baseline** that reduces variance without adding bias (here, the episode-mean
-return). With a tabular **softmax** policy
+`b(S_t)` is a **baseline** that can reduce variance without adding bias when it is independent of
+the sampled action, conditional on the state and past data. Here it is the mean of per-step returns
+from earlier episodes, frozen before the current episode (zero initially). A mean computed from
+the current trajectory would depend on its sampled actions and can bias the gradient.
+With a tabular **softmax** policy
 
 ```
 π_θ(a|s) = exp(θ_{s,a}) / Σ_{a'} exp(θ_{s,a'})
@@ -172,7 +175,7 @@ visited `(s_t, A_t)` and every action `a'`:
 
 ```
 ∂/∂θ_{s,a'} log π_θ(A_t|s) = 1[a' = A_t] − π_θ(a'|s)
-θ_{s,a'} ← θ_{s,a'} + α·(G_t − b)·( 1[a'=A_t] − π_θ(a'|s) )
+θ_{s,a'} ← θ_{s,a'} + α·γ^{t-1}·(G_t − b)·( 1[a'=A_t] − π_θ(a'|s) )
 ```
 
 *Implemented by:* `policy_gradient.train_reinforce`. *Inspect:*

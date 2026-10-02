@@ -18,6 +18,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.verify_artifacts import main as verify_artifacts_main
 from student_support_rl.reporting import (
     OPTIONAL_DRL_ARTIFACTS,
@@ -160,6 +162,40 @@ def test_optional_drl_group_requires_complete_comparison_outputs(tmp_path: Path)
 
     # Partial deep-RL group => the validator flags the comparison as incomplete.
     assert any("Optional DRL comparison output is incomplete" in error for error in errors)
+
+
+@pytest.mark.parametrize("content", ["", "family\ndqn\n", "family,avg_reward\ndqn,1.0\n"])
+def test_optional_comparison_schema_errors_return_a_failure(tmp_path: Path, content: str) -> None:
+    """An empty or nonempty CSV without policy must reject cleanly, without a KeyError."""
+    _write_minimal_required_artifacts(tmp_path)
+    write_text_artifact(
+        tmp_path / "artifacts/drl_optional/rl_family_comparison.csv", content,
+    )
+
+    errors = artifact_validation_errors(output_dir=tmp_path)
+    assert any("empty or missing a header" in error or "missing required columns" in error
+               for error in errors)
+    assert verify_artifacts_main(["--output-dir", str(tmp_path)]) == 1
+
+
+@pytest.mark.parametrize("value", ["", "NaN", "inf", "not-a-number"])
+def test_artifact_verifier_rejects_corrupt_numeric_cells(tmp_path: Path, value: str) -> None:
+    """A correct header must not make missing or invalid expected rewards acceptable evidence."""
+    _write_minimal_required_artifacts(tmp_path)
+    path = tmp_path / "artifacts/bandit/reward_trace.csv"
+    path.write_text(path.read_text(encoding="utf-8").replace("0.7", value), encoding="utf-8")
+    assert artifact_validation_errors(output_dir=tmp_path)
+    assert verify_artifacts_main(["--output-dir", str(tmp_path)]) == 1
+
+
+def test_artifact_verifier_rejects_truncated_rows(tmp_path: Path) -> None:
+    """A nonempty data row is corrupt when required cells are absent."""
+    _write_minimal_required_artifacts(tmp_path)
+    path = tmp_path / "artifacts/bandit/reward_trace.csv"
+    header = path.read_text(encoding="utf-8").splitlines()[0]
+    path.write_text(header + "\n1,medium_risk_student\n", encoding="utf-8")
+    assert artifact_validation_errors(output_dir=tmp_path)
+    assert verify_artifacts_main(["--output-dir", str(tmp_path)]) == 1
 
 
 def _write_minimal_required_artifacts(root: Path) -> None:

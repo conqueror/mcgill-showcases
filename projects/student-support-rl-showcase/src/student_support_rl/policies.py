@@ -245,6 +245,7 @@ class QLearningPolicy:
     ``q_table.get(...)`` returns an all-zeros value vector, so every action ties at 0.0 and the
     deterministic tie-break in greedy_action selects action 0 ("no_intervention"). This keeps
     the policy total over the whole state space without raising on novel states.
+    It is a baseline fallback, not a safety guarantee: inaction at risk 3 is questionable.
 
     Attributes:
         q_table: Mapping from a state's 6-tuple key (``StudentState.as_tuple``) to its list of

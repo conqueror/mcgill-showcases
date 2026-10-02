@@ -17,14 +17,15 @@ checked-in ``artifacts/manifest.json`` and the test suite assert byte-for-byte a
 RL concept:
     Evaluation and governance -- offline evaluation gates and reproducible evidence.
     See docs/evaluation-and-governance.md. The recommendation rule connects to reward design
-    and reward hacking (docs/reward-design-and-hacking.md): a policy that wins reward by
-    over-intervening must be caught here.
+    and reward hacking (docs/reward-design-and-hacking.md). Cost and over-intervention are
+    reported for human review; the recommendation gate checks reward, questionable actions and risk.
 """
 
 from __future__ import annotations
 
 import csv
 import json
+import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -489,8 +490,9 @@ def governance_artifacts() -> dict[str, str]:
     Returns the markdown bodies written to ``artifacts/governance/safety_controls.md``,
     ``artifacts/governance/offline_eval_plan.md``, and
     ``artifacts/business/deploy_shadow_reject_memo.md``. These encode the human-oversight and
-    offline-gating discipline that wraps any RL deployment, and they articulate the same
-    over-intervention concern that :func:`recommendation_from_summary` enforces numerically.
+    offline-gating discipline intended for a real deployment. They are written guidance, not
+    controls enforced in the simulator's action path. Cost and intervention volume need human
+    review.
 
     Returns:
         A mapping with keys ``safety_controls``, ``offline_eval_plan``, and ``business_memo``,
@@ -515,9 +517,9 @@ def governance_artifacts() -> dict[str, str]:
         ),
         "business_memo": (
             "# Deploy, Shadow, or Reject Memo\n\n"
-            "Recommendation: shadow first.\n\n"
-            "Reason: the tabular agent outperforms the random baseline offline, but the "
-            "reward-design comparison shows clear reward-hacking risk if governance is weak.\n"
+            "Recommendation: reject pending evaluation.\n\n"
+            "Reason: no evaluation summary was supplied to this template. Run policy evaluation "
+            "and derive the live verdict with recommendation_from_summary.\n"
         ),
     }
 
@@ -532,13 +534,14 @@ def recommendation_from_summary(
     only if it is both *safe enough* and *better than the incumbent heuristic*; anything else
     is rejected. The rule, applied to the ``q_learning`` row using ``heuristic`` as baseline:
 
-    1. Reject if it is unsafe -- ``unsafe_rate > 0.5`` or ``final_risk > 1.6``.
+    1. Reject if mean questionable decisions per episode exceed ``0.5`` or final risk exceeds
+       ``1.6``.
     2. Otherwise shadow if it beats the heuristic -- ``avg_reward > baseline_reward`` while
-       staying within the safety bound (``unsafe_rate <= 0.5``).
+       staying within that mean-count bound.
     3. Otherwise reject for an insufficient margin over the heuristic.
 
-    The unsafe-rate gate is what prevents accepting a reward-hacking policy that inflates
-    reward by over-intervening (the failure mode the reward-design comparison demonstrates).
+    The questionable-decision metric is a count per episode, not an action fraction or probability.
+    This gate does not impose a cost or over-intervention limit; those metrics need human review.
 
     Args:
         summary_rows: Per-policy offline-eval summary mappings. Must include rows whose
@@ -551,7 +554,7 @@ def recommendation_from_summary(
 
     RL concept:
         Evaluation and governance -- the deploy/shadow/reject decision rule, with a guard
-        against reward hacking. See docs/evaluation-and-governance.md and
+        on questionable actions and residual risk. See docs/evaluation-and-governance.md and
         docs/reward-design-and-hacking.md.
     """
     by_policy = {str(row["policy"]): row for row in summary_rows}
@@ -562,17 +565,17 @@ def recommendation_from_summary(
 
     avg_reward = _coerce_float(q_learning["avg_reward"])
     baseline_reward = _coerce_float(heuristic["avg_reward"])
-    unsafe_rate = _coerce_float(q_learning["avg_unsafe_or_questionable_decisions"])
+    avg_questionable_decisions = _coerce_float(q_learning["avg_unsafe_or_questionable_decisions"])
     final_risk = _coerce_float(q_learning["avg_final_risk"])
 
-    # Safety gate: reject reward-hacking / high-residual-risk policies before comparing reward.
-    if unsafe_rate > 0.5 or final_risk > 1.6:
+    # Reject excessive questionable decisions or residual risk before comparing reward.
+    if avg_questionable_decisions > 0.5 or final_risk > 1.6:
         return (
             "reject",
             "The learned policy still shows too much safety or residual-risk exposure.",
         )
     # Shadow only if the learned policy beats the heuristic baseline within the safety bound.
-    if avg_reward > baseline_reward and unsafe_rate <= 0.5:
+    if avg_reward > baseline_reward and avg_questionable_decisions <= 0.5:
         return (
             "shadow",
             "The learned policy beats the heuristic offline, but still needs guarded rollout.",
@@ -648,8 +651,11 @@ def _validate_optional_drl_artifact(relative_path: str, artifact_path: Path) -> 
     """
     if relative_path.endswith(".csv"):
         errors = _validate_csv_artifact(relative_path, artifact_path)
+        if errors:
+            return errors
         if relative_path == "artifacts/drl_optional/rl_family_comparison.csv":
-            rows = list(csv.DictReader(artifact_path.open(encoding="utf-8")))
+            with artifact_path.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
             policies = {row["policy"] for row in rows}
             # Contract: the comparison must contrast all three families head-to-head.
             if {"q_learning", "dqn", "ppo"} - policies:
@@ -679,12 +685,13 @@ def _validate_optional_drl_artifact(relative_path: str, artifact_path: Path) -> 
 
 
 def _validate_csv_artifact(relative_path: str, artifact_path: Path) -> list[str]:
-    """Validate a CSV artifact: required header columns present and at least one data row.
+    """Validate required columns, nonempty cells, finite numbers and at least one data row.
 
     The per-path ``required_columns`` table *is* the columnar contract for every tabular
     artifact (bandit traces, training curves, Q-tables, DP gap, policy comparisons, the
     deep-RL rollups). A file passes only if its header is non-empty, contains every required
-    column for its path, and carries at least one data row. ``scripts/verify_artifacts.py``
+    column for its path, and carries at least one complete row with finite numeric values.
+    ``scripts/verify_artifacts.py``
     and ``tests/test_artifact_contract.py`` rely on exactly these rules.
 
     Args:
@@ -816,6 +823,10 @@ def _validate_csv_artifact(relative_path: str, artifact_path: Path) -> list[str]
         ),
     }
     errors: list[str] = []
+    text_columns = {
+        "concept", "showcase_component", "artifact", "scenario_name", "context_signature",
+        "action_label", "optimal_action_label", "policy", "family", "actions",
+    }
     with artifact_path.open(encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
@@ -832,6 +843,26 @@ def _validate_csv_artifact(relative_path: str, artifact_path: Path) -> list[str]
         rows = list(reader)
         if not rows:
             errors.append(f"{relative_path} must contain at least one data row.")
+        for row_number, row in enumerate(rows, start=2):
+            if None in row:
+                errors.append(f"{relative_path} row {row_number} has extra cells.")
+            for column in required_columns.get(relative_path, ()):
+                value = row.get(column)
+                if value is None or not value.strip():
+                    errors.append(f"{relative_path} row {row_number} has an empty {column}.")
+                    continue
+                if column in text_columns or (
+                    column == "action" and relative_path == "artifacts/mdp/sample_episodes.csv"
+                ):
+                    continue
+                try:
+                    number = float(value)
+                except ValueError:
+                    number = math.nan
+                if not math.isfinite(number):
+                    errors.append(
+                        f"{relative_path} row {row_number} {column} must be a finite number."
+                    )
     return errors
 
 

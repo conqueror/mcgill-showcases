@@ -133,7 +133,8 @@ the tuple.
 
 `γ ∈ [0, 1]` is the **discount factor** weighting future rewards. Note an important design choice:
 `γ` is owned by the *agent*, **not** stored in the environment — the same world is solved with
-`γ = 0.9` by the tabular methods and `γ = 0.95` in the DRL bridge (see the notation table in
+`γ = 0.9` by default in the tabular methods and `γ = 0.95` by all three learners in the DRL bridge
+(see the notation table in
 [`math-notes.md`](math-notes.md)). `H` is the **horizon**: the episode runs for `H = 6` weekly
 decisions and then terminates. The `step` method flags `done` once a transition pushes the week past
 `H`, and clamps the reported terminal week back to `H` (the metrics of `s'` are preserved). The
@@ -153,7 +154,7 @@ The agent maximizes the **(discounted) return** from step `t`, which for this fi
 is a finite sum (full derivation in §1 of [`math-notes.md`](math-notes.md)):
 
 ```
-G_t = R_{t+1} + γ·R_{t+2} + γ²·R_{t+3} + … = Σ_{k=0}^{H−t−1} γ^k · R_{t+k+1}
+G_t = R_{t+1} + γ·R_{t+2} + γ²·R_{t+3} + … = Σ_{k=0}^{H−t} γ^k · R_{t+k+1}
 ```
 
 ## Diagram (a): the agent–environment loop

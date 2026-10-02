@@ -20,6 +20,14 @@ from __future__ import annotations
 from student_support_rl.evaluation import evaluate_policies
 from student_support_rl.policies import HeuristicPolicy, RandomPolicy
 from student_support_rl.q_learning import train_q_learning
+from student_support_rl.reporting import governance_artifacts
+
+
+def test_business_memo_without_evaluation_does_not_recommend_shadow() -> None:
+    """The static template has no evidence and must not assert measured policy improvement."""
+    memo = governance_artifacts()["business_memo"]
+    assert "Recommendation: reject" in memo
+    assert "outperforms" not in memo
 
 
 def test_policy_evaluation_includes_governance_metrics() -> None:
